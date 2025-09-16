@@ -231,16 +231,18 @@ const PaymentPage: React.FC = () => {
 
       <div style={{ textAlign: 'center' }}>
         <div style={{ marginBottom: '24px', maxWidth: '600px', margin: '0 auto 24px auto', textAlign: 'left' }}>
-          <Checkbox 
-            checked={agreementAccepted}
-            onChange={(e) => setAgreementAccepted(e.target.checked)}
-            style={{ 
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <Checkbox 
+              checked={agreementAccepted}
+              onChange={(e) => setAgreementAccepted(e.target.checked)}
+              style={{ marginTop: '2px' }}
+            />
+            <span style={{ 
               fontSize: '14px', 
               lineHeight: '1.5',
-              alignItems: 'flex-start'
-            }}
-          >
-            <span style={{ display: 'inline-block', textAlign: 'left' }}>
+              textAlign: 'left',
+              flex: 1
+            }}>
               Я согласен(на) с условиями{' '}
               <Link to="/offer" style={{ color: '#00695C' }}>
                 Публичной оферты
@@ -254,7 +256,7 @@ const PaymentPage: React.FC = () => {
                 Согласие на обработку персональных данных
               </Link>
             </span>
-          </Checkbox>
+          </div>
         </div>
         
         <Button 
