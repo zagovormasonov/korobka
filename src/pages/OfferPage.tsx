@@ -8,6 +8,10 @@ const { Title, Text, Paragraph } = Typography;
 const OfferPage: React.FC = () => {
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div style={{ 
       minHeight: '100vh',
