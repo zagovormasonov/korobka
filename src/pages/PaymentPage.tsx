@@ -230,24 +230,30 @@ const PaymentPage: React.FC = () => {
       </Row>
 
       <div style={{ textAlign: 'center' }}>
-        <div style={{ marginBottom: '24px', maxWidth: '600px', margin: '0 auto 24px auto' }}>
+        <div style={{ marginBottom: '24px', maxWidth: '600px', margin: '0 auto 24px auto', textAlign: 'left' }}>
           <Checkbox 
             checked={agreementAccepted}
             onChange={(e) => setAgreementAccepted(e.target.checked)}
-            style={{ fontSize: '14px', lineHeight: '1.5' }}
+            style={{ 
+              fontSize: '14px', 
+              lineHeight: '1.5',
+              alignItems: 'flex-start'
+            }}
           >
-            Я согласен(на) с условиями{' '}
-            <Link to="/offer" style={{ color: '#00695C' }}>
-              Публичной оферты
-            </Link>
-            ,{' '}
-            <Link to="/privacy-policy" style={{ color: '#00695C' }}>
-              Политики конфиденциальности
-            </Link>
-            {' '}и даю{' '}
-            <Link to="/consent" style={{ color: '#00695C' }}>
-              Согласие на обработку персональных данных
-            </Link>
+            <span style={{ display: 'inline-block', textAlign: 'left' }}>
+              Я согласен(на) с условиями{' '}
+              <Link to="/offer" style={{ color: '#00695C' }}>
+                Публичной оферты
+              </Link>
+              ,{' '}
+              <Link to="/privacy-policy" style={{ color: '#00695C' }}>
+                Политики конфиденциальности
+              </Link>
+              {' '}и даю{' '}
+              <Link to="/consent" style={{ color: '#00695C' }}>
+                Согласие на обработку персональных данных
+              </Link>
+            </span>
           </Checkbox>
         </div>
         
