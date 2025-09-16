@@ -243,7 +243,6 @@ const TestPage: React.FC = () => {
         
         // Не позволяем завершить тест, если не все вопросы отвечены
         setLoading(false);
-        alert(`Пожалуйста, ответьте на все вопросы. Осталось ответить на ${questions.length - answers.length} вопросов.`);
         return;
       }
       
@@ -267,11 +266,11 @@ const TestPage: React.FC = () => {
       } else {
         const errorText = await response.text();
         console.error('❌ Ошибка сервера:', response.status, errorText);
-        alert('Ошибка при отправке теста. Попробуйте еще раз.');
+        navigate(`/payment?sessionId=${sessionId}`);
       }
     } catch (error) {
       console.error('❌ Ошибка сети:', error);
-      alert('Ошибка соединения. Проверьте интернет и попробуйте еще раз.');
+      navigate(`/payment?sessionId=${sessionId}`);
     } finally {
       setLoading(false);
     }
