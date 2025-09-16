@@ -18,7 +18,7 @@ import {
   UserOutlined, 
   FileTextOutlined, 
   MessageOutlined,
-  CheckCircleOutlined
+  CheckOutlined
 } from '@ant-design/icons';
 
 const { Title, Paragraph, Text } = Typography;
@@ -416,10 +416,7 @@ const DashboardPage: React.FC = () => {
               <Card 
                 size="small" 
                 hoverable
-                style={{ 
-                  height: '100%',
-                  position: 'relative'
-                }}
+                style={{ height: '100%' }}
                 actions={[
                   <Button 
                     type="link" 
@@ -431,51 +428,67 @@ const DashboardPage: React.FC = () => {
                   </Button>
                 ]}
               >
-                {/* Галочка для завершенных тестов */}
-                {testResults[test.id] && (
-                  <CheckCircleOutlined 
-                    style={{ 
-                      position: 'absolute',
-                      top: '8px',
-                      right: '8px',
-                      fontSize: '20px',
-                      color: '#52c41a',
-                      zIndex: 1
-                    }} 
-                  />
-                )}
-                <Title level={5} style={{ color: '#00695C', marginBottom: '8px' }}>
-                  {test.name}
-                </Title>
-                <Text type="secondary" style={{ fontSize: '14px', marginBottom: '16px', display: 'block' }}>
-                  {test.description}
-                </Text>
-                
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  {/* Отображение результата (обрезанный текст) */}
-                  {testResults[test.id] && (
-                    <div style={{ 
-                      padding: '8px 12px', 
-                      backgroundColor: '#f6ffed', 
-                      border: '1px solid #b7eb8f', 
-                      borderRadius: '6px',
-                      marginBottom: '8px'
-                    }}>
-                      <Text style={{ fontSize: '14px', color: '#00695C' }}>
-                        {truncateText(testResults[test.id])}
-                      </Text>
-                    </div>
-                  )}
-                  
-                  <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => openModal(test.id)}
-                    style={{ width: '100%' }}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  {/* Кружочек со статусом теста */}
+                  <div 
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      border: `2px solid ${testResults[test.id] ? '#52c41a' : '#d9d9d9'}`,
+                      backgroundColor: testResults[test.id] ? '#52c41a' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      marginTop: '2px'
+                    }}
                   >
-                    {testResults[test.id] ? 'Изменить результат' : 'Ввести результат'}
-                  </Button>
-                </Space>
+                    {testResults[test.id] && (
+                      <CheckOutlined 
+                        style={{ 
+                          fontSize: '12px',
+                          color: 'white'
+                        }} 
+                      />
+                    )}
+                  </div>
+                  
+                  <div style={{ flex: 1 }}>
+                    <Title level={5} style={{ color: '#00695C', marginBottom: '8px' }}>
+                      {test.name}
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: '14px', marginBottom: '16px', display: 'block' }}>
+                      {test.description}
+                    </Text>
+                    
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                      {/* Отображение результата (обрезанный текст) */}
+                      {testResults[test.id] && (
+                        <div style={{ 
+                          padding: '8px 12px', 
+                          backgroundColor: '#f6ffed', 
+                          border: '1px solid #b7eb8f', 
+                          borderRadius: '6px',
+                          marginBottom: '8px'
+                        }}>
+                          <Text style={{ fontSize: '14px', color: '#00695C' }}>
+                            {truncateText(testResults[test.id])}
+                          </Text>
+                        </div>
+                      )}
+                      
+                      <Button
+                        type="primary"
+                        size="small"
+                        onClick={() => openModal(test.id)}
+                        style={{ width: '100%' }}
+                      >
+                        {testResults[test.id] ? 'Изменить результат' : 'Ввести результат'}
+                      </Button>
+                    </Space>
+                  </div>
+                </div>
               </Card>
             </Col>
           ))}
