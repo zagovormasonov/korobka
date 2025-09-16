@@ -237,15 +237,15 @@ const PaymentPage: React.FC = () => {
             style={{ fontSize: '14px', lineHeight: '1.5' }}
           >
             Я согласен(на) с условиями{' '}
-            <Link to="/offer" target="_blank" style={{ color: '#00695C' }}>
+            <Link to="/offer" style={{ color: '#00695C' }}>
               Публичной оферты
             </Link>
             ,{' '}
-            <Link to="/privacy-policy" target="_blank" style={{ color: '#00695C' }}>
+            <Link to="/privacy-policy" style={{ color: '#00695C' }}>
               Политики конфиденциальности
             </Link>
             {' '}и даю{' '}
-            <Link to="/consent" target="_blank" style={{ color: '#00695C' }}>
+            <Link to="/consent" style={{ color: '#00695C' }}>
               Согласие на обработку персональных данных
             </Link>
           </Checkbox>
