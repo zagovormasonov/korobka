@@ -235,11 +235,29 @@ const TestPage: React.FC = () => {
     setLoading(true);
 
     try {
-      console.log('📤 Отправляем результаты теста:', { sessionId, answersCount: answers.length });
-      console.log('📊 Все ответы:', answers);
+      // Сначала сохраняем текущий ответ (включая email)
+      let finalAnswers = [...answers];
+      if (currentAnswer) {
+        const currentQuestion = questions[currentQuestionIndex];
+        const newAnswer = {
+          questionId: currentQuestion.id,
+          answer: currentAnswer,
+          additionalText: additionalText || undefined
+        };
+        
+        const existingAnswerIndex = finalAnswers.findIndex(a => a.questionId === currentQuestion.id);
+        if (existingAnswerIndex >= 0) {
+          finalAnswers[existingAnswerIndex] = newAnswer;
+        } else {
+          finalAnswers.push(newAnswer);
+        }
+      }
+      
+      console.log('📤 Отправляем результаты теста:', { sessionId, answersCount: finalAnswers.length });
+      console.log('📊 Все ответы (включая последний):', finalAnswers);
       
       // Находим email в ответах
-      const emailAnswer = answers.find(answer => {
+      const emailAnswer = finalAnswers.find(answer => {
         const question = questions.find(q => q.id === answer.questionId);
         return question && question.type === 'email';
       });
@@ -250,7 +268,7 @@ const TestPage: React.FC = () => {
       
       // Логируем статистику ответов
       console.log('📊 Статистика ответов:', { 
-        answered: answers.length, 
+        answered: finalAnswers.length, 
         total: questions.length
       });
 
@@ -261,7 +279,7 @@ const TestPage: React.FC = () => {
         },
         body: JSON.stringify({
           sessionId,
-          answers: answers,
+          answers: finalAnswers,
           email: email
         }),
       });
