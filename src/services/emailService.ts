@@ -39,6 +39,8 @@ export const sendDashboardAccessEmail = async (data: DashboardAccessData): Promi
     };
 
     console.log('📧 Параметры шаблона:', templateParams);
+    console.log('📧 Отправляем на email:', data.userEmail);
+    console.log('📧 Шаблон ID:', EMAILJS_TEMPLATE_ID);
 
     // Отправляем email
     const response = await emailjs.send(
