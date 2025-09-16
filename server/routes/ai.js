@@ -45,7 +45,7 @@ router.post('/mascot-message/payment', async (req, res) => {
 Ответь только текстом сообщения, без дополнительных объяснений.`;
 
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-4o',
+      model: 'gpt-4',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 200,
       temperature: 0.7

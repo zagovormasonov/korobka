@@ -351,17 +351,8 @@ router.post('/primary/submit', async (req, res) => {
       { id: 45, type: "email" }
     ];
     
-    // Извлекаем email из последнего ответа (вопрос с типом email)
-    const emailAnswer = answers.find(answer => {
-      const question = questions.find(q => q.id === answer.questionId);
-      return question && question.type === 'email';
-    });
-    
-    const email = emailAnswer ? emailAnswer.answer : null;
-    
-    console.log('📧 Извлеченный email:', email);
-    console.log('📧 Email answer:', emailAnswer);
-    console.log('📧 Все ответы:', answers.map(a => ({ questionId: a.questionId, answer: a.answer })));
+    const { email } = req.body;
+    console.log('📧 Email из запроса:', email);
     
     const result = await pool.query(
       'INSERT INTO primary_test_results (session_id, email, answers) VALUES ($1, $2, $3) ON CONFLICT (session_id) DO UPDATE SET answers = $3, email = $2, updated_at = CURRENT_TIMESTAMP RETURNING *',

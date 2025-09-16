@@ -251,6 +251,15 @@ const TestPage: React.FC = () => {
         total: questions.length
       });
       
+      // Находим email в ответах
+      const emailAnswer = answers.find(answer => {
+        const question = questions.find(q => q.id === answer.questionId);
+        return question && question.type === 'email';
+      });
+      
+      const email = emailAnswer ? emailAnswer.answer : null;
+      console.log('📧 Отправляем email:', email);
+
       const response = await fetch('/api/tests/primary/submit', {
         method: 'POST',
         headers: {
@@ -258,7 +267,8 @@ const TestPage: React.FC = () => {
         },
         body: JSON.stringify({
           sessionId,
-          answers: answers
+          answers: answers,
+          email: email
         }),
       });
 
