@@ -354,12 +354,13 @@ router.post('/primary/submit', async (req, res) => {
     const { email } = req.body;
     console.log('📧 Email из запроса:', email);
     
-    // Генерируем уникальный токен для доступа к ЛК
+    // Генерируем уникальный токен и пароль для доступа к ЛК
     const dashboardToken = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+    const dashboardPassword = generateDashboardPassword();
     
     const result = await pool.query(
-      'INSERT INTO primary_test_results (session_id, email, answers, dashboard_token) VALUES ($1, $2, $3, $4) ON CONFLICT (session_id) DO UPDATE SET answers = $3, email = $2, dashboard_token = $4, updated_at = CURRENT_TIMESTAMP RETURNING *',
-      [sessionId, email, JSON.stringify(answers), dashboardToken]
+      'INSERT INTO primary_test_results (session_id, email, answers, dashboard_token, dashboard_password) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (session_id) DO UPDATE SET answers = $3, email = $2, dashboard_token = $4, dashboard_password = $5, updated_at = CURRENT_TIMESTAMP RETURNING *',
+      [sessionId, email, JSON.stringify(answers), dashboardToken, dashboardPassword]
     );
 
     console.log('✅ Результаты теста сохранены в БД');
@@ -412,15 +413,15 @@ router.get('/dashboard/:token', async (req, res) => {
   }
 });
 
-// Проверить email для доступа к ЛК
-router.post('/verify-email', async (req, res) => {
+// Проверить email и пароль для доступа к ЛК
+router.post('/verify-credentials', async (req, res) => {
   try {
-    const { sessionId, email } = req.body;
+    const { sessionId, email, password } = req.body;
     
-    console.log('📧 Проверяем email для sessionId:', sessionId, 'email:', email);
+    console.log('🔐 Проверяем credentials для sessionId:', sessionId, 'email:', email, 'password:', password);
     
     const result = await pool.query(
-      'SELECT email FROM primary_test_results WHERE session_id = $1',
+      'SELECT email, dashboard_password FROM primary_test_results WHERE session_id = $1',
       [sessionId]
     );
 
@@ -429,18 +430,27 @@ router.post('/verify-email', async (req, res) => {
     }
 
     const storedEmail = result.rows[0].email;
+    const storedPassword = result.rows[0].dashboard_password;
     console.log('📧 Email из БД:', storedEmail);
+    console.log('🔐 Пароль из БД:', storedPassword);
     
-    // Сравниваем email (регистр не важен)
-    if (storedEmail && email && storedEmail.toLowerCase() === email.toLowerCase()) {
-      console.log('✅ Email совпадает, доступ разрешен');
+    // Сравниваем email (регистр не важен) и пароль (регистр важен)
+    const emailMatch = storedEmail && email && storedEmail.toLowerCase() === email.toLowerCase();
+    const passwordMatch = storedPassword && password && storedPassword === password;
+    
+    if (emailMatch && passwordMatch) {
+      console.log('✅ Credentials совпадают, доступ разрешен');
       res.json({ success: true });
     } else {
-      console.log('❌ Email не совпадает, доступ запрещен');
-      res.status(400).json({ success: false, error: 'Invalid email' });
+      console.log('❌ Credentials не совпадают, доступ запрещен');
+      if (!emailMatch) {
+        res.status(400).json({ success: false, error: 'Invalid email' });
+      } else {
+        res.status(400).json({ success: false, error: 'Invalid password' });
+      }
     }
   } catch (error) {
-    console.error('Error verifying email:', error);
+    console.error('Error verifying credentials:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -559,5 +569,15 @@ router.get('/additional/results-by-email/:email', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// Функция генерации пароля для доступа к ЛК
+function generateDashboardPassword() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
 
 export default router;

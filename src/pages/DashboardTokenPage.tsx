@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Spin, Card, Input, Button, Form, message } from 'antd';
-import { MailOutlined, LockOutlined } from '@ant-design/icons';
+import { MailOutlined, LockOutlined, KeyOutlined } from '@ant-design/icons';
 
 const { Text, Title } = Typography;
 
@@ -44,41 +44,54 @@ const DashboardTokenPage: React.FC = () => {
     }
   };
 
-  const verifyEmailAndEnter = async (values: { email: string }) => {
+  const verifyCredentialsAndEnter = async (values: { email: string; password: string }) => {
     if (!sessionId) return;
     
     setVerifyingEmail(true);
     try {
-      const response = await fetch('/api/tests/verify-email', {
+      const response = await fetch('/api/tests/verify-credentials', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sessionId,
-          email: values.email
+          email: values.email,
+          password: values.password
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        message.success('Email подтвержден! Перенаправляем в личный кабинет...');
+        message.success('Данные подтверждены! Перенаправляем в личный кабинет...');
         setTimeout(() => {
           navigate(`/dashboard?sessionId=${sessionId}`, { replace: true });
         }, 1000);
       } else {
-        message.error('Неверный email. Проверьте адрес электронной почты.');
-        form.setFields([
-          {
-            name: 'email',
-            errors: ['Неверный email адрес']
-          }
-        ]);
+        if (data.error === 'Invalid email') {
+          message.error('Неверный email. Проверьте адрес электронной почты.');
+          form.setFields([
+            {
+              name: 'email',
+              errors: ['Неверный email адрес']
+            }
+          ]);
+        } else if (data.error === 'Invalid password') {
+          message.error('Неверный пароль. Проверьте пароль.');
+          form.setFields([
+            {
+              name: 'password',
+              errors: ['Неверный пароль']
+            }
+          ]);
+        } else {
+          message.error('Неверные данные для входа.');
+        }
       }
     } catch (error) {
-      console.error('Error verifying email:', error);
-      message.error('Ошибка при проверке email');
+      console.error('Error verifying credentials:', error);
+      message.error('Ошибка при проверке данных');
     } finally {
       setVerifyingEmail(false);
     }
@@ -139,13 +152,13 @@ const DashboardTokenPage: React.FC = () => {
               Подтверждение доступа
             </Title>
             <Text type="secondary" style={{ fontSize: '14px' }}>
-              Для безопасности введите email, который был указан при прохождении теста
+              Введите email и пароль для доступа к личному кабинету
             </Text>
           </div>
 
           <Form
             form={form}
-            onFinish={verifyEmailAndEnter}
+            onFinish={verifyCredentialsAndEnter}
             layout="vertical"
             size="large"
           >
@@ -161,6 +174,28 @@ const DashboardTokenPage: React.FC = () => {
                 prefix={<MailOutlined />}
                 placeholder="example@email.com"
                 autoComplete="email"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="password"
+              label="Пароль"
+              rules={[
+                { required: true, message: 'Введите пароль' },
+                { len: 6, message: 'Пароль должен содержать 6 символов' }
+              ]}
+            >
+              <Input
+                prefix={<KeyOutlined />}
+                placeholder="ABC123"
+                autoComplete="current-password"
+                style={{ textTransform: 'uppercase' }}
+                maxLength={6}
+                onChange={(e) => {
+                  // Автоматически переводим в верхний регистр
+                  const value = e.target.value.toUpperCase();
+                  form.setFieldsValue({ password: value });
+                }}
               />
             </Form.Item>
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Typography, Spin, Button, Card, Space, message } from 'antd';
-import { CheckCircleOutlined, CopyOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CopyOutlined, MailOutlined } from '@ant-design/icons';
+import { sendDashboardAccessEmail, checkEmailJSConfig } from '../services/emailService';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -10,7 +11,11 @@ const PaymentSuccessPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [dashboardToken, setDashboardToken] = useState<string | null>(null);
+  const [dashboardPassword, setDashboardPassword] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const sessionId = searchParams.get('sessionId');
 
   useEffect(() => {
@@ -29,6 +34,13 @@ const PaymentSuccessPage: React.FC = () => {
 
       if (data.success && data.data.dashboard_token) {
         setDashboardToken(data.data.dashboard_token);
+        setDashboardPassword(data.data.dashboard_password);
+        setUserEmail(data.data.email);
+        
+        // Автоматически отправляем email, если EmailJS настроен
+        if (checkEmailJSConfig()) {
+          sendEmailWithData(data.data.email, data.data.dashboard_password, data.data.dashboard_token);
+        }
       } else {
         setError('Не удалось получить ссылку на личный кабинет');
       }
@@ -38,6 +50,35 @@ const PaymentSuccessPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const sendEmailWithData = async (email: string, password: string, token: string) => {
+    setSendingEmail(true);
+    try {
+      const dashboardUrl = `${window.location.origin}/lk/${token}`;
+      const success = await sendDashboardAccessEmail({
+        userEmail: email,
+        dashboardPassword: password,
+        dashboardUrl: dashboardUrl
+      });
+
+      if (success) {
+        setEmailSent(true);
+        message.success('📧 Данные для доступа отправлены на вашу почту!');
+      } else {
+        message.warning('Не удалось отправить email с данными доступа');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      message.error('Ошибка при отправке email');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const manualSendEmail = async () => {
+    if (!userEmail || !dashboardPassword || !dashboardToken) return;
+    await sendEmailWithData(userEmail, dashboardPassword, dashboardToken);
   };
 
   const getDashboardUrl = () => {
@@ -122,7 +163,7 @@ const PaymentSuccessPage: React.FC = () => {
           
           <Paragraph style={{ fontSize: '16px', color: '#666' }}>
             Спасибо за оплату! Ваш личный кабинет готов. 
-            Сохраните ссылку ниже для доступа с любого устройства.
+            Сохраните данные ниже для доступа с любого устройства.
           </Paragraph>
 
           <Card 
@@ -132,29 +173,100 @@ const PaymentSuccessPage: React.FC = () => {
               border: '1px solid #b7eb8f'
             }}
           >
-            <Title level={5} style={{ margin: '0 0 12px 0' }}>
-              Ваша персональная ссылка:
+            <Title level={5} style={{ margin: '0 0 16px 0' }}>
+              Данные для входа в личный кабинет:
             </Title>
-            <div style={{ 
-              padding: '8px 12px',
-              backgroundColor: 'white',
-              border: '1px solid #d9d9d9',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontFamily: 'monospace',
-              wordBreak: 'break-all',
-              marginBottom: '12px'
-            }}>
-              {getDashboardUrl()}
+            
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ display: 'block', marginBottom: '4px' }}>
+                Ссылка:
+              </Text>
+              <div style={{ 
+                padding: '8px 12px',
+                backgroundColor: 'white',
+                border: '1px solid #d9d9d9',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontFamily: 'monospace',
+                wordBreak: 'break-all',
+                marginBottom: '8px'
+              }}>
+                {getDashboardUrl()}
+              </div>
             </div>
-            <Button 
-              type="dashed" 
-              icon={<CopyOutlined />}
-              onClick={copyToClipboard}
-              style={{ width: '100%' }}
-            >
-              Скопировать ссылку
-            </Button>
+
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ display: 'block', marginBottom: '4px' }}>
+                Email:
+              </Text>
+              <div style={{ 
+                padding: '8px 12px',
+                backgroundColor: 'white',
+                border: '1px solid #d9d9d9',
+                borderRadius: '6px',
+                fontSize: '16px',
+                marginBottom: '8px'
+              }}>
+                {userEmail}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ display: 'block', marginBottom: '4px' }}>
+                Пароль:
+              </Text>
+              <div style={{ 
+                padding: '8px 12px',
+                backgroundColor: 'white',
+                border: '1px solid #d9d9d9',
+                borderRadius: '6px',
+                fontSize: '24px',
+                fontFamily: 'monospace',
+                textAlign: 'center',
+                letterSpacing: '2px',
+                fontWeight: 'bold',
+                marginBottom: '8px'
+              }}>
+                {dashboardPassword}
+              </div>
+            </div>
+            
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button 
+                type="dashed" 
+                icon={<CopyOutlined />}
+                onClick={copyToClipboard}
+                style={{ width: '100%' }}
+              >
+                Скопировать ссылку
+              </Button>
+              
+              {checkEmailJSConfig() && !emailSent && (
+                <Button 
+                  type="default" 
+                  icon={<MailOutlined />}
+                  onClick={manualSendEmail}
+                  loading={sendingEmail}
+                  style={{ width: '100%' }}
+                >
+                  {sendingEmail ? 'Отправляем email...' : 'Отправить данные на почту'}
+                </Button>
+              )}
+              
+              {emailSent && (
+                <div style={{ 
+                  padding: '8px 12px',
+                  backgroundColor: '#f6ffed',
+                  border: '1px solid #b7eb8f',
+                  borderRadius: '6px',
+                  textAlign: 'center'
+                }}>
+                  <Text style={{ color: '#52c41a', fontSize: '14px' }}>
+                    ✅ Данные отправлены на {userEmail}
+                  </Text>
+                </div>
+              )}
+            </Space>
           </Card>
 
           <Space size="middle">
@@ -174,9 +286,9 @@ const PaymentSuccessPage: React.FC = () => {
           </Space>
 
           <Paragraph style={{ fontSize: '14px', color: '#999', margin: 0 }}>
-            <strong>Важно:</strong> Сохраните эту ссылку в закладках браузера 
-            или скопируйте в надежное место. Она даёт доступ к вашему личному кабинету 
-            с любого устройства.
+            <strong>Важно:</strong> Сохраните эти данные в надежном месте. 
+            Для входа в личный кабинет вам потребуется ввести email и пароль. 
+            Доступ возможен с любого устройства.
           </Paragraph>
         </Space>
       </Card>
