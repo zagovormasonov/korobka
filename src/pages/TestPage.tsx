@@ -164,6 +164,11 @@ const TestPage: React.FC = () => {
         answerToSave = currentAnswer; // Уже числовое значение шкалы
       }
       
+      // Для email вопроса сохраняем ответ как есть
+      if (currentQuestion.type === 'email') {
+        answerToSave = currentAnswer;
+      }
+      
       const newAnswer: Answer = {
         questionId: currentQuestion.id,
         answer: answerToSave,
@@ -232,6 +237,13 @@ const TestPage: React.FC = () => {
     try {
       console.log('📤 Отправляем результаты теста:', { sessionId, answersCount: answers.length });
       console.log('📊 Все ответы:', answers);
+      
+      // Находим email в ответах
+      const emailAnswer = answers.find(answer => {
+        const question = questions.find(q => q.id === answer.questionId);
+        return question && question.type === 'email';
+      });
+      console.log('📧 Email ответ:', emailAnswer);
       
       // Логируем статистику ответов
       console.log('📊 Статистика ответов:', { 
