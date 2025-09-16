@@ -243,22 +243,16 @@ const TestPage: React.FC = () => {
         const question = questions.find(q => q.id === answer.questionId);
         return question && question.type === 'email';
       });
+      
+      const email = emailAnswer ? emailAnswer.answer : null;
       console.log('📧 Email ответ:', emailAnswer);
+      console.log('📧 Отправляем email:', email);
       
       // Логируем статистику ответов
       console.log('📊 Статистика ответов:', { 
         answered: answers.length, 
         total: questions.length
       });
-      
-      // Находим email в ответах
-      const emailAnswer = answers.find(answer => {
-        const question = questions.find(q => q.id === answer.questionId);
-        return question && question.type === 'email';
-      });
-      
-      const email = emailAnswer ? emailAnswer.answer : null;
-      console.log('📧 Отправляем email:', email);
 
       const response = await fetch('/api/tests/primary/submit', {
         method: 'POST',
