@@ -18,9 +18,9 @@ const OfferPage: React.FC = () => {
         <Space style={{ marginBottom: '20px' }}>
           <ArrowLeftOutlined 
             style={{ cursor: 'pointer', fontSize: '16px' }}
-            onClick={() => navigate('/')}
+            onClick={() => navigate(-1)}
           />
-          <Text onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+          <Text onClick={() => navigate(-1)} style={{ cursor: 'pointer' }}>
             Назад
           </Text>
         </Space>
