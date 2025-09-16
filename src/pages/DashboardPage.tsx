@@ -17,7 +17,8 @@ import {
   DownloadOutlined, 
   UserOutlined, 
   FileTextOutlined, 
-  MessageOutlined
+  MessageOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
 
 const { Title, Paragraph, Text } = Typography;
@@ -415,7 +416,10 @@ const DashboardPage: React.FC = () => {
               <Card 
                 size="small" 
                 hoverable
-                style={{ height: '100%' }}
+                style={{ 
+                  height: '100%',
+                  position: 'relative'
+                }}
                 actions={[
                   <Button 
                     type="link" 
@@ -427,6 +431,19 @@ const DashboardPage: React.FC = () => {
                   </Button>
                 ]}
               >
+                {/* Галочка для завершенных тестов */}
+                {testResults[test.id] && (
+                  <CheckCircleOutlined 
+                    style={{ 
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      fontSize: '20px',
+                      color: '#52c41a',
+                      zIndex: 1
+                    }} 
+                  />
+                )}
                 <Title level={5} style={{ color: '#00695C', marginBottom: '8px' }}>
                   {test.name}
                 </Title>
