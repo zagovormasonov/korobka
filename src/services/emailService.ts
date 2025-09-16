@@ -31,7 +31,7 @@ export const sendDashboardAccessEmail = async (data: DashboardAccessData): Promi
 
     // Параметры для шаблона
     const templateParams = {
-      to_email: data.userEmail,
+      to_email: data.userEmail, 
       user_email: data.userEmail,
       dashboard_password: data.dashboardPassword,
       dashboard_url: data.dashboardUrl,
