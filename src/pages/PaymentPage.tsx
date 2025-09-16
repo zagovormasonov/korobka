@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Typography, Button, Card, Row, Col, Space, message, List } from 'antd';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Typography, Button, Card, Row, Col, Space, message, List, Checkbox } from 'antd';
 import { 
   FileTextOutlined, 
   UserOutlined, 
@@ -60,6 +60,7 @@ const PaymentPage: React.FC = () => {
   const [sessionId] = useState(() => searchParams.get('sessionId') || '');
   const [mascotMessage, setMascotMessage] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
 
   useEffect(() => {
     if (sessionId) {
@@ -101,6 +102,11 @@ const PaymentPage: React.FC = () => {
   const handlePayment = async () => {
     if (!sessionId) {
       message.error('Ошибка: не найден ID сессии');
+      return;
+    }
+
+    if (!agreementAccepted) {
+      message.warning('Необходимо согласиться с условиями для продолжения');
       return;
     }
 
@@ -224,16 +230,39 @@ const PaymentPage: React.FC = () => {
       </Row>
 
       <div style={{ textAlign: 'center' }}>
+        <div style={{ marginBottom: '24px', maxWidth: '600px', margin: '0 auto 24px auto' }}>
+          <Checkbox 
+            checked={agreementAccepted}
+            onChange={(e) => setAgreementAccepted(e.target.checked)}
+            style={{ fontSize: '14px', lineHeight: '1.5' }}
+          >
+            Я согласен(на) с условиями{' '}
+            <Link to="/offer" target="_blank" style={{ color: '#00695C' }}>
+              Публичной оферты
+            </Link>
+            ,{' '}
+            <Link to="/privacy-policy" target="_blank" style={{ color: '#00695C' }}>
+              Политики конфиденциальности
+            </Link>
+            {' '}и даю{' '}
+            <Link to="/consent" target="_blank" style={{ color: '#00695C' }}>
+              Согласие на обработку персональных данных
+            </Link>
+          </Checkbox>
+        </div>
+        
         <Button 
           type="primary" 
           size="large"
           onClick={handlePayment}
           loading={paymentLoading}
+          disabled={!agreementAccepted}
           style={{ 
             height: '60px', 
             fontSize: '18px', 
             fontWeight: 'bold',
-            padding: '0 40px'
+            padding: '0 40px',
+            opacity: agreementAccepted ? 1 : 0.6
           }}
         >
           Оплатить 1₽
