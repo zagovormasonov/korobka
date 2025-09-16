@@ -354,9 +354,12 @@ router.post('/primary/submit', async (req, res) => {
     const { email } = req.body;
     console.log('📧 Email из запроса:', email);
     
+    // Генерируем уникальный токен для доступа к ЛК
+    const dashboardToken = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+    
     const result = await pool.query(
-      'INSERT INTO primary_test_results (session_id, email, answers) VALUES ($1, $2, $3) ON CONFLICT (session_id) DO UPDATE SET answers = $3, email = $2, updated_at = CURRENT_TIMESTAMP RETURNING *',
-      [sessionId, email, JSON.stringify(answers)]
+      'INSERT INTO primary_test_results (session_id, email, answers, dashboard_token) VALUES ($1, $2, $3, $4) ON CONFLICT (session_id) DO UPDATE SET answers = $3, email = $2, dashboard_token = $4, updated_at = CURRENT_TIMESTAMP RETURNING *',
+      [sessionId, email, JSON.stringify(answers), dashboardToken]
     );
 
     console.log('✅ Результаты теста сохранены в БД');
@@ -384,6 +387,27 @@ router.get('/primary/:sessionId', async (req, res) => {
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Error fetching primary test:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить результаты теста по токену ЛК
+router.get('/dashboard/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const result = await pool.query(
+      'SELECT * FROM primary_test_results WHERE dashboard_token = $1',
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Dashboard not found' });
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Error fetching dashboard by token:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
