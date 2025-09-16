@@ -47,8 +47,8 @@ router.post('/create', async (req, res) => {
       OrderId: orderId,
       Description: 'Персональный план психического здоровья',
       CustomerKey: sessionId,
-      SuccessURL: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard?sessionId=${sessionId}&payment=success`,
-      FailURL: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment?sessionId=${sessionId}&payment=failed`,
+      SuccessURL: `${process.env.FRONTEND_URL}/dashboard?sessionId=${sessionId}&payment=success`,
+      FailURL: `${process.env.FRONTEND_URL}/payment?sessionId=${sessionId}&payment=failed`,
       Receipt: {
         Email: 'test@example.com',
         Taxation: 'usn_income',

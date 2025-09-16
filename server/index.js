@@ -47,9 +47,18 @@ checkEnvironmentVariables();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (process.env.NODE_ENV !== 'production') return callback(null, true);
+    if (FRONTEND_URL && origin === FRONTEND_URL) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -119,10 +128,10 @@ app.get('/api/health/database', async (req, res) => {
   }
 });
 
-app.listen(PORT, async () => {
-  console.log(`🚀 Сервер запущен на порту ${PORT}`);
-  console.log(`🌐 Frontend: http://localhost:3000`);
-  console.log(`🔧 Backend API: http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', async () => {
+  console.log(`🚀 Сервер запущен на 0.0.0.0:${PORT}`);
+  console.log(`🌐 Frontend: ${FRONTEND_URL || 'не задан (FRONTEND_URL)'}`);
+  console.log(`🔧 Backend API: ${process.env.BACKEND_URL || `http://127.0.0.1:${PORT}`}`);
   
   // Проверяем подключение к базе данных
   await testDatabaseConnection();

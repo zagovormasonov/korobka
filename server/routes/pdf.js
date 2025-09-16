@@ -10,7 +10,8 @@ router.post('/personal-plan', async (req, res) => {
     const { sessionId } = req.body;
     
     // Получаем персональный план от ChatGPT
-    const planResponse = await fetch('http://localhost:5000/api/ai/personal-plan', {
+    const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
+    const planResponse = await fetch(`${baseUrl}/api/ai/personal-plan`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -130,7 +131,8 @@ router.post('/session-preparation', async (req, res) => {
     const { sessionId, specialistType } = req.body;
     
     // Получаем подготовку от ChatGPT
-    const prepResponse = await fetch('http://localhost:5000/api/ai/session-preparation', {
+    const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
+    const prepResponse = await fetch(`${baseUrl}/api/ai/session-preparation`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
