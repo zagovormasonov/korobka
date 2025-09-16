@@ -412,6 +412,39 @@ router.get('/dashboard/:token', async (req, res) => {
   }
 });
 
+// Проверить email для доступа к ЛК
+router.post('/verify-email', async (req, res) => {
+  try {
+    const { sessionId, email } = req.body;
+    
+    console.log('📧 Проверяем email для sessionId:', sessionId, 'email:', email);
+    
+    const result = await pool.query(
+      'SELECT email FROM primary_test_results WHERE session_id = $1',
+      [sessionId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+
+    const storedEmail = result.rows[0].email;
+    console.log('📧 Email из БД:', storedEmail);
+    
+    // Сравниваем email (регистр не важен)
+    if (storedEmail && email && storedEmail.toLowerCase() === email.toLowerCase()) {
+      console.log('✅ Email совпадает, доступ разрешен');
+      res.json({ success: true });
+    } else {
+      console.log('❌ Email не совпадает, доступ запрещен');
+      res.status(400).json({ success: false, error: 'Invalid email' });
+    }
+  } catch (error) {
+    console.error('Error verifying email:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Сохранить результаты дополнительного теста
 router.post('/additional/save', async (req, res) => {
   try {
