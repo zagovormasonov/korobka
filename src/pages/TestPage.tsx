@@ -233,18 +233,11 @@ const TestPage: React.FC = () => {
       console.log('📤 Отправляем результаты теста:', { sessionId, answersCount: answers.length });
       console.log('📊 Все ответы:', answers);
       
-      // Проверяем, что все вопросы отвечены
-      if (answers.length < questions.length) {
-        console.warn('⚠️ Не все вопросы отвечены!', { 
-          answered: answers.length, 
-          total: questions.length,
-          missing: questions.length - answers.length 
-        });
-        
-        // Не позволяем завершить тест, если не все вопросы отвечены
-        setLoading(false);
-        return;
-      }
+      // Логируем статистику ответов
+      console.log('📊 Статистика ответов:', { 
+        answered: answers.length, 
+        total: questions.length
+      });
       
       const response = await fetch('/api/tests/primary/submit', {
         method: 'POST',
