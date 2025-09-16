@@ -18,9 +18,9 @@ const PrivacyPolicyPage: React.FC = () => {
         <Space style={{ marginBottom: '20px' }}>
           <ArrowLeftOutlined 
             style={{ cursor: 'pointer', fontSize: '16px' }}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
           />
-          <Text onClick={() => navigate(-1)} style={{ cursor: 'pointer' }}>
+          <Text onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
             Назад
           </Text>
         </Space>

@@ -18,9 +18,9 @@ const OfferPage: React.FC = () => {
         <Space style={{ marginBottom: '20px' }}>
           <ArrowLeftOutlined 
             style={{ cursor: 'pointer', fontSize: '16px' }}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
           />
-          <Text onClick={() => navigate(-1)} style={{ cursor: 'pointer' }}>
+          <Text onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
             Назад
           </Text>
         </Space>
@@ -65,7 +65,7 @@ const OfferPage: React.FC = () => {
 
           <Title level={2}>3. Стоимость и порядок оплаты</Title>
           <Paragraph>
-            3.1. Стоимость услуг составляет 1 (один) рубль за прохождение полного тестирования.
+            3.1. Стоимость услуг составляет 199 (сто девяносто девять) рублей за прохождение полного тестирования.
           </Paragraph>
           <Paragraph>
             3.2. Оплата производится путем перевода денежных средств через платежную систему, 
