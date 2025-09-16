@@ -40,6 +40,8 @@ const PaymentSuccessPage: React.FC = () => {
         // Автоматически отправляем email, если EmailJS настроен
         if (checkEmailJSConfig()) {
           sendEmailWithData(data.data.email, data.data.dashboard_password, data.data.dashboard_token);
+        } else {
+          console.log('⚠️ EmailJS не настроен. Данные отображаются только на странице.');
         }
       } else {
         setError('Не удалось получить ссылку на личный кабинет');
@@ -251,6 +253,20 @@ const PaymentSuccessPage: React.FC = () => {
                 >
                   {sendingEmail ? 'Отправляем email...' : 'Отправить данные на почту'}
                 </Button>
+              )}
+              
+              {!checkEmailJSConfig() && (
+                <div style={{ 
+                  padding: '8px 12px',
+                  backgroundColor: '#fff7e6',
+                  border: '1px solid #ffd591',
+                  borderRadius: '6px',
+                  textAlign: 'center'
+                }}>
+                  <Text style={{ color: '#fa8c16', fontSize: '14px' }}>
+                    ⚠️ Отправка email не настроена. Сохраните данные самостоятельно.
+                  </Text>
+                </div>
               )}
               
               {emailSent && (

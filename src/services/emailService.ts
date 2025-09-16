@@ -1,9 +1,15 @@
 import emailjs from '@emailjs/browser';
 
-// Настройки EmailJS (в production эти значения будут из .env)
-const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || 'your_public_key';
-const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID || 'your_service_id';
-const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'your_template_id';
+// Настройки EmailJS из переменных окружения
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || 'ONZ5G0uZYkJdC-ryS';
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID || 'service_ewevwbl';
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'template_4b4bku2';
+
+// Отладочная информация
+console.log('🔧 EmailJS конфигурация:');
+console.log('📧 EMAILJS_PUBLIC_KEY:', EMAILJS_PUBLIC_KEY);
+console.log('📧 EMAILJS_SERVICE_ID:', EMAILJS_SERVICE_ID);
+console.log('📧 EMAILJS_TEMPLATE_ID:', EMAILJS_TEMPLATE_ID);
 
 interface DashboardAccessData {
   userEmail: string;
