@@ -285,17 +285,19 @@ const PaymentSuccessPage: React.FC = () => {
             </Space>
           </Card>
 
-          <Space size="middle">
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             <Button 
               type="primary" 
               size="large"
               onClick={goToDashboard}
+              style={{ width: '100%' }}
             >
               Перейти в личный кабинет
             </Button>
             <Button 
               size="large"
               onClick={() => navigate('/')}
+              style={{ width: '100%' }}
             >
               На главную
             </Button>
