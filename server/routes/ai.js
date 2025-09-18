@@ -13,6 +13,16 @@ function createAxiosConfig() {
     }
   };
 
+  // Проверяем, нужно ли отключить прокси (для отладки)
+  if (process.env.DISABLE_PROXY === 'true') {
+    console.log('⚠️ Прокси отключен (DISABLE_PROXY=true), подключение напрямую к OpenAI API');
+    return config;
+  }
+
+  // ВРЕМЕННО: отключаем прокси из-за ошибки 403
+  console.log('⚠️ ВРЕМЕННО: Прокси отключен из-за ошибки 403 от OpenAI');
+  return config;
+
   // Добавляем прокси если настроен
   if (process.env.PROXY_HOST && process.env.PROXY_PORT) {
     console.log('🌐 Настройка прокси для OpenAI API:', {
@@ -92,7 +102,12 @@ router.post('/mascot-message/payment', async (req, res) => {
     const message = response.data.choices[0].message.content;
     res.json({ success: true, message });
   } catch (error) {
-    console.error('Error generating mascot message:', error);
+    console.error('❌ Ошибка генерации сообщения маскота:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -140,6 +155,8 @@ router.post('/mascot-message/dashboard', async (req, res) => {
 Ответь только текстом сообщения, без дополнительных объяснений.`;
 
     const axiosConfig = createAxiosConfig();
+    console.log('🚀 Отправляем запрос к OpenAI через прокси...');
+    
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: prompt }],
@@ -150,7 +167,12 @@ router.post('/mascot-message/dashboard', async (req, res) => {
     const message = response.data.choices[0].message.content;
     res.json({ success: true, message, recommendedTests });
   } catch (error) {
-    console.error('Error generating dashboard message:', error);
+    console.error('❌ Ошибка генерации сообщения для ЛК:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
     res.status(500).json({ success: false, error: error.message });
   }
 });
