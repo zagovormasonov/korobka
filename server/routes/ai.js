@@ -4,6 +4,43 @@ import { pool } from '../index.js';
 
 const router = express.Router();
 
+// Функция для создания конфигурации axios с прокси
+function createAxiosConfig() {
+  const config = {
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    }
+  };
+
+  // Добавляем прокси если настроен
+  if (process.env.PROXY_HOST && process.env.PROXY_PORT) {
+    console.log('🌐 Настройка прокси для OpenAI API:', {
+      host: process.env.PROXY_HOST,
+      port: process.env.PROXY_PORT,
+      auth: process.env.PROXY_USERNAME ? 'да' : 'нет'
+    });
+
+    config.proxy = {
+      host: process.env.PROXY_HOST,
+      port: parseInt(process.env.PROXY_PORT),
+      protocol: 'http'
+    };
+
+    // Добавляем аутентификацию если есть
+    if (process.env.PROXY_USERNAME && process.env.PROXY_PASSWORD) {
+      config.proxy.auth = {
+        username: process.env.PROXY_USERNAME,
+        password: process.env.PROXY_PASSWORD
+      };
+    }
+  } else {
+    console.log('🌐 Прокси не настроен, подключение напрямую к OpenAI API');
+  }
+
+  return config;
+}
+
 // Генерировать сообщение от маскота для лендинга оплаты
 router.post('/mascot-message/payment', async (req, res) => {
   try {
@@ -44,17 +81,13 @@ router.post('/mascot-message/payment', async (req, res) => {
 
 Ответь только текстом сообщения, без дополнительных объяснений.`;
 
+    const axiosConfig = createAxiosConfig();
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-4',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 200,
       temperature: 0.7
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    }, axiosConfig);
 
     const message = response.data.choices[0].message.content;
     res.json({ success: true, message });
@@ -106,17 +139,13 @@ router.post('/mascot-message/dashboard', async (req, res) => {
 
 Ответь только текстом сообщения, без дополнительных объяснений.`;
 
+    const axiosConfig = createAxiosConfig();
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 250,
       temperature: 0.7
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    }, axiosConfig);
 
     const message = response.data.choices[0].message.content;
     res.json({ success: true, message, recommendedTests });
@@ -169,17 +198,13 @@ router.post('/personal-plan', async (req, res) => {
 
 Ответь только текстом плана, без дополнительных объяснений.`;
 
+    const axiosConfig = createAxiosConfig();
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 2000,
       temperature: 0.7
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    }, axiosConfig);
 
     const plan = response.data.choices[0].message.content;
     res.json({ success: true, plan });
@@ -234,17 +259,13 @@ router.post('/session-preparation', async (req, res) => {
 
 Ответь только текстом руководства, без дополнительных объяснений.`;
 
+    const axiosConfig = createAxiosConfig();
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 1500,
       temperature: 0.7
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    }, axiosConfig);
 
     const preparation = response.data.choices[0].message.content;
     res.json({ success: true, preparation });
@@ -299,17 +320,13 @@ router.post('/session-feedback', async (req, res) => {
 
 Ответь только текстом анализа, без дополнительных объяснений.`;
 
+    const axiosConfig = createAxiosConfig();
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 1500,
       temperature: 0.7
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    }, axiosConfig);
 
     const analysis = response.data.choices[0].message.content;
     

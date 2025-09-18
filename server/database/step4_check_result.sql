@@ -15,3 +15,4 @@ SELECT
     COUNT(*) - COUNT(email) as records_without_email
 FROM additional_test_results;
 
+
