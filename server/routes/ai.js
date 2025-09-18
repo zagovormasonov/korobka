@@ -1,6 +1,7 @@
 import express from 'express';
 import axios from 'axios';
 import { pool } from '../index.js';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 const router = express.Router();
 
@@ -19,30 +20,48 @@ function createAxiosConfig() {
     return config;
   }
 
-  // ВРЕМЕННО: отключаем прокси из-за ошибки 403
-  console.log('⚠️ ВРЕМЕННО: Прокси отключен из-за ошибки 403 от OpenAI');
-  return config;
+  // Убираем временное отключение - нужен прокси для доступа из РФ
 
   // Добавляем прокси если настроен
   if (process.env.PROXY_HOST && process.env.PROXY_PORT) {
     console.log('🌐 Настройка прокси для OpenAI API:', {
       host: process.env.PROXY_HOST,
       port: process.env.PROXY_PORT,
+      protocol: process.env.PROXY_PROTOCOL || 'http',
       auth: process.env.PROXY_USERNAME ? 'да' : 'нет'
     });
 
-    config.proxy = {
-      host: process.env.PROXY_HOST,
-      port: parseInt(process.env.PROXY_PORT),
-      protocol: 'http'
-    };
-
-    // Добавляем аутентификацию если есть
+    // Создаем URL прокси
+    let proxyUrl = `${process.env.PROXY_PROTOCOL || 'http'}://`;
+    
     if (process.env.PROXY_USERNAME && process.env.PROXY_PASSWORD) {
-      config.proxy.auth = {
-        username: process.env.PROXY_USERNAME,
-        password: process.env.PROXY_PASSWORD
+      proxyUrl += `${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@`;
+    }
+    
+    proxyUrl += `${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
+    
+    console.log('🔗 Proxy URL:', proxyUrl.replace(/:[^:]*@/, ':***@')); // Скрываем пароль в логах
+    
+    // Используем HttpsProxyAgent для более надежного подключения
+    try {
+      config.httpsAgent = new HttpsProxyAgent(proxyUrl);
+      config.timeout = 30000;
+      console.log('✅ HttpsProxyAgent создан успешно');
+    } catch (proxyError) {
+      console.error('❌ Ошибка создания прокси агента:', proxyError.message);
+      // Fallback к обычному proxy config
+      config.proxy = {
+        host: process.env.PROXY_HOST,
+        port: parseInt(process.env.PROXY_PORT),
+        protocol: process.env.PROXY_PROTOCOL || 'http'
       };
+      
+      if (process.env.PROXY_USERNAME && process.env.PROXY_PASSWORD) {
+        config.proxy.auth = {
+          username: process.env.PROXY_USERNAME,
+          password: process.env.PROXY_PASSWORD
+        };
+      }
     }
   } else {
     console.log('🌐 Прокси не настроен, подключение напрямую к OpenAI API');
