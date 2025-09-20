@@ -2,8 +2,45 @@ import express from 'express';
 import axios from 'axios';
 import { pool } from '../index.js';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import OpenAI from 'openai';
 
 const router = express.Router();
+
+// Инициализация OpenAI клиента с прокси
+function createOpenAIClient() {
+  const config = {
+    apiKey: process.env.OPENAI_API_KEY,
+  };
+
+  // Добавляем прокси если настроен
+  if (process.env.PROXY_HOST && process.env.PROXY_PORT && process.env.DISABLE_PROXY !== 'true') {
+    let proxyUrl = `${process.env.PROXY_PROTOCOL || 'http'}://`;
+    
+    if (process.env.PROXY_USERNAME && process.env.PROXY_PASSWORD) {
+      proxyUrl += `${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@`;
+    }
+    
+    proxyUrl += `${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
+    
+    console.log('🌐 Настройка прокси для OpenAI клиента:', {
+      host: process.env.PROXY_HOST,
+      port: process.env.PROXY_PORT,
+      protocol: process.env.PROXY_PROTOCOL || 'http',
+      auth: process.env.PROXY_USERNAME ? 'да' : 'нет'
+    });
+    
+    try {
+      config.httpAgent = new HttpsProxyAgent(proxyUrl);
+      console.log('✅ HttpsProxyAgent создан для OpenAI клиента');
+    } catch (proxyError) {
+      console.error('❌ Ошибка создания прокси агента для OpenAI клиента:', proxyError.message);
+    }
+  } else {
+    console.log('🌐 Прокси не настроен для OpenAI клиента, подключение напрямую');
+  }
+
+  return new OpenAI(config);
+}
 
 // Функция для создания конфигурации axios с прокси
 function createAxiosConfig() {
@@ -70,6 +107,46 @@ function createAxiosConfig() {
   return config;
 }
 
+// Функция для вызова O3 Deep Research
+async function callO3DeepResearch(prompt, maxTokens = 2000) {
+  try {
+    const client = createOpenAIClient();
+    
+    console.log('🔬 Вызываем O3 Deep Research...');
+    
+    const response = await client.responses.create({
+      model: "o3-deep-research-2025-06-26",
+      reasoning: { effort: "medium" },
+      input: [
+        { role: "user", content: prompt }
+      ],
+      tools: [{ type: "web_search_preview" }]
+    });
+
+    console.log('✅ O3 Deep Research ответ получен');
+    return response.output_text;
+    
+  } catch (error) {
+    console.error('❌ Ошибка O3 Deep Research:', {
+      message: error.message,
+      status: error.status,
+      statusText: error.statusText
+    });
+    
+    // Fallback к GPT-4 если O3 недоступен
+    console.log('🔄 Fallback к GPT-4...');
+    const axiosConfig = createAxiosConfig();
+    const fallbackResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: maxTokens,
+      temperature: 0.5
+    }, axiosConfig);
+    
+    return fallbackResponse.data.choices[0].message.content;
+  }
+}
+
 // Генерировать сообщение от маскота для лендинга оплаты
 router.post('/mascot-message/payment', async (req, res) => {
   try {
@@ -120,15 +197,7 @@ ${JSON.stringify(answers)}
 
 ФОРМАТ ОТВЕТА: Только текст сообщения, без дополнительных объяснений.`;
 
-    const axiosConfig = createAxiosConfig();
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'o3-deep-research-2025-06-26',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 300,
-      temperature: 0.6
-    }, axiosConfig);
-
-    const message = response.data.choices[0].message.content;
+    const message = await callO3DeepResearch(prompt, 300);
     res.json({ success: true, message });
   } catch (error) {
     console.error('❌ Ошибка генерации сообщения маскота:', {
@@ -193,17 +262,9 @@ router.post('/mascot-message/dashboard', async (req, res) => {
 
 ФОРМАТ ОТВЕТА: Только текст сообщения, без дополнительных объяснений.`;
 
-    const axiosConfig = createAxiosConfig();
-    console.log('🚀 Отправляем запрос к OpenAI через прокси...');
-
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'o3-deep-research-2025-06-26',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 350,
-      temperature: 0.6
-    }, axiosConfig);
-
-    const message = response.data.choices[0].message.content;
+    console.log('🚀 Отправляем запрос к O3 Deep Research...');
+    
+    const message = await callO3DeepResearch(prompt, 350);
     res.json({ success: true, message, recommendedTests });
   } catch (error) {
     console.error('❌ Ошибка генерации сообщения для ЛК:', {
@@ -292,15 +353,7 @@ router.post('/personal-plan', async (req, res) => {
 
 ФОРМАТ ОТВЕТА: Только текст плана, без дополнительных объяснений.`;
 
-    const axiosConfig = createAxiosConfig();
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'o3-deep-research-2025-06-26',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 3000,
-      temperature: 0.5
-    }, axiosConfig);
-
-    const plan = response.data.choices[0].message.content;
+    const plan = await callO3DeepResearch(prompt, 3000);
     res.json({ success: true, plan });
   } catch (error) {
     console.error('Error generating personal plan:', error);
@@ -385,15 +438,7 @@ router.post('/session-preparation', async (req, res) => {
 
 ФОРМАТ ОТВЕТА: Только текст руководства, без дополнительных объяснений.`;
 
-    const axiosConfig = createAxiosConfig();
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'o3-deep-research-2025-06-26',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 2000,
-      temperature: 0.5
-    }, axiosConfig);
-
-    const preparation = response.data.choices[0].message.content;
+    const preparation = await callO3DeepResearch(prompt, 2000);
     res.json({ success: true, preparation });
   } catch (error) {
     console.error('Error generating session preparation:', error);
@@ -478,15 +523,7 @@ router.post('/session-feedback', async (req, res) => {
 
 ФОРМАТ ОТВЕТА: Только текст анализа, без дополнительных объяснений.`;
 
-    const axiosConfig = createAxiosConfig();
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'o3-deep-research-2025-06-26',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 2000,
-      temperature: 0.5
-    }, axiosConfig);
-
-    const analysis = response.data.choices[0].message.content;
+    const analysis = await callO3DeepResearch(prompt, 2000);
     
     // Сохраняем обратную связь в базу
     await pool.query(
@@ -525,7 +562,7 @@ async function analyzeAndRecommendTests(answers) {
   ];
 
   try {
-    // Используем O3 для глубокого анализа ответов
+    // Используем GPT-4 для глубокого анализа ответов
     const analysisPrompt = `Проведи глубокое исследование психологических паттернов в ответах теста и определи приоритетные области для дополнительного тестирования.
 
 ИССЛЕДОВАТЕЛЬСКАЯ ЗАДАЧА:
@@ -551,15 +588,7 @@ ${allTests.map((test, index) => `${index + 1}. ${test.name}`).join('\n')}
 
 ФОРМАТ ОТВЕТА: Верни только номера рекомендуемых тестов через запятую (например: 1,3,6,7), максимум 5 тестов.`;
 
-    const axiosConfig = createAxiosConfig();
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'o3-deep-research-2025-06-26',
-      messages: [{ role: 'user', content: analysisPrompt }],
-      max_tokens: 100,
-      temperature: 0.3
-    }, axiosConfig);
-
-    const recommendedTestNumbers = response.data.choices[0].message.content.trim();
+    const recommendedTestNumbers = await callO3DeepResearch(analysisPrompt, 100);
     console.log('🔬 Рекомендации от O3:', recommendedTestNumbers);
     
     // Парсим номера тестов

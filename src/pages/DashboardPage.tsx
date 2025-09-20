@@ -11,7 +11,8 @@ import {
   Row, 
   Col,
   Divider,
-  Modal
+  Modal,
+  Spin
 } from 'antd';
 import { 
   DownloadOutlined, 
@@ -73,6 +74,12 @@ const DashboardPage: React.FC = () => {
   const [testResults, setTestResults] = useState<{[key: number]: string}>({});
   const [savingResults, setSavingResults] = useState<{[key: number]: boolean}>({});
   
+  // Состояния загрузки для AI операций
+  const [loadingMascotMessage, setLoadingMascotMessage] = useState(false);
+  const [loadingPersonalPlan, setLoadingPersonalPlan] = useState(false);
+  const [loadingSessionPreparation, setLoadingSessionPreparation] = useState(false);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  
   // Состояния для модального окна
   const [modalVisible, setModalVisible] = useState(false);
   const [currentTestId, setCurrentTestId] = useState<number | null>(null);
@@ -105,6 +112,7 @@ const DashboardPage: React.FC = () => {
         return;
       }
 
+      setLoadingMascotMessage(true);
       console.log('🤖 Запрос на генерацию сообщения маскота для dashboard:', { sessionId });
       
       const response = await fetch('/api/ai/mascot-message/dashboard', {
@@ -128,6 +136,8 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('❌ Ошибка при генерации сообщения маскота:', error);
       setMascotMessage('Привет! На основе твоего теста я рекомендую пройти дополнительные тесты для более точной диагностики.');
+    } finally {
+      setLoadingMascotMessage(false);
     }
   };
 
@@ -287,6 +297,7 @@ const DashboardPage: React.FC = () => {
       return;
     }
 
+    setLoadingFeedback(true);
     try {
       const response = await fetch('/api/ai/session-feedback', {
         method: 'POST',
@@ -311,10 +322,13 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Error processing feedback:', error);
       message.error('Произошла ошибка при обработке обратной связи');
+    } finally {
+      setLoadingFeedback(false);
     }
   };
 
   const downloadPersonalPlan = async () => {
+    setLoadingPersonalPlan(true);
     try {
       const response = await fetch('/api/pdf/personal-plan', {
         method: 'POST',
@@ -341,10 +355,13 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Error downloading personal plan:', error);
       message.error('Произошла ошибка при скачивании плана');
+    } finally {
+      setLoadingPersonalPlan(false);
     }
   };
 
   const downloadSessionPreparation = async () => {
+    setLoadingSessionPreparation(true);
     try {
       const response = await fetch('/api/pdf/session-preparation', {
         method: 'POST',
@@ -371,6 +388,8 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Error downloading session preparation:', error);
       message.error('Произошла ошибка при скачивании подготовки');
+    } finally {
+      setLoadingSessionPreparation(false);
     }
   };
 
@@ -396,9 +415,18 @@ const DashboardPage: React.FC = () => {
             style={{ width: '60px', height: '60px', flexShrink: 0, objectFit: 'contain' }}
           />
           <div style={{ flex: 1 }}>
-            <Paragraph style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
-              {mascotMessage || 'Привет! На основе твоего теста я рекомендую пройти дополнительные тесты для более точной диагностики.'}
-            </Paragraph>
+            {loadingMascotMessage ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Spin size="small" />
+                <Text style={{ color: '#00695C', fontSize: '16px' }}>
+                  Луми анализирует твой тест...
+                </Text>
+              </div>
+            ) : (
+              <Paragraph style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
+                {mascotMessage || 'Привет! На основе твоего теста я рекомендую пройти дополнительные тесты для более точной диагностики.'}
+              </Paragraph>
+            )}
           </div>
         </div>
       </Card>
@@ -514,9 +542,10 @@ const DashboardPage: React.FC = () => {
                   type="primary" 
                   icon={<DownloadOutlined />}
                   onClick={downloadPersonalPlan}
+                  loading={loadingPersonalPlan}
                   style={{ width: '100%' }}
                 >
-                  Скачать персональный план
+                  {loadingPersonalPlan ? 'Генерируем план...' : 'Скачать персональный план'}
                 </Button>
               </Card>
             </Col>
@@ -588,9 +617,10 @@ const DashboardPage: React.FC = () => {
                   type="primary" 
                   icon={<DownloadOutlined />}
                   onClick={downloadSessionPreparation}
+                  loading={loadingSessionPreparation}
                   style={{ width: '100%' }}
                 >
-                  Скачать подготовку
+                  {loadingSessionPreparation ? 'Генерируем подготовку...' : 'Скачать подготовку'}
                 </Button>
               </Card>
             </Col>
@@ -612,9 +642,10 @@ const DashboardPage: React.FC = () => {
                   <Button 
                     type="primary" 
                     onClick={handleFeedbackSubmit}
+                    loading={loadingFeedback}
                     style={{ width: '100%' }}
                   >
-                    Получить обратную связь
+                    {loadingFeedback ? 'Анализируем обратную связь...' : 'Получить обратную связь'}
                   </Button>
                 </Space>
               </Card>
