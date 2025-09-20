@@ -50,7 +50,13 @@ function createAxiosConfig() {
         const socksProxyUrl = `socks5://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
         config.httpsAgent = new SocksProxyAgent(socksProxyUrl, {
           rejectUnauthorized: false,
-          checkServerIdentity: () => undefined
+          checkServerIdentity: () => undefined,
+          // Дополнительные настройки для стабильности
+          timeout: 30000,
+          keepAlive: true,
+          // Настройки для SOCKS5
+          family: 4, // Принудительно IPv4
+          lookup: false // Отключаем DNS lookup
         });
         console.log('✅ SOCKS5 прокси создан успешно');
       } else {
@@ -128,7 +134,8 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     if (error.message.includes('href') || error.message.includes('proxy') || error.message.includes('TLS') || 
         error.message.includes('socketErrorListener') || error.message.includes('certificate') || 
         error.message.includes('altnames') || error.message.includes('hostname') || 
-        error.message.includes('disconnected') || error.message.includes('secure TLS connection')) {
+        error.message.includes('disconnected') || error.message.includes('secure TLS connection') ||
+        error.message.includes('stream has been aborted') || error.message.includes('aborted')) {
       console.log('🔄 Пробуем без прокси...');
       
       // Получаем API ключ заново для fallback
