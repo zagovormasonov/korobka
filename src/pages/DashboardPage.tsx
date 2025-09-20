@@ -131,6 +131,8 @@ const DashboardPage: React.FC = () => {
         setMascotMessage(data.message);
       } else {
         console.error('❌ Ошибка API:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Ответ сервера:', errorText);
         setMascotMessage('Привет! На основе твоего теста я рекомендую пройти дополнительные тесты для более точной диагностики.');
       }
     } catch (error) {
@@ -163,6 +165,14 @@ const DashboardPage: React.FC = () => {
       
       // Загружаем результаты дополнительных тестов по email
       const response = await fetch(`/api/tests/additional/results-by-email/${encodeURIComponent(userEmail)}`);
+      
+      if (!response.ok) {
+        console.error('❌ Ошибка HTTP:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Ответ сервера:', errorText);
+        return;
+      }
+      
       const data = await response.json();
       if (data.success) {
         setAllTestsCompleted(data.results.length >= recommendedTests.length);
