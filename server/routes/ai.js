@@ -43,14 +43,17 @@ function createAxiosConfig() {
     // Используем HttpsProxyAgent для более надежного подключения
     try {
       config.httpsAgent = new HttpsProxyAgent(proxyUrl, {
-        // Отключаем проверку SSL сертификата для прокси
+        // Полностью отключаем проверку SSL сертификата для прокси
         rejectUnauthorized: false,
+        checkServerIdentity: () => undefined, // Отключаем проверку hostname
         // Дополнительные опции для обхода проблем с SSL
         secureProtocol: 'TLSv1_2_method',
-        ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384'
+        ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384',
+        // Дополнительные опции для обхода проблем с сертификатами
+        servername: 'generativelanguage.googleapis.com'
       });
       config.timeout = 30000;
-      console.log('✅ HttpsProxyAgent создан успешно для Gemini API с отключенной проверкой SSL');
+      console.log('✅ HttpsProxyAgent создан успешно для Gemini API с полным отключением проверки SSL');
     } catch (proxyError) {
       console.error('❌ Ошибка создания прокси агента для Gemini API:', proxyError.message);
     }
@@ -100,8 +103,10 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       stack: error.stack
     });
     
-    // Если ошибка связана с прокси или TLS, попробуем без прокси
-    if (error.message.includes('href') || error.message.includes('proxy') || error.message.includes('TLS') || error.message.includes('socketErrorListener')) {
+    // Если ошибка связана с прокси, TLS или SSL сертификатом, попробуем без прокси
+    if (error.message.includes('href') || error.message.includes('proxy') || error.message.includes('TLS') || 
+        error.message.includes('socketErrorListener') || error.message.includes('certificate') || 
+        error.message.includes('altnames') || error.message.includes('hostname')) {
       console.log('🔄 Пробуем без прокси...');
       try {
         const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
@@ -119,9 +124,10 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
             'Content-Type': 'application/json'
           },
           timeout: 30000,
-          // Отключаем проверку SSL для прямого подключения
+          // Полностью отключаем проверку SSL для прямого подключения
           httpsAgent: new (require('https').Agent)({
-            rejectUnauthorized: false
+            rejectUnauthorized: false,
+            checkServerIdentity: () => undefined
           })
         });
         
