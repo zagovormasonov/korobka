@@ -13,7 +13,7 @@ const ConsentPage: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ 
+    <div style={{  
       minHeight: '100vh',
       backgroundColor: '#f0f2f5',
       padding: '20px'
