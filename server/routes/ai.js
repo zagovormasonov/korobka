@@ -1,9 +1,59 @@
 import express from 'express';
+import axios from 'axios';
 import { pool } from '../index.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
 const router = express.Router();
+
+// Функция для создания конфигурации axios с прокси
+function createAxiosConfig() {
+  const config = {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  };
+
+  // Отключаем прокси если указано
+  if (process.env.DISABLE_PROXY === 'true') {
+    console.log('⚠️ Прокси отключен (DISABLE_PROXY=true), подключение напрямую к Gemini API');
+    return config;
+  }
+
+  // Добавляем прокси если настроен
+  if (process.env.PROXY_HOST && process.env.PROXY_PORT) {
+    console.log('🌐 Настройка прокси для Gemini API через axios:', {
+      host: process.env.PROXY_HOST,
+      port: process.env.PROXY_PORT,
+      protocol: process.env.PROXY_PROTOCOL || 'http',
+      auth: process.env.PROXY_USERNAME ? 'да' : 'нет'
+    });
+
+    // Создаем URL прокси
+    let proxyUrl = `${process.env.PROXY_PROTOCOL || 'http'}://`;
+    
+    if (process.env.PROXY_USERNAME && process.env.PROXY_PASSWORD) {
+      proxyUrl += `${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@`;
+    }
+    
+    proxyUrl += `${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
+    
+    console.log('🔗 Proxy URL:', proxyUrl.replace(/:[^:]*@/, ':***@')); // Скрываем пароль в логах
+    
+    // Используем HttpsProxyAgent для более надежного подключения
+    try {
+      config.httpsAgent = new HttpsProxyAgent(proxyUrl);
+      config.timeout = 30000;
+      console.log('✅ HttpsProxyAgent создан успешно для Gemini API');
+    } catch (proxyError) {
+      console.error('❌ Ошибка создания прокси агента для Gemini API:', proxyError.message);
+    }
+  } else {
+    console.log('🌐 Прокси не настроен, подключение напрямую к Gemini API');
+  }
+
+  return config;
+}
 
 // Инициализация Gemini AI клиента с прокси
 function createGeminiClient() {
@@ -45,33 +95,74 @@ function createGeminiClient() {
   return genAI;
 }
 
-// Функция для вызова Gemini AI
-async function callGeminiAI(prompt, maxTokens = 2000) {
+// Функция для вызова Gemini AI с повторными попытками
+async function callGeminiAI(prompt, maxTokens = 2000, retryCount = 0) {
+  const maxRetries = 3;
+  
   try {
     const genAI = createGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
-    console.log('🔬 Вызываем Gemini AI...');
+    console.log('🔬 Вызываем Gemini AI через SDK...');
     console.log('📝 Длина промпта:', prompt.length, 'символов');
     
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     
-    console.log('✅ Gemini AI ответ получен, длина:', text.length, 'символов');
+    console.log('✅ Gemini AI ответ получен через SDK, длина:', text.length, 'символов');
     return text;
     
   } catch (error) {
-    console.error('❌ Ошибка Gemini AI:', {
+    console.error('❌ Ошибка Gemini AI SDK:', {
       message: error.message,
       status: error.status,
       statusText: error.statusText,
-      code: error.code,
-      stack: error.stack
+      code: error.code
     });
     
-    // Возвращаем заглушку если API недоступен
-    return 'Извините, сервис временно недоступен. Попробуйте позже.';
+    // Проверяем, является ли ошибка квотой
+    if (error.message.includes('429') && error.message.includes('quota') && retryCount < maxRetries) {
+      const retryDelay = 60; // 60 секунд
+      console.log(`⏳ Превышена квота, повторная попытка через ${retryDelay} секунд (попытка ${retryCount + 1}/${maxRetries})`);
+      
+      await new Promise(resolve => setTimeout(resolve, retryDelay * 1000));
+      return callGeminiAI(prompt, maxTokens, retryCount + 1);
+    }
+    
+    // Fallback к axios с прокси
+    console.log('🔄 Fallback к Gemini API через axios...');
+    try {
+      const axiosConfig = createAxiosConfig();
+      const apiKey = process.env.GEMINI_API_KEY;
+      
+      const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          maxOutputTokens: maxTokens,
+          temperature: 0.5
+        }
+      }, axiosConfig);
+      
+      const text = response.data.candidates[0].content.parts[0].text;
+      console.log('✅ Gemini AI ответ получен через axios, длина:', text.length, 'символов');
+      return text;
+      
+    } catch (axiosError) {
+      console.error('❌ Ошибка Gemini AI через axios:', {
+        message: axiosError.message,
+        status: axiosError.response?.status,
+        statusText: axiosError.response?.statusText,
+        data: axiosError.response?.data
+      });
+      
+      // Возвращаем заглушку если все методы недоступны
+      return 'Извините, сервис временно недоступен. Попробуйте позже.';
+    }
   }
 }
 
