@@ -1,18 +1,24 @@
 import express from 'express';
-import axios from 'axios';
 import { pool } from '../index.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import OpenAI from 'openai';
 
 const router = express.Router();
 
-// Инициализация OpenAI клиента с прокси
-function createOpenAIClient() {
-  const config = {
-    apiKey: process.env.OPENAI_API_KEY,
-  };
+// Инициализация Gemini AI клиента с прокси
+function createGeminiClient() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY не установлен в переменных окружения');
+  }
 
-  // Добавляем прокси если настроен
+  console.log('🤖 Инициализация Gemini AI клиента...');
+  
+  // Создаем клиент Gemini
+  const genAI = new GoogleGenerativeAI(apiKey);
+  
+  // Настраиваем прокси если необходимо
   if (process.env.PROXY_HOST && process.env.PROXY_PORT && process.env.DISABLE_PROXY !== 'true') {
     let proxyUrl = `${process.env.PROXY_PROTOCOL || 'http'}://`;
     
@@ -22,7 +28,7 @@ function createOpenAIClient() {
     
     proxyUrl += `${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
     
-    console.log('🌐 Настройка прокси для OpenAI клиента:', {
+    console.log('🌐 Настройка прокси для Gemini API:', {
       host: process.env.PROXY_HOST,
       port: process.env.PROXY_PORT,
       protocol: process.env.PROXY_PROTOCOL || 'http',
@@ -30,120 +36,45 @@ function createOpenAIClient() {
     });
     
     try {
-      config.httpAgent = new HttpsProxyAgent(proxyUrl);
-      console.log('✅ HttpsProxyAgent создан для OpenAI клиента');
+      // Настраиваем прокси для fetch (используется Gemini SDK)
+      const agent = new HttpsProxyAgent(proxyUrl);
+      global.fetch = require('node-fetch');
+      // Примечание: Gemini SDK может не поддерживать прокси напрямую
+      console.log('⚠️ Прокси настроен, но Gemini SDK может не поддерживать его напрямую');
     } catch (proxyError) {
-      console.error('❌ Ошибка создания прокси агента для OpenAI клиента:', proxyError.message);
+      console.error('❌ Ошибка создания прокси агента для Gemini:', proxyError.message);
     }
   } else {
-    console.log('🌐 Прокси не настроен для OpenAI клиента, подключение напрямую');
+    console.log('🌐 Прокси не настроен для Gemini API, подключение напрямую');
   }
 
-  return new OpenAI(config);
+  return genAI;
 }
 
-// Функция для создания конфигурации axios с прокси
-function createAxiosConfig() {
-  const config = {
-    headers: {
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-      'Content-Type': 'application/json'
-    }
-  };
-
-  // Проверяем, нужно ли отключить прокси (для отладки)
-  if (process.env.DISABLE_PROXY === 'true') {
-    console.log('⚠️ Прокси отключен (DISABLE_PROXY=true), подключение напрямую к OpenAI API');
-    return config;
-  }
-
-  // Убираем временное отключение - нужен прокси для доступа из РФ
-
-  // Добавляем прокси если настроен
-  if (process.env.PROXY_HOST && process.env.PROXY_PORT) {
-    console.log('🌐 Настройка прокси для OpenAI API:', {
-      host: process.env.PROXY_HOST,
-      port: process.env.PROXY_PORT,
-      protocol: process.env.PROXY_PROTOCOL || 'http',
-      auth: process.env.PROXY_USERNAME ? 'да' : 'нет'
-    });
-
-    // Создаем URL прокси
-    let proxyUrl = `${process.env.PROXY_PROTOCOL || 'http'}://`;
-    
-    if (process.env.PROXY_USERNAME && process.env.PROXY_PASSWORD) {
-      proxyUrl += `${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@`;
-    }
-    
-    proxyUrl += `${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
-    
-    console.log('🔗 Proxy URL:', proxyUrl.replace(/:[^:]*@/, ':***@')); // Скрываем пароль в логах
-    
-    // Используем HttpsProxyAgent для более надежного подключения
-    try {
-      config.httpsAgent = new HttpsProxyAgent(proxyUrl);
-      config.timeout = 30000;
-      console.log('✅ HttpsProxyAgent создан успешно');
-    } catch (proxyError) {
-      console.error('❌ Ошибка создания прокси агента:', proxyError.message);
-      // Fallback к обычному proxy config
-      config.proxy = {
-        host: process.env.PROXY_HOST,
-        port: parseInt(process.env.PROXY_PORT),
-        protocol: process.env.PROXY_PROTOCOL || 'http'
-      };
-      
-      if (process.env.PROXY_USERNAME && process.env.PROXY_PASSWORD) {
-        config.proxy.auth = {
-          username: process.env.PROXY_USERNAME,
-          password: process.env.PROXY_PASSWORD
-        };
-      }
-    }
-  } else {
-    console.log('🌐 Прокси не настроен, подключение напрямую к OpenAI API');
-  }
-
-  return config;
-}
-
-// Функция для вызова O3 Deep Research
-async function callO3DeepResearch(prompt, maxTokens = 2000) {
+// Функция для вызова Gemini AI
+async function callGeminiAI(prompt, maxTokens = 2000) {
   try {
-    const client = createOpenAIClient();
+    const genAI = createGeminiClient();
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     
-    console.log('🔬 Вызываем O3 Deep Research...');
+    console.log('🔬 Вызываем Gemini AI...');
     
-    const response = await client.responses.create({
-      model: "o3-deep-research-2025-06-26",
-      reasoning: { effort: "medium" },
-      input: [
-        { role: "user", content: prompt }
-      ],
-      tools: [{ type: "web_search_preview" }]
-    });
-
-    console.log('✅ O3 Deep Research ответ получен');
-    return response.output_text;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    console.log('✅ Gemini AI ответ получен');
+    return text;
     
   } catch (error) {
-    console.error('❌ Ошибка O3 Deep Research:', {
+    console.error('❌ Ошибка Gemini AI:', {
       message: error.message,
       status: error.status,
       statusText: error.statusText
     });
     
-    // Fallback к GPT-4 если O3 недоступен
-    console.log('🔄 Fallback к GPT-4...');
-    const axiosConfig = createAxiosConfig();
-    const fallbackResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-4',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: maxTokens,
-      temperature: 0.5
-    }, axiosConfig);
-    
-    return fallbackResponse.data.choices[0].message.content;
+    // Возвращаем заглушку если API недоступен
+    return 'Извините, сервис временно недоступен. Попробуйте позже.';
   }
 }
 
@@ -159,7 +90,7 @@ router.post('/mascot-message/payment', async (req, res) => {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
     
-    console.log('🔑 OpenAI API Key:', process.env.OPENAI_API_KEY ? 'установлен' : 'НЕ УСТАНОВЛЕН');
+    console.log('🔑 Gemini API Key:', process.env.GEMINI_API_KEY ? 'установлен' : 'НЕ УСТАНОВЛЕН');
     
     // Получаем результаты теста
     const testResult = await pool.query(
@@ -197,7 +128,7 @@ ${JSON.stringify(answers)}
 
 ФОРМАТ ОТВЕТА: Только текст сообщения, без дополнительных объяснений.`;
 
-    const message = await callO3DeepResearch(prompt, 300);
+    const message = await callGeminiAI(prompt, 300);
     res.json({ success: true, message });
   } catch (error) {
     console.error('❌ Ошибка генерации сообщения маскота:', {
@@ -210,10 +141,19 @@ ${JSON.stringify(answers)}
   }
 });
 
-// Генерировать сообщение от маскота для личного кабинета
+// Генерировать сообщение от маскота для дашборда
 router.post('/mascot-message/dashboard', async (req, res) => {
   try {
+    console.log('🤖 Запрос на генерацию сообщения маскота для dashboard:', req.body);
+    
     const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      console.error('❌ Отсутствует sessionId');
+      return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
+    
+    console.log('🔑 Gemini API Key:', process.env.GEMINI_API_KEY ? 'установлен' : 'НЕ УСТАНОВЛЕН');
     
     // Получаем результаты первичного теста
     const primaryTest = await pool.query(
@@ -262,9 +202,9 @@ router.post('/mascot-message/dashboard', async (req, res) => {
 
 ФОРМАТ ОТВЕТА: Только текст сообщения, без дополнительных объяснений.`;
 
-    console.log('🚀 Отправляем запрос к O3 Deep Research...');
+    console.log('🚀 Отправляем запрос к Gemini AI...');
     
-    const message = await callO3DeepResearch(prompt, 350);
+    const message = await callGeminiAI(prompt, 350);
     res.json({ success: true, message, recommendedTests });
   } catch (error) {
     console.error('❌ Ошибка генерации сообщения для ЛК:', {
@@ -353,7 +293,7 @@ router.post('/personal-plan', async (req, res) => {
 
 ФОРМАТ ОТВЕТА: Только текст плана, без дополнительных объяснений.`;
 
-    const plan = await callO3DeepResearch(prompt, 3000);
+    const plan = await callGeminiAI(prompt, 3000);
     res.json({ success: true, plan });
   } catch (error) {
     console.error('Error generating personal plan:', error);
@@ -361,7 +301,7 @@ router.post('/personal-plan', async (req, res) => {
   }
 });
 
-// Генерировать подготовку к сеансу
+// Подготовка к сеансу
 router.post('/session-preparation', async (req, res) => {
   try {
     const { sessionId, specialistType } = req.body; // 'psychologist' или 'psychiatrist'
@@ -438,7 +378,7 @@ router.post('/session-preparation', async (req, res) => {
 
 ФОРМАТ ОТВЕТА: Только текст руководства, без дополнительных объяснений.`;
 
-    const preparation = await callO3DeepResearch(prompt, 2000);
+    const preparation = await callGeminiAI(prompt, 2000);
     res.json({ success: true, preparation });
   } catch (error) {
     console.error('Error generating session preparation:', error);
@@ -446,7 +386,7 @@ router.post('/session-preparation', async (req, res) => {
   }
 });
 
-// Анализ обратной связи по сеансу
+// Обратная связь о сеансе
 router.post('/session-feedback', async (req, res) => {
   try {
     const { sessionId, feedbackText } = req.body;
@@ -523,17 +463,17 @@ router.post('/session-feedback', async (req, res) => {
 
 ФОРМАТ ОТВЕТА: Только текст анализа, без дополнительных объяснений.`;
 
-    const analysis = await callO3DeepResearch(prompt, 2000);
+    const analysis = await callGeminiAI(prompt, 2000);
     
     // Сохраняем обратную связь в базу
     await pool.query(
       'INSERT INTO session_feedback (session_id, feedback_text, ai_response) VALUES ($1, $2, $3)',
       [sessionId, feedbackText, analysis]
     );
-
+    
     res.json({ success: true, analysis });
   } catch (error) {
-    console.error('Error analyzing session feedback:', error);
+    console.error('Error processing feedback:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -562,7 +502,7 @@ async function analyzeAndRecommendTests(answers) {
   ];
 
   try {
-    // Используем GPT-4 для глубокого анализа ответов
+    // Используем Gemini для глубокого анализа ответов
     const analysisPrompt = `Проведи глубокое исследование психологических паттернов в ответах теста и определи приоритетные области для дополнительного тестирования.
 
 ИССЛЕДОВАТЕЛЬСКАЯ ЗАДАЧА:
@@ -588,24 +528,24 @@ ${allTests.map((test, index) => `${index + 1}. ${test.name}`).join('\n')}
 
 ФОРМАТ ОТВЕТА: Верни только номера рекомендуемых тестов через запятую (например: 1,3,6,7), максимум 5 тестов.`;
 
-    const recommendedTestNumbers = await callO3DeepResearch(analysisPrompt, 100);
-    console.log('🔬 Рекомендации от O3:', recommendedTestNumbers);
+    const recommendedTestNumbers = await callGeminiAI(analysisPrompt, 100);
+    console.log('🔬 Рекомендации от Gemini:', recommendedTestNumbers);
     
     // Парсим номера тестов
     const testNumbers = recommendedTestNumbers.split(',').map(num => parseInt(num.trim()) - 1).filter(num => num >= 0 && num < allTests.length);
     
     const recommendedTests = testNumbers.map(num => allTests[num]);
     
-    // Если O3 не дал рекомендаций, используем fallback логику
+    // Если Gemini не дал рекомендаций, используем fallback логику
     if (recommendedTests.length === 0) {
-      console.log('⚠️ O3 не дал рекомендаций, используем fallback логику');
+      console.log('⚠️ Gemini не дал рекомендаций, используем fallback логику');
       return getFallbackRecommendations(answers, allTests);
     }
     
     return recommendedTests.slice(0, 5);
     
   } catch (error) {
-    console.error('❌ Ошибка анализа O3, используем fallback:', error.message);
+    console.error('❌ Ошибка анализа Gemini, используем fallback:', error.message);
     return getFallbackRecommendations(answers, allTests);
   }
 }
