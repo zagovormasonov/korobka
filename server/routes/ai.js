@@ -50,7 +50,12 @@ function createAxiosConfig() {
         secureProtocol: 'TLSv1_2_method',
         ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384',
         // Дополнительные опции для обхода проблем с сертификатами
-        servername: 'generativelanguage.googleapis.com'
+        servername: 'generativelanguage.googleapis.com',
+        // Дополнительные опции для стабильного соединения
+        keepAlive: true,
+        timeout: 30000,
+        // Отключаем проверку сертификата прокси
+        secureOptions: require('constants').SSL_OP_NO_SSLv2 | require('constants').SSL_OP_NO_SSLv3
       });
       config.timeout = 30000;
       console.log('✅ HttpsProxyAgent создан успешно для Gemini API с полным отключением проверки SSL');
@@ -107,11 +112,21 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     // Если ошибка связана с прокси, TLS или SSL сертификатом, попробуем без прокси
     if (error.message.includes('href') || error.message.includes('proxy') || error.message.includes('TLS') || 
         error.message.includes('socketErrorListener') || error.message.includes('certificate') || 
-        error.message.includes('altnames') || error.message.includes('hostname')) {
+        error.message.includes('altnames') || error.message.includes('hostname') || 
+        error.message.includes('disconnected') || error.message.includes('secure TLS connection')) {
       console.log('🔄 Пробуем без прокси...');
-      console.log('🔑 API Key в fallback:', apiKey ? 'установлен' : 'НЕ УСТАНОВЛЕН');
+      
+      // Получаем API ключ заново для fallback
+      const fallbackApiKey = process.env.GEMINI_API_KEY;
+      console.log('🔑 API Key в fallback:', fallbackApiKey ? 'установлен' : 'НЕ УСТАНОВЛЕН');
+      
+      if (!fallbackApiKey) {
+        console.error('❌ GEMINI_API_KEY не установлен для fallback');
+        return 'Извините, сервис временно недоступен. Попробуйте позже.';
+      }
+      
       try {
-        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${fallbackApiKey}`, {
           contents: [{
             parts: [{
               text: prompt
