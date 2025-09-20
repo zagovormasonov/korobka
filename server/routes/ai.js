@@ -15,9 +15,6 @@ function createGeminiClient() {
 
   console.log('🤖 Инициализация Gemini AI клиента...');
   
-  // Создаем клиент Gemini
-  const genAI = new GoogleGenerativeAI(apiKey);
-  
   // Настраиваем прокси если необходимо
   if (process.env.PROXY_HOST && process.env.PROXY_PORT && process.env.DISABLE_PROXY !== 'true') {
     let proxyUrl = `${process.env.PROXY_PROTOCOL || 'http'}://`;
@@ -35,19 +32,16 @@ function createGeminiClient() {
       auth: process.env.PROXY_USERNAME ? 'да' : 'нет'
     });
     
-    try {
-      // Настраиваем прокси для fetch (используется Gemini SDK)
-      const agent = new HttpsProxyAgent(proxyUrl);
-      global.fetch = require('node-fetch');
-      // Примечание: Gemini SDK может не поддерживать прокси напрямую
-      console.log('⚠️ Прокси настроен, но Gemini SDK может не поддерживать его напрямую');
-    } catch (proxyError) {
-      console.error('❌ Ошибка создания прокси агента для Gemini:', proxyError.message);
-    }
+    // Настраиваем прокси через переменные окружения для fetch
+    process.env.HTTP_PROXY = proxyUrl;
+    process.env.HTTPS_PROXY = proxyUrl;
+    console.log('✅ Прокси настроен через переменные окружения');
   } else {
     console.log('🌐 Прокси не настроен для Gemini API, подключение напрямую');
   }
 
+  // Создаем клиент Gemini
+  const genAI = new GoogleGenerativeAI(apiKey);
   return genAI;
 }
 
@@ -58,19 +52,22 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     
     console.log('🔬 Вызываем Gemini AI...');
+    console.log('📝 Длина промпта:', prompt.length, 'символов');
     
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     
-    console.log('✅ Gemini AI ответ получен');
+    console.log('✅ Gemini AI ответ получен, длина:', text.length, 'символов');
     return text;
     
   } catch (error) {
     console.error('❌ Ошибка Gemini AI:', {
       message: error.message,
       status: error.status,
-      statusText: error.statusText
+      statusText: error.statusText,
+      code: error.code,
+      stack: error.stack
     });
     
     // Возвращаем заглушку если API недоступен
