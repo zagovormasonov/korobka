@@ -3,6 +3,8 @@ import axios from 'axios';
 import { pool } from '../index.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import { SocksProxyAgent } from 'socks-proxy-agent';
+import { constants } from 'crypto';
 
 const router = express.Router();
 
@@ -40,25 +42,38 @@ function createAxiosConfig() {
     
     console.log('🔗 Proxy URL:', proxyUrl.replace(/:[^:]*@/, ':***@')); // Скрываем пароль в логах
     
-    // Используем HttpsProxyAgent для более надежного подключения
+    // Пробуем разные типы прокси
     try {
-      config.httpsAgent = new HttpsProxyAgent(proxyUrl, {
-        // Полностью отключаем проверку SSL сертификата для прокси
-        rejectUnauthorized: false,
-        checkServerIdentity: () => undefined, // Отключаем проверку hostname
-        // Дополнительные опции для обхода проблем с SSL
-        secureProtocol: 'TLSv1_2_method',
-        ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384',
-        // Дополнительные опции для обхода проблем с сертификатами
-        servername: 'generativelanguage.googleapis.com',
-        // Дополнительные опции для стабильного соединения
-        keepAlive: true,
-        timeout: 30000,
-        // Отключаем проверку сертификата прокси
-        secureOptions: require('constants').SSL_OP_NO_SSLv2 | require('constants').SSL_OP_NO_SSLv3
-      });
+      // Сначала пробуем SOCKS5 прокси
+      if (process.env.PROXY_TYPE === 'socks5') {
+        console.log('🔧 Используем SOCKS5 прокси...');
+        const socksProxyUrl = `socks5://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
+        config.httpsAgent = new SocksProxyAgent(socksProxyUrl, {
+          rejectUnauthorized: false,
+          checkServerIdentity: () => undefined
+        });
+        console.log('✅ SOCKS5 прокси создан успешно');
+      } else {
+        // Используем HTTP прокси
+        console.log('🔧 Используем HTTP прокси...');
+        config.httpsAgent = new HttpsProxyAgent(proxyUrl, {
+          // Полностью отключаем проверку SSL сертификата для прокси
+          rejectUnauthorized: false,
+          checkServerIdentity: () => undefined, // Отключаем проверку hostname
+          // Дополнительные опции для обхода проблем с SSL
+          secureProtocol: 'TLSv1_2_method',
+          ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384',
+          // Дополнительные опции для обхода проблем с сертификатами
+          servername: 'generativelanguage.googleapis.com',
+          // Дополнительные опции для стабильного соединения
+          keepAlive: true,
+          timeout: 30000,
+          // Отключаем проверку сертификата прокси
+          secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3
+        });
+        console.log('✅ HTTP прокси создан успешно');
+      }
       config.timeout = 30000;
-      console.log('✅ HttpsProxyAgent создан успешно для Gemini API с полным отключением проверки SSL');
     } catch (proxyError) {
       console.error('❌ Ошибка создания прокси агента для Gemini API:', proxyError.message);
     }
@@ -142,7 +157,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
           },
           timeout: 30000,
           // Полностью отключаем проверку SSL для прямого подключения
-          httpsAgent: new (require('https').Agent)({
+          httpsAgent: new (await import('https')).Agent({
             rejectUnauthorized: false,
             checkServerIdentity: () => undefined
           })
