@@ -53,10 +53,7 @@ function createAxiosConfig() {
           checkServerIdentity: () => undefined,
           // Дополнительные настройки для стабильности
           timeout: 30000,
-          keepAlive: true,
-          // Настройки для SOCKS5
-          family: 4, // Принудительно IPv4
-          lookup: false // Отключаем DNS lookup
+          keepAlive: true
         });
         console.log('✅ SOCKS5 прокси создан успешно');
       } else {
@@ -143,7 +140,8 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
         error.message.includes('altnames') || error.message.includes('hostname') || 
         error.message.includes('disconnected') || error.message.includes('secure TLS connection') ||
         error.message.includes('stream has been aborted') || error.message.includes('aborted') ||
-        error.message.includes('400') || error.message.includes('Bad Request') || error.message.includes('malformed')) {
+        error.message.includes('400') || error.message.includes('Bad Request') || error.message.includes('malformed') ||
+        error.message.includes('lookupFn is not a function') || error.message.includes('TypeError')) {
       console.log('🔄 Пробуем без прокси...');
       
       // Получаем API ключ заново для fallback
