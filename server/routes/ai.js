@@ -42,9 +42,15 @@ function createAxiosConfig() {
     
     // Используем HttpsProxyAgent для более надежного подключения
     try {
-      config.httpsAgent = new HttpsProxyAgent(proxyUrl);
+      config.httpsAgent = new HttpsProxyAgent(proxyUrl, {
+        // Отключаем проверку SSL сертификата для прокси
+        rejectUnauthorized: false,
+        // Дополнительные опции для обхода проблем с SSL
+        secureProtocol: 'TLSv1_2_method',
+        ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384'
+      });
       config.timeout = 30000;
-      console.log('✅ HttpsProxyAgent создан успешно для Gemini API');
+      console.log('✅ HttpsProxyAgent создан успешно для Gemini API с отключенной проверкой SSL');
     } catch (proxyError) {
       console.error('❌ Ошибка создания прокси агента для Gemini API:', proxyError.message);
     }
@@ -94,8 +100,8 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       stack: error.stack
     });
     
-    // Если ошибка связана с прокси, попробуем без прокси
-    if (error.message.includes('href') || error.message.includes('proxy')) {
+    // Если ошибка связана с прокси или TLS, попробуем без прокси
+    if (error.message.includes('href') || error.message.includes('proxy') || error.message.includes('TLS') || error.message.includes('socketErrorListener')) {
       console.log('🔄 Пробуем без прокси...');
       try {
         const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
@@ -112,14 +118,22 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
           headers: {
             'Content-Type': 'application/json'
           },
-          timeout: 30000
+          timeout: 30000,
+          // Отключаем проверку SSL для прямого подключения
+          httpsAgent: new (require('https').Agent)({
+            rejectUnauthorized: false
+          })
         });
         
         const text = response.data.candidates[0].content.parts[0].text;
         console.log('✅ Gemini API ответ получен без прокси, длина:', text.length, 'символов');
         return text;
       } catch (fallbackError) {
-        console.error('❌ Ошибка Gemini API без прокси:', fallbackError.message);
+        console.error('❌ Ошибка Gemini API без прокси:', {
+          message: fallbackError.message,
+          status: fallbackError.response?.status,
+          data: fallbackError.response?.data
+        });
       }
     }
     
