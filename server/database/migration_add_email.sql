@@ -15,3 +15,4 @@ WHERE additional_test_results.session_id = ptr.session_id
 AND additional_test_results.email IS NULL;
 
 
+
