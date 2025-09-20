@@ -103,6 +103,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     console.log('🔬 Вызываем Gemini API через axios...');
     console.log('📝 Длина промпта:', prompt.length, 'символов');
     console.log('🔑 API Key установлен:', apiKey ? 'да' : 'нет');
+    console.log('🔑 API Key первые 10 символов:', apiKey ? apiKey.substring(0, 10) + '...' : 'НЕТ');
     
     // Используем правильный endpoint для Gemini API
     const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
@@ -115,7 +116,13 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
         maxOutputTokens: maxTokens,
         temperature: 0.5
       }
-    }, axiosConfig);
+    }, {
+      ...axiosConfig,
+      headers: {
+        ...axiosConfig.headers,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
     
     const text = response.data.candidates[0].content.parts[0].text;
     console.log('✅ Gemini API ответ получен, длина:', text.length, 'символов');
@@ -135,7 +142,8 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
         error.message.includes('socketErrorListener') || error.message.includes('certificate') || 
         error.message.includes('altnames') || error.message.includes('hostname') || 
         error.message.includes('disconnected') || error.message.includes('secure TLS connection') ||
-        error.message.includes('stream has been aborted') || error.message.includes('aborted')) {
+        error.message.includes('stream has been aborted') || error.message.includes('aborted') ||
+        error.message.includes('400') || error.message.includes('Bad Request') || error.message.includes('malformed')) {
       console.log('🔄 Пробуем без прокси...');
       
       // Получаем API ключ заново для fallback
