@@ -79,15 +79,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
         maxOutputTokens: maxTokens,
         temperature: 0.5
       }
-    }, {
-      ...axiosConfig,
-      // Отключаем проверку SSL для прокси
-      httpsAgent: axiosConfig.httpsAgent ? new HttpsProxyAgent(axiosConfig.httpsAgent.options.proxy) : undefined,
-      // Добавляем дополнительные опции для обхода проблем с сертификатом
-      validateStatus: function (status) {
-        return status >= 200 && status < 300;
-      }
-    });
+    }, axiosConfig);
     
     const text = response.data.candidates[0].content.parts[0].text;
     console.log('✅ Gemini API ответ получен, длина:', text.length, 'символов');
@@ -98,8 +90,38 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       message: error.message,
       status: error.response?.status,
       statusText: error.response?.statusText,
-      data: error.response?.data
+      data: error.response?.data,
+      stack: error.stack
     });
+    
+    // Если ошибка связана с прокси, попробуем без прокси
+    if (error.message.includes('href') || error.message.includes('proxy')) {
+      console.log('🔄 Пробуем без прокси...');
+      try {
+        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            maxOutputTokens: maxTokens,
+            temperature: 0.5
+          }
+        }, {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          timeout: 30000
+        });
+        
+        const text = response.data.candidates[0].content.parts[0].text;
+        console.log('✅ Gemini API ответ получен без прокси, длина:', text.length, 'символов');
+        return text;
+      } catch (fallbackError) {
+        console.error('❌ Ошибка Gemini API без прокси:', fallbackError.message);
+      }
+    }
     
     // Возвращаем заглушку если API недоступен
     return 'Извините, сервис временно недоступен. Попробуйте позже.';
