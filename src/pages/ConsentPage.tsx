@@ -16,7 +16,7 @@ const ConsentPage: React.FC = () => {
     <div style={{  
       minHeight: '100vh',
       backgroundColor: '#f0f2f5',
-      padding: '20px'
+      padding: '20px' 
     }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <Space style={{ marginBottom: '20px' }}>
