@@ -103,7 +103,10 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     console.log('🔑 API Key первые 10 символов:', apiKey ? apiKey.substring(0, 10) + '...' : 'НЕТ');
     
     // Используем правильный endpoint для Gemini API
-    const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    console.log('🔗 Gemini URL:', geminiUrl.replace(apiKey, 'API_KEY_HIDDEN'));
+    
+    const response = await axios.post(geminiUrl, {
       contents: [{
         parts: [{
           text: prompt
@@ -154,7 +157,11 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       }
       
       try {
-        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${fallbackApiKey}`, {
+        // Пробуем другой endpoint в fallback
+        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${fallbackApiKey}`;
+        console.log('🔗 Fallback Gemini URL:', fallbackUrl.replace(fallbackApiKey, 'API_KEY_HIDDEN'));
+        
+        const response = await axios.post(fallbackUrl, {
           contents: [{
             parts: [{
               text: prompt
