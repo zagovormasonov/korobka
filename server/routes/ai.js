@@ -76,6 +76,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     
     console.log('🔬 Вызываем Gemini API через axios...');
     console.log('📝 Длина промпта:', prompt.length, 'символов');
+    console.log('🔑 API Key установлен:', apiKey ? 'да' : 'нет');
     
     // Используем правильный endpoint для Gemini API
     const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
@@ -108,6 +109,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
         error.message.includes('socketErrorListener') || error.message.includes('certificate') || 
         error.message.includes('altnames') || error.message.includes('hostname')) {
       console.log('🔄 Пробуем без прокси...');
+      console.log('🔑 API Key в fallback:', apiKey ? 'установлен' : 'НЕ УСТАНОВЛЕН');
       try {
         const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           contents: [{
