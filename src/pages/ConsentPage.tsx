@@ -98,7 +98,7 @@ const ConsentPage: React.FC = () => {
           </Paragraph>
           <Paragraph>
             4.3. По истечении указанного срока персональные данные подлежат удалению или обезличиванию.
-          </Paragraph>
+          </Paragraph> 
 
           <Title level={2}>5. Передача персональных данных</Title>
           <Paragraph>
