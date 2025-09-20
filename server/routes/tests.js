@@ -271,6 +271,15 @@ router.get('/primary/questions', (req, res) => {
       id: 45,
       text: "Введите почту, на которую мы пришлём персональный план:",
       type: "email"
+    },
+    {
+      id: 46,
+      text: "В каком роде к вам обращаться?",
+      type: "gender_choice",
+      options: [
+        { value: "male", label: "В мужском" },
+        { value: "female", label: "В женском" }
+      ]
     }
   ];
 
@@ -348,7 +357,8 @@ router.post('/primary/submit', async (req, res) => {
       { id: 42, type: "yes_no_text" },
       { id: 43, type: "yes_no_examples" },
       { id: 44, type: "open_text" },
-      { id: 45, type: "email" }
+      { id: 45, type: "email" },
+      { id: 46, type: "gender_choice" }
     ];
     
     const { email } = req.body;

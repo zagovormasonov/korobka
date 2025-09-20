@@ -24,8 +24,8 @@ POSTGRESQL_USER=your_username
 POSTGRESQL_PASSWORD=your_password
 POSTGRESQL_DBNAME=your_database_name
 
-# ChatGPT API
-OPENAI_API_KEY=sk-your-openai-api-key
+# Google Gemini API
+GEMINI_API_KEY=your-gemini-api-key
 
 # Тинькофф платежи
 TINKOFF_TERMINAL_KEY=your_terminal_key
@@ -52,11 +52,11 @@ PORT=5000
 npm run init-db
 ```
 
-## 3. Настройка ChatGPT API
+## 3. Настройка Google Gemini API
 
-1. Зарегистрируйтесь на https://platform.openai.com/
+1. Зарегистрируйтесь на https://makersuite.google.com/app/apikey
 2. Создайте API ключ
-3. Добавьте ключ в переменную `OPENAI_API_KEY`
+3. Добавьте ключ в переменную `GEMINI_API_KEY`
 
 ## 4. Настройка платежей Тинькофф
 
@@ -111,7 +111,7 @@ npm start
 - `POST /api/tests/additional/save` - Сохранить результаты дополнительного теста
 - `GET /api/tests/additional/:sessionId` - Получить результаты дополнительных тестов
 
-### ИИ (ChatGPT)
+### ИИ (Google Gemini)
 - `POST /api/ai/mascot-message/payment` - Генерировать сообщение маскота для страницы оплаты
 - `POST /api/ai/mascot-message/dashboard` - Генерировать сообщение маскота для личного кабинета
 - `POST /api/ai/personal-plan` - Генерировать персональный план

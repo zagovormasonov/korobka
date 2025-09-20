@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Progress, Card, Input, Slider, Radio, Space, Checkbox, InputNumber } from 'antd';
+import { Button, Typography, Progress, Card, Input, Slider, Space, Checkbox, InputNumber } from 'antd';
 import { ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -20,7 +20,7 @@ interface Question {
     };
   };
   placeholder?: string;
-  options?: string[];
+  options?: string[] | { value: string; label: string }[];
 }
 
 interface Answer {
@@ -553,6 +553,22 @@ const TestPage: React.FC = () => {
               onChange={(e) => handleAnswer(e.target.value)}
               style={{ width: '100%' }}
             />
+          )}
+
+          {question.type === 'gender_choice' && question.options && (
+            <Space size="large" style={{ width: '100%', justifyContent: 'space-between' }}>
+              {question.options.map((option: any) => (
+                <Button 
+                  key={option.value}
+                  type={currentAnswer === option.value ? 'primary' : 'default'}
+                  onClick={() => handleAnswer(option.value)}
+                  size="large"
+                  style={{ flex: 1, margin: '0 8px' }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </Space>
           )}
         </Card>
 
