@@ -87,110 +87,83 @@ function createAxiosConfig() {
   return config;
 }
 
-// Функция для вызова Gemini API через axios
+// Функция для вызова Gemini API через официальный SDK
 async function callGeminiAI(prompt, maxTokens = 2000) {
   try {
-    const axiosConfig = createAxiosConfig();
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY не установлен в переменных окружения');
     }
     
-    console.log('🔬 Вызываем Gemini API через axios...');
+    console.log('🔬 Вызываем Gemini API через официальный SDK...');
     console.log('📝 Длина промпта:', prompt.length, 'символов');
     console.log('🔑 API Key установлен:', apiKey ? 'да' : 'нет');
     console.log('🔑 API Key первые 10 символов:', apiKey ? apiKey.substring(0, 10) + '...' : 'НЕТ');
     
-    // Используем правильный endpoint для Gemini API
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    console.log('🔗 Gemini URL:', geminiUrl.replace(apiKey, 'API_KEY_HIDDEN'));
-    
-    const response = await axios.post(geminiUrl, {
-      contents: [{
-        parts: [{
-          text: prompt
-        }]
-      }],
-      generationConfig: {
-        maxOutputTokens: maxTokens,
-        temperature: 0.5
+    // Настраиваем прокси для Google AI SDK
+    if (process.env.PROXY_HOST && process.env.PROXY_PORT && process.env.DISABLE_PROXY !== 'true') {
+      console.log('🌐 Настраиваем прокси для Google AI SDK...');
+      
+      // Устанавливаем переменные окружения для прокси
+      if (process.env.PROXY_TYPE === 'socks5') {
+        process.env.HTTP_PROXY = `socks5://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
+        process.env.HTTPS_PROXY = `socks5://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
+      } else {
+        process.env.HTTP_PROXY = `http://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
+        process.env.HTTPS_PROXY = `http://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
       }
-    }, {
-      ...axiosConfig,
-      headers: {
-        ...axiosConfig.headers,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    });
+      
+      console.log('✅ Прокси настроен для Google AI SDK');
+    } else {
+      console.log('🌐 Прокси отключен, используем прямое подключение');
+    }
     
-    const text = response.data.candidates[0].content.parts[0].text;
-    console.log('✅ Gemini API ответ получен, длина:', text.length, 'символов');
+    // Создаем клиент Google AI
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    console.log('🚀 Отправляем запрос к Gemini через SDK...');
+    
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    console.log('✅ Gemini API ответ получен через SDK, длина:', text.length, 'символов');
     return text;
     
   } catch (error) {
-    console.error('❌ Ошибка Gemini API:', {
+    console.error('❌ Ошибка Gemini API через SDK:', {
       message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
       stack: error.stack
     });
     
-    // Если ошибка связана с прокси, TLS или SSL сертификатом, попробуем без прокси
-    if (error.message.includes('href') || error.message.includes('proxy') || error.message.includes('TLS') || 
-        error.message.includes('socketErrorListener') || error.message.includes('certificate') || 
-        error.message.includes('altnames') || error.message.includes('hostname') || 
-        error.message.includes('disconnected') || error.message.includes('secure TLS connection') ||
-        error.message.includes('stream has been aborted') || error.message.includes('aborted') ||
-        error.message.includes('400') || error.message.includes('Bad Request') || error.message.includes('malformed') ||
-        error.message.includes('lookupFn is not a function') || error.message.includes('TypeError')) {
-      console.log('🔄 Пробуем без прокси...');
+    // Если ошибка связана с прокси или сетью, попробуем без прокси
+    if (error.message.includes('proxy') || error.message.includes('timeout') || 
+        error.message.includes('network') || error.message.includes('connection') ||
+        error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+      console.log('🔄 Пробуем без прокси через SDK...');
       
-      // Получаем API ключ заново для fallback
-      const fallbackApiKey = process.env.GEMINI_API_KEY;
-      console.log('🔑 API Key в fallback:', fallbackApiKey ? 'установлен' : 'НЕ УСТАНОВЛЕН');
-      
-      if (!fallbackApiKey) {
-        console.error('❌ GEMINI_API_KEY не установлен для fallback');
-        return 'Извините, сервис временно недоступен. Попробуйте позже.';
-      }
+      // Очищаем переменные прокси
+      delete process.env.HTTP_PROXY;
+      delete process.env.HTTPS_PROXY;
       
       try {
-        // Пробуем другой endpoint в fallback
-        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${fallbackApiKey}`;
-        console.log('🔗 Fallback Gemini URL:', fallbackUrl.replace(fallbackApiKey, 'API_KEY_HIDDEN'));
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
         
-        const response = await axios.post(fallbackUrl, {
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            maxOutputTokens: maxTokens,
-            temperature: 0.5
-          }
-        }, {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 30000,
-          // Полностью отключаем проверку SSL для прямого подключения
-          httpsAgent: new (await import('https')).Agent({
-            rejectUnauthorized: false,
-            checkServerIdentity: () => undefined
-          })
-        });
+        console.log('🚀 Отправляем fallback запрос к Gemini через SDK...');
         
-        const text = response.data.candidates[0].content.parts[0].text;
-        console.log('✅ Gemini API ответ получен без прокси, длина:', text.length, 'символов');
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        console.log('✅ Gemini API ответ получен без прокси через SDK, длина:', text.length, 'символов');
         return text;
       } catch (fallbackError) {
-        console.error('❌ Ошибка Gemini API без прокси:', {
+        console.error('❌ Ошибка Gemini API без прокси через SDK:', {
           message: fallbackError.message,
-          status: fallbackError.response?.status,
-          data: fallbackError.response?.data
+          stack: fallbackError.stack
         });
       }
     }
