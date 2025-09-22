@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: mental-health-test
+    name: mental-health-test-fast
     env: node
     plan: starter
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --no-audit --no-fund && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -39,4 +39,6 @@ services:
       - key: EMAILJS_TEMPLATE_ID
         sync: false
       - key: DISABLE_PROXY
+        value: true
+      - key: DISABLE_PDF
         value: true
