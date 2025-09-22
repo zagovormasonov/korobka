@@ -33,7 +33,9 @@
     "@vitejs/plugin-react": "^4.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "antd": "^5.11.0",
+    "@ant-design/icons": "^5.2.6"
   },
   "devDependencies": {
     "@types/node": "^20.8.10",
@@ -43,7 +45,6 @@
     "@types/uuid": "^9.0.7",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",
-    "antd": "^5.11.0",
     "concurrently": "^8.2.2",
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
