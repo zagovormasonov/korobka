@@ -1,7 +1,7 @@
 import express from 'express';
 import axios from 'axios';
 import { pool } from '../index.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { constants } from 'crypto';
