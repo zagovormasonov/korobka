@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
+import { createClient } from '@supabase/supabase-js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import testRoutes from './routes/tests.js';
@@ -21,11 +21,8 @@ dotenv.config({ path: path.join(projectRoot, '.env') });
 // Проверка обязательных переменных окружения
 function checkEnvironmentVariables() {
   const requiredVars = [
-    'POSTGRESQL_HOST',
-    'POSTGRESQL_PORT', 
-    'POSTGRESQL_USER',
-    'POSTGRESQL_PASSWORD',
-    'POSTGRESQL_DBNAME'
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY'
   ];
   
   const missingVars = requiredVars.filter(varName => !process.env[varName]);
@@ -35,7 +32,7 @@ function checkEnvironmentVariables() {
     missingVars.forEach(varName => {
       console.error(`   - ${varName}`);
     });
-    console.error('💡 Создайте файл .env на основе env.example');
+    console.error('💡 Создайте файл .env на основе env.supabase.example');
     process.exit(1);
   }
   
@@ -54,7 +51,11 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (process.env.NODE_ENV !== 'production') return callback(null, true);
+    
+    // Разрешаем запросы с render.com доменов
+    if (origin && origin.includes('render.com')) return callback(null, true);
     if (FRONTEND_URL && origin === FRONTEND_URL) return callback(null, true);
+    
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true
@@ -62,32 +63,39 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static('public'));
 
-// Database connection
-export const pool = new Pool({
-  host: process.env.POSTGRESQL_HOST,
-  port: process.env.POSTGRESQL_PORT,
-  user: process.env.POSTGRESQL_USER,
-  password: process.env.POSTGRESQL_PASSWORD,
-  database: process.env.POSTGRESQL_DBNAME,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+// Статическая раздача фронтенда в продакшне
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(projectRoot, 'dist')));
+}
 
-// Test database connection
-async function testDatabaseConnection() {
+// Supabase connection
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY должны быть установлены');
+  process.exit(1);
+}
+
+export const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Test Supabase connection
+async function testSupabaseConnection() {
   try {
-    console.log('🔍 Проверка подключения к базе данных...');
-    console.log(`📡 Хост: ${process.env.POSTGRESQL_HOST}`);
-    console.log(`🔌 Порт: ${process.env.POSTGRESQL_PORT}`);
-    console.log(`👤 Пользователь: ${process.env.POSTGRESQL_USER}`);
-    console.log(`🗄 База данных: ${process.env.POSTGRESQL_DBNAME}`);
+    console.log('🔍 Проверка подключения к Supabase...');
+    console.log(`📡 Supabase URL: ${supabaseUrl}`);
     
-    const client = await pool.connect();
-    const result = await client.query('SELECT NOW() as current_time');
-    console.log('✅ Подключение к базе данных успешно!');
-    console.log(`⏰ Время сервера БД: ${result.rows[0].current_time}`);
-    client.release();
+    const { data, error } = await supabase.from('primary_test_results').select('count').limit(1);
+    
+    if (error) {
+      console.error('❌ Ошибка подключения к Supabase:', error.message);
+      console.error('💡 Проверьте переменные окружения SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY');
+      process.exit(1);
+    }
+    
+    console.log('✅ Подключение к Supabase успешно!');
   } catch (error) {
-    console.error('❌ Ошибка подключения к базе данных:');
+    console.error('❌ Ошибка подключения к Supabase:');
     console.error(`🔴 ${error.message}`);
     console.error('💡 Проверьте переменные окружения в файле .env');
     process.exit(1);
@@ -106,18 +114,27 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Database health check
+// SPA fallback - все остальные запросы возвращают index.html
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(projectRoot, 'dist', 'index.html'));
+  });
+}
+
+// Supabase health check
 app.get('/api/health/database', async (req, res) => {
   try {
-    const client = await pool.connect();
-    const result = await client.query('SELECT NOW() as current_time, version() as db_version');
-    client.release();
+    const { data, error } = await supabase.from('primary_test_results').select('count').limit(1);
+    
+    if (error) {
+      throw error;
+    }
     
     res.json({ 
       status: 'OK', 
       database: 'connected',
-      current_time: result.rows[0].current_time,
-      db_version: result.rows[0].db_version
+      supabase_url: supabaseUrl,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     res.status(500).json({ 
@@ -133,6 +150,6 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🌐 Frontend: ${FRONTEND_URL || 'не задан (FRONTEND_URL)'}`);
   console.log(`🔧 Backend API: ${process.env.BACKEND_URL || `http://127.0.0.1:${PORT}`}`);
   
-  // Проверяем подключение к базе данных
-  await testDatabaseConnection();
+  // Проверяем подключение к Supabase
+  await testSupabaseConnection();
 });

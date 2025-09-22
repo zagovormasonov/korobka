@@ -29,10 +29,14 @@ const PaymentSuccessPage: React.FC = () => {
 
   const fetchDashboardToken = async () => {
     try {
+      console.log('🔍 Загружаем данные дашборда для sessionId:', sessionId);
       const response = await fetch(`/api/tests/primary/${sessionId}`);
       const data = await response.json();
 
+      console.log('📥 Ответ от API:', data);
+
       if (data.success && data.data.dashboard_token) {
+        console.log('✅ Токен дашборда получен:', data.data.dashboard_token);
         setDashboardToken(data.data.dashboard_token);
         setDashboardPassword(data.data.dashboard_password);
         setUserEmail(data.data.email);
@@ -44,10 +48,11 @@ const PaymentSuccessPage: React.FC = () => {
           console.log('⚠️ EmailJS не настроен. Данные отображаются только на странице.');
         }
       } else {
+        console.error('❌ Токен дашборда не найден в ответе:', data);
         setError('Не удалось получить ссылку на личный кабинет');
       }
     } catch (error) {
-      console.error('Error fetching dashboard token:', error);
+      console.error('❌ Ошибка при получении токена дашборда:', error);
       setError('Ошибка при получении ссылки на личный кабинет');
     } finally {
       setLoading(false);
@@ -98,8 +103,14 @@ const PaymentSuccessPage: React.FC = () => {
   };
 
   const goToDashboard = () => {
+    console.log('🚀 Переход в дашборд, токен:', dashboardToken);
     if (dashboardToken) {
-      navigate(`/lk/${dashboardToken}`);
+      const dashboardUrl = `/lk/${dashboardToken}`;
+      console.log('🔗 URL дашборда:', dashboardUrl);
+      navigate(dashboardUrl);
+    } else {
+      console.error('❌ Токен дашборда отсутствует');
+      message.error('Токен дашборда не найден');
     }
   };
 
