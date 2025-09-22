@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS primary_test_results (
     session_id VARCHAR(255) UNIQUE NOT NULL,
     answers JSONB NOT NULL,
     email VARCHAR(255),
+    dashboard_token VARCHAR(255),
+    dashboard_password VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -19,6 +21,7 @@ CREATE TABLE IF NOT EXISTS additional_test_results (
     id SERIAL PRIMARY KEY,
     session_id VARCHAR(255) NOT NULL,
     test_type VARCHAR(100) NOT NULL,
+    test_url VARCHAR(500),
     answers JSONB NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     FOREIGN KEY (session_id) REFERENCES primary_test_results(session_id) ON DELETE CASCADE
@@ -54,8 +57,19 @@ CREATE TABLE IF NOT EXISTS psychologist_requests (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
+    telegram_username VARCHAR(100),
     message TEXT,
     status VARCHAR(50) DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    FOREIGN KEY (session_id) REFERENCES primary_test_results(session_id) ON DELETE CASCADE
+);
+
+-- Таблица обратной связи о сеансах
+CREATE TABLE IF NOT EXISTS session_feedback (
+    id SERIAL PRIMARY KEY,
+    session_id VARCHAR(255) NOT NULL,
+    feedback_text TEXT NOT NULL,
+    ai_response TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     FOREIGN KEY (session_id) REFERENCES primary_test_results(session_id) ON DELETE CASCADE
 );
@@ -68,6 +82,7 @@ CREATE INDEX IF NOT EXISTS idx_payments_payment_id ON payments(payment_id);
 CREATE INDEX IF NOT EXISTS idx_dashboard_tokens_token ON dashboard_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_dashboard_tokens_session_id ON dashboard_tokens(session_id);
 CREATE INDEX IF NOT EXISTS idx_psychologist_requests_session_id ON psychologist_requests(session_id);
+CREATE INDEX IF NOT EXISTS idx_session_feedback_session_id ON session_feedback(session_id);
 
 -- Создаем функцию для автоматического обновления updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -93,6 +108,7 @@ ALTER TABLE additional_test_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dashboard_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE psychologist_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE session_feedback ENABLE ROW LEVEL SECURITY;
 
 -- Создаем политики RLS (разрешаем все операции для сервисного ключа)
 CREATE POLICY "Enable all operations for service role" ON primary_test_results
@@ -108,4 +124,7 @@ CREATE POLICY "Enable all operations for service role" ON dashboard_tokens
     FOR ALL USING (true);
 
 CREATE POLICY "Enable all operations for service role" ON psychologist_requests
+    FOR ALL USING (true);
+
+CREATE POLICY "Enable all operations for service role" ON session_feedback
     FOR ALL USING (true);
