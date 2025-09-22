@@ -14,7 +14,7 @@ const benefits = [
   {
     title: 'Персональный план, что делать именно в твоём случае',
     subtitle: 'Индивидуальный подход к твоей ситуации',
-    icon: <FileTextOutlined style={{ color: '#000', fontSize: '32px' }} />,
+    icon: <FileTextOutlined style={{ color: 'white', fontSize: '32px' }} />,
     items: [
       'Конкретные действия',
       'Какие тесты ещё пройти в твоём случае',
@@ -25,13 +25,13 @@ const benefits = [
   {
     title: 'Подберём психолога под твой случай',
     subtitle: 'Найдём специалиста, который понимает твои особенности',
-    icon: <UserOutlined style={{ color: '#000', fontSize: '32px' }} />,
+    icon: <UserOutlined style={{ color: 'white', fontSize: '32px' }} />,
     items: []
   },
   {
     title: 'Подготовим к сеансу',
     subtitle: 'Поможем максимально эффективно использовать время с психологом',
-    icon: <CalendarOutlined style={{ color: '#000', fontSize: '32px' }} />,
+    icon: <CalendarOutlined style={{ color: 'white', fontSize: '32px' }} />,
     items: [
       'Что сказать специалисту в твоём случае',
       'Как на первом сеансе определить, что он, скорее всего, тебе подходит'
@@ -40,7 +40,7 @@ const benefits = [
   {
     title: 'Подготовим PDF для психолога',
     subtitle: 'Документ, который поможет специалисту лучше понять тебя',
-    icon: <FilePdfOutlined style={{ color: '#000', fontSize: '32px' }} />,
+    icon: <FilePdfOutlined style={{ color: 'white', fontSize: '32px' }} />,
     items: [
       'Даёшь его психологу, и он понимает, что делать в твоём случае'
     ]
@@ -48,7 +48,7 @@ const benefits = [
   {
     title: 'Ты сможешь поделиться с нами, что было на сеансе у психолога, и мы дадим обратную связь',
     subtitle: 'Поддержим тебя на каждом этапе',
-    icon: <MessageOutlined style={{ color: '#000', fontSize: '32px' }} />,
+    icon: <MessageOutlined style={{ color: 'white', fontSize: '32px' }} />,
     items: []
   }
 ];
@@ -96,7 +96,7 @@ const HomePage = () => {
                 hoverable
                 style={{ 
                   height: '100%',
-                  background: 'rgb(255, 211, 200)',
+                  background: 'white',
                   border: 'none',
                   borderRadius: '16px',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
@@ -105,7 +105,18 @@ const HomePage = () => {
               >
                 <Space direction="vertical" size="large" style={{ width: '100%' }}>
                   <div style={{ textAlign: 'left' }}>
-                    {benefit.icon}
+                    <div style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, rgb(255, 228, 181) 0%, rgb(255, 182, 193) 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '16px'
+                    }}>
+                      {benefit.icon}
+                    </div>
                   </div>
                   
                   <div>
