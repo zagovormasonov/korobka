@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: mental-health-test
+    name: mental-health-test-fast
     env: node
     plan: starter
-    buildCommand: npm ci --only=production && npm run build
+    buildCommand: npm install --production --no-optional && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV

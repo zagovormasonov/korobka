@@ -16,10 +16,13 @@ console.log('🔍 Проверка готовности к деплою на Ren
 // Проверяем наличие необходимых файлов
 const requiredFiles = [
   'render.yaml',
+  'render-fast.yaml',
   'env.render.example',
   'RENDER_DEPLOYMENT.md',
   'package.json',
-  'server/index.js'
+  'server/index.js',
+  '.npmrc',
+  '.dockerignore'
 ];
 
 console.log('📁 Проверка файлов:');
