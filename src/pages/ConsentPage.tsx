@@ -9,7 +9,7 @@ const ConsentPage: React.FC = () => {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo(0, 0); 
   }, []);
 
   return (
