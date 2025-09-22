@@ -121,7 +121,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     
     // Создаем клиент Google AI
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
     
     console.log('🚀 Отправляем запрос к Gemini через SDK...');
     
@@ -150,7 +150,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       
       try {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
         
         console.log('🚀 Отправляем fallback запрос к Gemini через SDK...');
         
