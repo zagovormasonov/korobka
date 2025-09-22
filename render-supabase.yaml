@@ -18,16 +18,6 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: POSTGRESQL_HOST
-        sync: false
-      - key: POSTGRESQL_PORT
-        value: 5432
-      - key: POSTGRESQL_USER
-        value: postgres
-      - key: POSTGRESQL_PASSWORD
-        sync: false
-      - key: POSTGRESQL_DBNAME
-        value: postgres
       - key: GEMINI_API_KEY
         sync: false
       - key: TINKOFF_TERMINAL_KEY

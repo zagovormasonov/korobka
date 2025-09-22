@@ -1,9 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
-import { Pool } from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,16 +21,6 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Создаем подключение к PostgreSQL
-const pool = new Pool({
-  host: process.env.POSTGRESQL_HOST,
-  port: process.env.POSTGRESQL_PORT,
-  user: process.env.POSTGRESQL_USER,
-  password: process.env.POSTGRESQL_PASSWORD,
-  database: process.env.POSTGRESQL_DBNAME,
-  ssl: { rejectUnauthorized: false }
-});
-
 async function initSupabase() {
   try {
     console.log('🚀 Инициализация Supabase...');
@@ -47,14 +35,6 @@ async function initSupabase() {
     }
     
     console.log('✅ Подключение к Supabase успешно');
-    
-    // Проверяем подключение к PostgreSQL
-    console.log('🔍 Проверка подключения к PostgreSQL...');
-    const client = await pool.connect();
-    const result = await client.query('SELECT NOW() as current_time');
-    console.log('✅ Подключение к PostgreSQL успешно');
-    console.log(`⏰ Время сервера БД: ${result.rows[0].current_time}`);
-    client.release();
     
     // Проверяем существование таблиц
     console.log('🔍 Проверка структуры базы данных...');
@@ -86,8 +66,6 @@ async function initSupabase() {
   } catch (error) {
     console.error('❌ Ошибка инициализации Supabase:', error);
     process.exit(1);
-  } finally {
-    await pool.end();
   }
 }
 
