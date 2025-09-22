@@ -3,7 +3,7 @@ services:
     name: mental-health-test
     env: node
     plan: starter
-    buildCommand: npm ci --only=production && npm run build
+    buildCommand: npm ci && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
