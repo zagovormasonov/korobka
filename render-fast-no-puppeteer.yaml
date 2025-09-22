@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: mental-health-test-fast
+    env: node
+    plan: starter
+    buildCommand: npm ci --no-audit --no-fund && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "18"
+      - key: PORT
+        value: 10000
+      - key: POSTGRESQL_HOST
+        sync: false
+      - key: POSTGRESQL_PORT
+        value: 5432
+      - key: POSTGRESQL_USER
+        sync: false
+      - key: POSTGRESQL_PASSWORD
+        sync: false
+      - key: POSTGRESQL_DBNAME
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TINKOFF_TERMINAL_KEY
+        sync: false
+      - key: TINKOFF_PASSWORD
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: EMAILJS_PUBLIC_KEY
+        sync: false
+      - key: EMAILJS_SERVICE_ID
+        sync: false
+      - key: EMAILJS_TEMPLATE_ID
+        sync: false
+      - key: DISABLE_PROXY
+        value: true
+      - key: DISABLE_PDF
+        value: true
