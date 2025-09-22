@@ -556,14 +556,14 @@ const TestPage: React.FC = () => {
           )}
 
           {question.type === 'gender_choice' && question.options && (
-            <Space size="large" style={{ width: '100%', justifyContent: 'space-between' }}>
+            <Space size="small" style={{ width: '100%', justifyContent: 'space-between' }}>
               {question.options.map((option: any) => (
                 <Button 
                   key={option.value}
                   type={currentAnswer === option.value ? 'primary' : 'default'}
                   onClick={() => handleAnswer(option.value)}
                   size="large"
-                  style={{ flex: 1, margin: '0 8px' }}
+                  style={{ flex: 1, margin: '0 4px' }}
                 >
                   {option.label}
                 </Button>
