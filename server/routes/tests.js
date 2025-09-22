@@ -342,6 +342,8 @@ router.post('/primary/submit', async (req, res) => {
     if (error) throw error;
 
     console.log('✅ Результаты теста сохранены в БД');
+    console.log('🔑 Сгенерированный токен:', dashboardToken);
+    console.log('🔐 Сгенерированный пароль:', dashboardPassword);
     res.json({ success: true, data });
   } catch (error) {
     console.error('❌ Ошибка при сохранении результатов теста:', error);
@@ -354,16 +356,30 @@ router.get('/primary/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
     
+    console.log('🔍 Запрос данных теста для sessionId:', sessionId);
+    
     const { data, error } = await supabase
       .from('primary_test_results')
       .select('*')
       .eq('session_id', sessionId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Ошибка Supabase:', error);
+      throw error;
+    }
+    
     if (!data) {
+      console.log('❌ Данные не найдены для sessionId:', sessionId);
       return res.status(404).json({ success: false, error: 'Test results not found' });
     }
+
+    console.log('✅ Данные найдены:', {
+      session_id: data.session_id,
+      email: data.email,
+      has_dashboard_token: !!data.dashboard_token,
+      has_dashboard_password: !!data.dashboard_password
+    });
 
     res.json({ success: true, data });
   } catch (error) {
