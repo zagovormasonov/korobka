@@ -54,13 +54,22 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (process.env.NODE_ENV !== 'production') return callback(null, true);
+    
+    // Разрешаем запросы с render.com доменов
+    if (origin && origin.includes('render.com')) return callback(null, true);
     if (FRONTEND_URL && origin === FRONTEND_URL) return callback(null, true);
+    
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
 app.use(express.json());
 app.use(express.static('public'));
+
+// Статическая раздача фронтенда в продакшне
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(projectRoot, 'dist')));
+}
 
 // Database connection
 export const pool = new Pool({
@@ -105,6 +114,13 @@ app.use('/api/pdf', pdfRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// SPA fallback - все остальные запросы возвращают index.html
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(projectRoot, 'dist', 'index.html'));
+  });
+}
 
 // Database health check
 app.get('/api/health/database', async (req, res) => {
