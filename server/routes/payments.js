@@ -1,7 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import axios from 'axios';
-import { pool } from '../index.js';
+import { supabase } from '../index.js';
 
 const router = express.Router();
 
@@ -86,10 +86,18 @@ router.post('/create', async (req, res) => {
       console.log('✅ Платеж успешно создан в Тинькофф');
       
       // Сохраняем информацию о платеже в базу
-      await pool.query(
-        'INSERT INTO payments (session_id, payment_id, amount, status) VALUES ($1, $2, $3, $4)',
-        [sessionId, orderId, amount, 'PENDING']
-      );
+      const { data, error } = await supabase
+        .from('payments')
+        .insert({
+          session_id: sessionId,
+          payment_id: orderId,
+          amount: amount,
+          status: 'PENDING'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
 
       console.log('💾 Платеж сохранен в базу данных');
 
@@ -156,10 +164,15 @@ router.get('/status/:paymentId', async (req, res) => {
       const status = response.data.Status;
       
       // Обновляем статус в базе данных
-      await pool.query(
-        'UPDATE payments SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE payment_id = $2',
-        [status, paymentId]
-      );
+      const { error } = await supabase
+        .from('payments')
+        .update({ 
+          status: status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('payment_id', paymentId);
+
+      if (error) throw error;
       
       res.json({
         success: true,
@@ -198,10 +211,15 @@ router.post('/webhook', async (req, res) => {
     }
     
     // Обновляем статус платежа
-    await pool.query(
-      'UPDATE payments SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE payment_id = $2',
-      [Status, PaymentId]
-    );
+    const { error } = await supabase
+      .from('payments')
+      .update({ 
+        status: Status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('payment_id', PaymentId);
+
+    if (error) throw error;
     
     res.json({ success: true });
   } catch (error) {
@@ -215,23 +233,26 @@ router.get('/session/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
     
-    const result = await pool.query(
-      'SELECT * FROM payments WHERE session_id = $1 ORDER BY created_at DESC LIMIT 1',
-      [sessionId]
-    );
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
     
-    if (result.rows.length === 0) {
+    if (error) throw error;
+    if (!data) {
       return res.status(404).json({ success: false, error: 'Payment not found' });
     }
     
-    const payment = result.rows[0];
     res.json({
       success: true,
       payment: {
-        id: payment.payment_id,
-        amount: payment.amount,
-        status: payment.status,
-        createdAt: payment.created_at
+        id: data.payment_id,
+        amount: data.amount,
+        status: data.status,
+        createdAt: data.created_at
       }
     });
   } catch (error) {

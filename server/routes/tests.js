@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../index.js';
+import { supabase } from '../index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
@@ -291,12 +291,20 @@ router.post('/primary/save', async (req, res) => {
   try {
     const { sessionId, answers, email } = req.body;
     
-    const result = await pool.query(
-      'INSERT INTO primary_test_results (session_id, email, answers) VALUES ($1, $2, $3) ON CONFLICT (session_id) DO UPDATE SET answers = $3, email = $2, updated_at = CURRENT_TIMESTAMP RETURNING *',
-      [sessionId, email, JSON.stringify(answers)]
-    );
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .upsert({
+        session_id: sessionId,
+        email: email,
+        answers: answers,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-    res.json({ success: true, data: result.rows[0] });
+    if (error) throw error;
+
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Error saving primary test:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -311,56 +319,6 @@ router.post('/primary/submit', async (req, res) => {
     console.log('📥 Получены результаты теста для sessionId:', sessionId);
     console.log('📊 Количество ответов:', answers.length);
     
-    // Определяем вопросы для поиска email
-    const questions = [
-      { id: 1, type: "gender_choice" },
-      { id: 2, type: "yes_no_scale" },
-      { id: 3, type: "yes_no_text" },
-      { id: 4, type: "yes_no_scale" },
-      { id: 5, type: "yes_no_examples" },
-      { id: 6, type: "yes_no_scale" },
-      { id: 7, type: "yes_no_text" },
-      { id: 8, type: "yes_no_text" },
-      { id: 9, type: "yes_no_text" },
-      { id: 10, type: "yes_no_scale" },
-      { id: 11, type: "yes_no_examples" },
-      { id: 12, type: "yes_no_text" },
-      { id: 13, type: "yes_no_scale" },
-      { id: 14, type: "yes_no_text" },
-      { id: 15, type: "yes_no_scale" },
-      { id: 16, type: "yes_no_text" },
-      { id: 17, type: "yes_no_examples" },
-      { id: 18, type: "yes_no_text" },
-      { id: 19, type: "yes_no_scale" },
-      { id: 20, type: "yes_no_text" },
-      { id: 21, type: "yes_no_text" },
-      { id: 22, type: "yes_no_scale" },
-      { id: 23, type: "yes_no_examples" },
-      { id: 24, type: "yes_no_text" },
-      { id: 25, type: "yes_no_text" },
-      { id: 26, type: "yes_no_examples" },
-      { id: 27, type: "budget" },
-      { id: 28, type: "scale" },
-      { id: 29, type: "yes_no" },
-      { id: 30, type: "yes_no_text" },
-      { id: 31, type: "yes_no_scale" },
-      { id: 32, type: "yes_no_text" },
-      { id: 33, type: "yes_no_text" },
-      { id: 34, type: "yes_no_scale" },
-      { id: 35, type: "yes_no_text" },
-      { id: 36, type: "yes_no_text" },
-      { id: 37, type: "yes_no_examples" },
-      { id: 38, type: "yes_no" },
-      { id: 39, type: "no_text" },
-      { id: 40, type: "yes_no_scale" },
-      { id: 41, type: "yes_no_text" },
-      { id: 42, type: "yes_no_text" },
-      { id: 43, type: "yes_no_examples" },
-      { id: 44, type: "yes_no_scale" },
-      { id: 45, type: "open_text" },
-      { id: 46, type: "email" }
-    ];
-    
     const { email } = req.body;
     console.log('📧 Email из запроса:', email);
     
@@ -368,13 +326,23 @@ router.post('/primary/submit', async (req, res) => {
     const dashboardToken = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
     const dashboardPassword = generateDashboardPassword();
     
-    const result = await pool.query(
-      'INSERT INTO primary_test_results (session_id, email, answers, dashboard_token, dashboard_password) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (session_id) DO UPDATE SET answers = $3, email = $2, dashboard_token = $4, dashboard_password = $5, updated_at = CURRENT_TIMESTAMP RETURNING *',
-      [sessionId, email, JSON.stringify(answers), dashboardToken, dashboardPassword]
-    );
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .upsert({
+        session_id: sessionId,
+        email: email,
+        answers: answers,
+        dashboard_token: dashboardToken,
+        dashboard_password: dashboardPassword,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
 
     console.log('✅ Результаты теста сохранены в БД');
-    res.json({ success: true, data: result.rows[0] });
+    res.json({ success: true, data });
   } catch (error) {
     console.error('❌ Ошибка при сохранении результатов теста:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -386,16 +354,18 @@ router.get('/primary/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
     
-    const result = await pool.query(
-      'SELECT * FROM primary_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .select('*')
+      .eq('session_id', sessionId)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error) throw error;
+    if (!data) {
       return res.status(404).json({ success: false, error: 'Test results not found' });
     }
 
-    res.json({ success: true, data: result.rows[0] });
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Error fetching primary test:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -407,16 +377,18 @@ router.get('/dashboard/:token', async (req, res) => {
   try {
     const { token } = req.params;
     
-    const result = await pool.query(
-      'SELECT * FROM primary_test_results WHERE dashboard_token = $1',
-      [token]
-    );
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .select('*')
+      .eq('dashboard_token', token)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error) throw error;
+    if (!data) {
       return res.status(404).json({ success: false, error: 'Dashboard not found' });
     }
 
-    res.json({ success: true, data: result.rows[0] });
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Error fetching dashboard by token:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -430,17 +402,19 @@ router.post('/verify-credentials', async (req, res) => {
     
     console.log('🔐 Проверяем credentials для sessionId:', sessionId, 'email:', email, 'password:', password);
     
-    const result = await pool.query(
-      'SELECT email, dashboard_password FROM primary_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .select('email, dashboard_password')
+      .eq('session_id', sessionId)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error) throw error;
+    if (!data) {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
-    const storedEmail = result.rows[0].email;
-    const storedPassword = result.rows[0].dashboard_password;
+    const storedEmail = data.email;
+    const storedPassword = data.dashboard_password;
     console.log('📧 Email из БД:', storedEmail);
     console.log('🔐 Пароль из БД:', storedPassword);
     
@@ -470,12 +444,20 @@ router.post('/additional/save', async (req, res) => {
   try {
     const { sessionId, testName, testUrl, testResult } = req.body;
     
-    const result = await pool.query(
-      'INSERT INTO additional_test_results (session_id, test_name, test_url, test_result) VALUES ($1, $2, $3, $4) RETURNING *',
-      [sessionId, testName, testUrl, testResult]
-    );
+    const { data, error } = await supabase
+      .from('additional_test_results')
+      .insert({
+        session_id: sessionId,
+        test_type: testName,
+        test_url: testUrl,
+        answers: testResult
+      })
+      .select()
+      .single();
 
-    res.json({ success: true, data: result.rows[0] });
+    if (error) throw error;
+
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Error saving additional test:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -496,47 +478,68 @@ router.post('/additional/save-result', async (req, res) => {
     }
     
     // Получаем email пользователя из primary_test_results
-    const primaryTest = await pool.query(
-      'SELECT email FROM primary_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data: primaryTest, error: primaryError } = await supabase
+      .from('primary_test_results')
+      .select('email')
+      .eq('session_id', sessionId)
+      .single();
     
-    if (primaryTest.rows.length === 0) {
+    if (primaryError || !primaryTest) {
       console.log('❌ Primary test не найден для sessionId:', sessionId);
       return res.status(404).json({ success: false, error: 'Primary test not found' });
     }
     
-    const email = primaryTest.rows[0].email;
+    const email = primaryTest.email;
     console.log('📧 Email пользователя:', email);
     console.log('✅ Primary test найден для sessionId:', sessionId);
     
     // Проверяем, существует ли уже результат для этого теста
-    const existingResult = await pool.query(
-      'SELECT id FROM additional_test_results WHERE session_id = $1 AND test_name = $2',
-      [sessionId, testName]
-    );
+    const { data: existingResult, error: existingError } = await supabase
+      .from('additional_test_results')
+      .select('id')
+      .eq('session_id', sessionId)
+      .eq('test_type', testName)
+      .single();
     
-    console.log('🔍 Существующий результат:', existingResult.rows);
+    console.log('🔍 Существующий результат:', existingResult);
     
     let result;
-    if (existingResult.rows.length > 0) {
+    if (existingResult) {
       // Обновляем существующий результат
       console.log('🔄 Обновляем существующий результат');
-      result = await pool.query(
-        'UPDATE additional_test_results SET test_result = $1, test_url = $2, email = $3 WHERE session_id = $4 AND test_name = $5 RETURNING *',
-        [testResult, testUrl, email, sessionId, testName]
-      );
+      const { data, error } = await supabase
+        .from('additional_test_results')
+        .update({
+          answers: testResult,
+          test_url: testUrl
+        })
+        .eq('session_id', sessionId)
+        .eq('test_type', testName)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      result = { data };
     } else {
       // Создаем новый результат
       console.log('➕ Создаем новый результат');
-      result = await pool.query(
-        'INSERT INTO additional_test_results (session_id, email, test_name, test_url, test_result) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [sessionId, email, testName, testUrl, testResult]
-      );
+      const { data, error } = await supabase
+        .from('additional_test_results')
+        .insert({
+          session_id: sessionId,
+          test_type: testName,
+          test_url: testUrl,
+          answers: testResult
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      result = { data };
     }
 
     console.log('✅ Результат теста сохранен в БД');
-    res.json({ success: true, data: result.rows[0] });
+    res.json({ success: true, data: result.data });
   } catch (error) {
     console.error('❌ Ошибка при сохранении результата теста:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -548,12 +551,15 @@ router.get('/additional/results/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
     
-    const result = await pool.query(
-      'SELECT * FROM additional_test_results WHERE session_id = $1 ORDER BY created_at DESC',
-      [sessionId]
-    );
+    const { data, error } = await supabase
+      .from('additional_test_results')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: false });
 
-    res.json({ success: true, results: result.rows });
+    if (error) throw error;
+
+    res.json({ success: true, results: data });
   } catch (error) {
     console.error('Error fetching additional tests:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -567,13 +573,16 @@ router.get('/additional/results-by-email/:email', async (req, res) => {
     
     console.log('📧 Загружаем результаты по email:', email);
     
-    const result = await pool.query(
-      'SELECT * FROM additional_test_results WHERE email = $1 ORDER BY created_at DESC',
-      [email]
-    );
+    const { data, error } = await supabase
+      .from('additional_test_results')
+      .select('*')
+      .eq('email', email)
+      .order('created_at', { ascending: false });
 
-    console.log('📊 Найдено результатов:', result.rows.length);
-    res.json({ success: true, results: result.rows });
+    if (error) throw error;
+
+    console.log('📊 Найдено результатов:', data.length);
+    res.json({ success: true, results: data });
   } catch (error) {
     console.error('Error fetching additional tests by email:', error);
     res.status(500).json({ success: false, error: error.message });

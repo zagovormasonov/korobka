@@ -1,6 +1,6 @@
 import express from 'express';
 import TelegramBot from 'node-telegram-bot-api';
-import { pool } from '../index.js';
+import { supabase } from '../index.js';
 
 const router = express.Router();
 
@@ -13,10 +13,19 @@ router.post('/psychologist-request', async (req, res) => {
     const { sessionId, name, phone, email, telegramUsername } = req.body;
     
     // Сохраняем заявку в базу данных
-    const result = await pool.query(
-      'INSERT INTO psychologist_requests (session_id, name, phone, email, telegram_username) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [sessionId, name, phone, email, telegramUsername]
-    );
+    const { data, error } = await supabase
+      .from('psychologist_requests')
+      .insert({
+        session_id: sessionId,
+        name: name,
+        phone: phone,
+        email: email,
+        telegram_username: telegramUsername
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
     
     // Отправляем уведомление в Telegram
     const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -31,7 +40,7 @@ router.post('/psychologist-request', async (req, res) => {
 
     await bot.sendMessage(chatId, message);
     
-    res.json({ success: true, data: result.rows[0] });
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Error sending psychologist request:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -41,11 +50,14 @@ router.post('/psychologist-request', async (req, res) => {
 // Получить заявки на подбор психолога
 router.get('/psychologist-requests', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM psychologist_requests ORDER BY created_at DESC'
-    );
+    const { data, error } = await supabase
+      .from('psychologist_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
     
-    res.json({ success: true, data: result.rows });
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Error fetching psychologist requests:', error);
     res.status(500).json({ success: false, error: error.message });

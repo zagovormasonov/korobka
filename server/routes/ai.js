@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { pool } from '../index.js';
+import { supabase } from '../index.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
@@ -188,16 +188,17 @@ router.post('/mascot-message/payment', async (req, res) => {
     console.log('🔑 Gemini API Key:', process.env.GEMINI_API_KEY ? 'установлен' : 'НЕ УСТАНОВЛЕН');
     
     // Получаем результаты теста
-    const testResult = await pool.query(
-      'SELECT answers FROM primary_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data: testResult, error } = await supabase
+      .from('primary_test_results')
+      .select('answers')
+      .eq('session_id', sessionId)
+      .single();
 
-    if (testResult.rows.length === 0) {
+    if (error || !testResult) {
       return res.status(404).json({ success: false, error: 'Test results not found' });
     }
 
-    const answers = testResult.rows[0].answers;
+    const answers = testResult.answers;
     
     const prompt = `Проведи глубокое исследование результатов психологического теста и создай персонализированное поддерживающее сообщение.
 
@@ -251,20 +252,21 @@ router.post('/mascot-message/dashboard', async (req, res) => {
     console.log('🔑 Gemini API Key:', process.env.GEMINI_API_KEY ? 'установлен' : 'НЕ УСТАНОВЛЕН');
     
     // Получаем результаты первичного теста
-    const primaryTest = await pool.query(
-      'SELECT answers, email FROM primary_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data: primaryTest, error } = await supabase
+      .from('primary_test_results')
+      .select('answers, email')
+      .eq('session_id', sessionId)
+      .single();
 
-    console.log('🔍 Результаты теста из БД:', primaryTest.rows);
+    console.log('🔍 Результаты теста из БД:', primaryTest);
 
-    if (primaryTest.rows.length === 0) {
+    if (error || !primaryTest) {
       console.log('❌ Результаты теста не найдены для sessionId:', sessionId);
       return res.status(404).json({ success: false, error: 'Test results not found' });
     }
 
-    const answers = primaryTest.rows[0].answers;
-    const email = primaryTest.rows[0].email;
+    const answers = primaryTest.answers;
+    const email = primaryTest.email;
     
     console.log('📊 Ответы теста:', answers);
     console.log('📧 Email из БД:', email);
@@ -318,22 +320,23 @@ router.post('/personal-plan', async (req, res) => {
     const { sessionId } = req.body;
     
     // Получаем все результаты тестов
-    const primaryTest = await pool.query(
-      'SELECT answers FROM primary_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data: primaryTest, error: primaryError } = await supabase
+      .from('primary_test_results')
+      .select('answers')
+      .eq('session_id', sessionId)
+      .single();
 
-    const additionalTests = await pool.query(
-      'SELECT test_name, test_result FROM additional_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data: additionalTests, error: additionalError } = await supabase
+      .from('additional_test_results')
+      .select('test_type, answers')
+      .eq('session_id', sessionId);
 
-    if (primaryTest.rows.length === 0) {
+    if (primaryError || !primaryTest) {
       return res.status(404).json({ success: false, error: 'Test results not found' });
     }
 
-    const primaryAnswers = primaryTest.rows[0].answers;
-    const additionalResults = additionalTests.rows;
+    const primaryAnswers = primaryTest.answers;
+    const additionalResults = additionalTests || [];
     
     const prompt = `Проведи комплексное исследование психологического профиля пользователя и создай детальный персональный план терапии.
 
@@ -402,22 +405,23 @@ router.post('/session-preparation', async (req, res) => {
     const { sessionId, specialistType } = req.body; // 'psychologist' или 'psychiatrist'
     
     // Получаем все результаты тестов
-    const primaryTest = await pool.query(
-      'SELECT answers FROM primary_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data: primaryTest, error: primaryError } = await supabase
+      .from('primary_test_results')
+      .select('answers')
+      .eq('session_id', sessionId)
+      .single();
 
-    const additionalTests = await pool.query(
-      'SELECT test_name, test_result FROM additional_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data: additionalTests, error: additionalError } = await supabase
+      .from('additional_test_results')
+      .select('test_type, answers')
+      .eq('session_id', sessionId);
 
-    if (primaryTest.rows.length === 0) {
+    if (primaryError || !primaryTest) {
       return res.status(404).json({ success: false, error: 'Test results not found' });
     }
 
-    const primaryAnswers = primaryTest.rows[0].answers;
-    const additionalResults = additionalTests.rows;
+    const primaryAnswers = primaryTest.answers;
+    const additionalResults = additionalTests || [];
     
     const specialistName = specialistType === 'psychologist' ? 'психологу' : 'психиатру';
     
@@ -487,22 +491,23 @@ router.post('/session-feedback', async (req, res) => {
     const { sessionId, feedbackText } = req.body;
     
     // Получаем все результаты тестов
-    const primaryTest = await pool.query(
-      'SELECT answers FROM primary_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data: primaryTest, error: primaryError } = await supabase
+      .from('primary_test_results')
+      .select('answers')
+      .eq('session_id', sessionId)
+      .single();
 
-    const additionalTests = await pool.query(
-      'SELECT test_name, test_result FROM additional_test_results WHERE session_id = $1',
-      [sessionId]
-    );
+    const { data: additionalTests, error: additionalError } = await supabase
+      .from('additional_test_results')
+      .select('test_type, answers')
+      .eq('session_id', sessionId);
 
-    if (primaryTest.rows.length === 0) {
+    if (primaryError || !primaryTest) {
       return res.status(404).json({ success: false, error: 'Test results not found' });
     }
 
-    const primaryAnswers = primaryTest.rows[0].answers;
-    const additionalResults = additionalTests.rows;
+    const primaryAnswers = primaryTest.answers;
+    const additionalResults = additionalTests || [];
     
     const prompt = `Проведи глубокое исследование эффективности терапевтического сеанса и создай детальный анализ с рекомендациями.
 
@@ -561,10 +566,17 @@ router.post('/session-feedback', async (req, res) => {
     const analysis = await callGeminiAI(prompt, 2000);
     
     // Сохраняем обратную связь в базу
-    await pool.query(
-      'INSERT INTO session_feedback (session_id, feedback_text, ai_response) VALUES ($1, $2, $3)',
-      [sessionId, feedbackText, analysis]
-    );
+    const { error: insertError } = await supabase
+      .from('session_feedback')
+      .insert({
+        session_id: sessionId,
+        feedback_text: feedbackText,
+        ai_response: analysis
+      });
+
+    if (insertError) {
+      console.error('Error saving feedback:', insertError);
+    }
 
     res.json({ success: true, analysis });
   } catch (error) {
