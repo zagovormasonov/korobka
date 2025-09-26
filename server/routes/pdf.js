@@ -6,16 +6,7 @@ const router = express.Router();
 // Проверяем, отключена ли PDF генерация
 const isPdfDisabled = process.env.DISABLE_PDF === 'true';
 
-// Функция для динамического импорта PDF библиотеки
-async function getHtmlPdf() {
-  try {
-    const htmlPdfModule = await import('html-pdf-node');
-    return htmlPdfModule.default || htmlPdfModule;
-  } catch (error) {
-    console.log('html-pdf-node не установлен, используем HTML режим');
-    return null;
-  }
-}
+// PDF генерация отключена, используем HTML с возможностью сохранения
 
 // Функция для правильного форматирования markdown в HTML
 function formatPlanContent(text) {
@@ -336,7 +327,10 @@ router.post('/personal-plan', async (req, res) => {
           <div class="header">
             <h1>Персональный план психического здоровья</h1>
             <p>Создан на основе результатов тестирования</p>
-            <button class="print-button" onclick="window.print()">Печать</button>
+            <div class="button-group">
+              <button class="print-button" onclick="window.print()">Сохранить как PDF</button>
+              <button class="download-button" onclick="downloadAsFile()">Скачать файл</button>
+            </div>
           </div>
           
           <div class="plan-content">
@@ -348,41 +342,43 @@ router.post('/personal-plan', async (req, res) => {
             <p>При возникновении кризисных ситуаций обращайтесь к специалистам.</p>
           </div>
         </div>
+        
+        <script>
+          function downloadAsFile() {
+            // Создаем текстовый файл с содержимым плана
+            const content = document.querySelector('.plan-content').innerText;
+            const filename = 'personal-plan.txt';
+            
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            
+            // Показываем инструкцию для PDF
+            setTimeout(() => {
+              alert('📄 Для сохранения как PDF:\\n\\n1. Нажмите Ctrl+P (или Cmd+P на Mac)\\n2. Выберите "Сохранить как PDF"\\n3. Нажмите "Сохранить"\\n\\nИли используйте кнопку "Сохранить как PDF" выше!');
+            }, 500);
+          }
+          
+          // Автоматически предлагаем сохранить при загрузке страницы
+          window.addEventListener('load', function() {
+            setTimeout(() => {
+              const shouldDownload = confirm('💾 Сохранить персональный план как PDF?\\n\\nНажмите "ОК" для открытия диалога печати, где можно выбрать "Сохранить как PDF"');
+              if (shouldDownload) {
+                window.print();
+              }
+            }, 1000);
+          });
+        </script>
       </body>
       </html>
     `;
 
-    // Пытаемся сгенерировать PDF, если библиотека доступна
-    const htmlPdf = await getHtmlPdf();
-    if (htmlPdf && !isPdfDisabled) {
-      try {
-        const options = {
-          format: 'A4',
-          margin: {
-            top: '20mm',
-            right: '15mm',
-            bottom: '20mm',
-            left: '15mm'
-          },
-          printBackground: true,
-          displayHeaderFooter: false
-        };
-
-        const file = { content: html };
-        const pdfBuffer = await htmlPdf.generatePdf(file, options);
-
-        // Отправляем PDF файл
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename="personal-plan.pdf"');
-        res.send(pdfBuffer);
-        return;
-      } catch (pdfError) {
-        console.error('Ошибка генерации PDF:', pdfError);
-        // Если ошибка PDF, отправляем HTML
-      }
-    }
-
-    // Если PDF недоступен, отправляем HTML
+    // Отправляем HTML с улучшенными стилями для печати
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   } catch (error) {
