@@ -8,7 +8,7 @@
 
 ### 1. Неправильный URL в настройках платежа
 - **Проблема**: `FRONTEND_URL` не установлен в Render.com
-- **Решение**: Исправлено в коде - теперь используется `RENDER_EXTERNAL_URL` с fallback на `https://korobka-1.onrender.com`
+- **Решение**: Исправлено в коде - теперь используется `RENDER_EXTERNAL_URL` с fallback на `https://idenself.com`
 
 ### 2. Отсутствие токена дашборда
 - **Проблема**: `dashboard_token` и `dashboard_password` не сохраняются в базе данных
@@ -75,7 +75,7 @@ ORDER BY ordinal_position;
 
 ### 1. Обновлен URL платежа
 ```javascript
-SuccessURL: `${process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL || 'https://korobka-1.onrender.com'}/payment-success?sessionId=${sessionId}`
+SuccessURL: `${process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL || 'https://idenself.com'}/payment-success?sessionId=${sessionId}`
 ```
 
 ### 2. Добавлено логирование

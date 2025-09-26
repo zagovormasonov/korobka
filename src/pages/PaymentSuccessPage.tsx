@@ -62,7 +62,9 @@ const PaymentSuccessPage: React.FC = () => {
   const sendEmailWithData = async (email: string, password: string, token: string) => {
     setSendingEmail(true);
     try {
-      const dashboardUrl = `${window.location.origin}/lk/${token}`;
+      // Используем правильный домен для ссылки в письме
+      const baseUrl = process.env.REACT_APP_FRONTEND_URL || window.location.origin;
+      const dashboardUrl = `${baseUrl}/lk/${token}`;
       const success = await sendDashboardAccessEmail({
         userEmail: email,
         dashboardPassword: password,
@@ -90,7 +92,8 @@ const PaymentSuccessPage: React.FC = () => {
 
   const getDashboardUrl = () => {
     if (!dashboardToken) return '';
-    return `${window.location.origin}/lk/${dashboardToken}`;
+    const baseUrl = process.env.REACT_APP_FRONTEND_URL || window.location.origin;
+    return `${baseUrl}/lk/${dashboardToken}`;
   };
 
   const copyToClipboard = async () => {

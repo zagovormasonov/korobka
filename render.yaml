@@ -44,3 +44,5 @@ services:
         value: true
       - key: FRONTEND_URL
         value: https://idenself.com
+      - key: REACT_APP_FRONTEND_URL
+        value: https://idenself.com

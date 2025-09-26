@@ -40,8 +40,8 @@ router.post('/create', async (req, res) => {
     }
     
     console.log('🆔 OrderId:', orderId, '(длина:', orderId.length, 'символов)');
-    console.log('🌐 SuccessURL:', `${process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL || 'https://korobka-1.onrender.com'}/payment-success?sessionId=${sessionId}`);
-    console.log('🌐 FailURL:', `${process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL || 'https://korobka-1.onrender.com'}/payment?sessionId=${sessionId}&payment=failed`);
+    console.log('🌐 SuccessURL:', `${process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL || 'https://idenself.com'}/payment-success?sessionId=${sessionId}`);
+    console.log('🌐 FailURL:', `${process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL || 'https://idenself.com'}/payment?sessionId=${sessionId}&payment=failed`);
     
     const paymentData = {
       TerminalKey: terminalKey,
@@ -49,8 +49,8 @@ router.post('/create', async (req, res) => {
       OrderId: orderId,
       Description: 'Персональный план психического здоровья',
       CustomerKey: sessionId,
-      SuccessURL: `${process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL || 'https://korobka-1.onrender.com'}/payment-success?sessionId=${sessionId}`,
-      FailURL: `${process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL || 'https://korobka-1.onrender.com'}/payment?sessionId=${sessionId}&payment=failed`,
+      SuccessURL: `${process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL || 'https://idenself.com'}/payment-success?sessionId=${sessionId}`,
+      FailURL: `${process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL || 'https://idenself.com'}/payment?sessionId=${sessionId}&payment=failed`,
       Receipt: {
         Email: 'test@example.com',
         Taxation: 'usn_income',
