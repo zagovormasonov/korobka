@@ -63,8 +63,15 @@ const PaymentSuccessPage: React.FC = () => {
     setSendingEmail(true);
     try {
       // Используем правильный домен для ссылки в письме
-      const baseUrl = process.env.REACT_APP_FRONTEND_URL || window.location.origin;
+      // Принудительно используем idenself.com для писем
+      const baseUrl = process.env.REACT_APP_FRONTEND_URL || 'https://idenself.com';
+      console.log('🔧 REACT_APP_FRONTEND_URL:', process.env.REACT_APP_FRONTEND_URL);
+      console.log('🌐 window.location.origin:', window.location.origin);
+      console.log('📧 Используемый baseUrl для письма:', baseUrl);
+      
       const dashboardUrl = `${baseUrl}/lk/${token}`;
+      console.log('🔗 Финальный URL для письма:', dashboardUrl);
+      
       const success = await sendDashboardAccessEmail({
         userEmail: email,
         dashboardPassword: password,
@@ -92,7 +99,11 @@ const PaymentSuccessPage: React.FC = () => {
 
   const getDashboardUrl = () => {
     if (!dashboardToken) return '';
+    // Для отображения можем использовать текущий домен, но для писем - всегда idenself.com
     const baseUrl = process.env.REACT_APP_FRONTEND_URL || window.location.origin;
+    console.log('🔧 REACT_APP_FRONTEND_URL для отображения:', process.env.REACT_APP_FRONTEND_URL);
+    console.log('🌐 window.location.origin для отображения:', window.location.origin);
+    console.log('📧 Используемый baseUrl для отображения:', baseUrl);
     return `${baseUrl}/lk/${dashboardToken}`;
   };
 
