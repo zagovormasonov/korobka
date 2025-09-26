@@ -13,6 +13,9 @@
     "start": "node server/index.js",
     "init-db": "node server/scripts/init-db.js",
     "init-supabase": "node server/scripts/init-supabase.js",
+    "migrate:add-email": "node server/scripts/migrate-add-email.js",
+    "test-domain": "node test-domain.js",
+    "build:test": "npm run build && NODE_ENV=production node server/index.js",
     "postbuild": "echo 'Build completed successfully'",
     "check-deployment": "node check-deployment.js"
   },

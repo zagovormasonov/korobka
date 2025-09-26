@@ -514,7 +514,7 @@ router.post('/additional/save-result', async (req, res) => {
       .from('additional_test_results')
       .select('id')
       .eq('session_id', sessionId)
-      .eq('test_type', testName)
+      .eq('test_name', testName)
       .single();
     
     console.log('🔍 Существующий результат:', existingResult);
@@ -526,11 +526,12 @@ router.post('/additional/save-result', async (req, res) => {
       const { data, error } = await supabase
         .from('additional_test_results')
         .update({
-          answers: testResult,
-          test_url: testUrl
+          test_result: testResult,
+          test_url: testUrl,
+          email: email
         })
         .eq('session_id', sessionId)
-        .eq('test_type', testName)
+        .eq('test_name', testName)
         .select()
         .single();
       
@@ -543,9 +544,10 @@ router.post('/additional/save-result', async (req, res) => {
         .from('additional_test_results')
         .insert({
           session_id: sessionId,
-          test_type: testName,
+          email: email,
+          test_name: testName,
           test_url: testUrl,
-          answers: testResult
+          test_result: testResult
         })
         .select()
         .single();

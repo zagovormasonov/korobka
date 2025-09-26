@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Диагностика - idenself.com</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; }
+        button {
+            background-color: #00695c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #004d40;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Диагностика idenself.com</h1>
+    
+    <div class="status info">
+        <strong>Домен:</strong> <span id="currentDomain"></span><br>
+        <strong>Протокол:</strong> <span id="protocol"></span><br>
+        <strong>User Agent:</strong> <span id="userAgent"></span>
+    </div>
+
+    <h2>Тесты подключения:</h2>
+    
+    <button onclick="testMainApp()">Тест главного приложения</button>
+    <button onclick="testAPI()">Тест API</button>
+    <button onclick="testStatic()">Тест статических файлов</button>
+    <button onclick="clearCache()">Очистить кэш</button>
+    
+    <div id="results"></div>
+
+    <h2>Информация о сессии:</h2>
+    <div class="status info">
+        <strong>LocalStorage:</strong> <span id="localStorage"></span><br>
+        <strong>SessionStorage:</strong> <span id="sessionStorage"></span><br>
+        <strong>Cookies:</strong> <span id="cookies"></span>
+    </div>
+
+    <script>
+        // Показываем базовую информацию
+        document.getElementById('currentDomain').textContent = window.location.hostname;
+        document.getElementById('protocol').textContent = window.location.protocol;
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        
+        // Информация о хранилище
+        document.getElementById('localStorage').textContent = Object.keys(localStorage).length + ' элементов';
+        document.getElementById('sessionStorage').textContent = Object.keys(sessionStorage).length + ' элементов';
+        document.getElementById('cookies').textContent = document.cookie ? 'Есть' : 'Нет';
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        async function testMainApp() {
+            addResult('Тестируем главное приложение...', 'info');
+            try {
+                const response = await fetch('/');
+                if (response.ok) {
+                    const text = await response.text();
+                    if (text.includes('root')) {
+                        addResult('✅ Главная страница загружается корректно', 'success');
+                    } else {
+                        addResult('⚠️ Главная страница загружается, но содержимое подозрительное', 'error');
+                    }
+                } else {
+                    addResult(`❌ Ошибка загрузки главной страницы: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Ошибка подключения к главной странице: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAPI() {
+            addResult('Тестируем API...', 'info');
+            try {
+                const response = await fetch('/api/tests/primary/questions');
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ API работает, получено ${data.length} вопросов`, 'success');
+                } else {
+                    addResult(`❌ Ошибка API: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Ошибка подключения к API: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStatic() {
+            addResult('Тестируем статические файлы...', 'info');
+            try {
+                const response = await fetch('/mascot.png');
+                if (response.ok) {
+                    addResult('✅ Статические файлы загружаются', 'success');
+                } else {
+                    addResult(`❌ Ошибка загрузки статических файлов: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Ошибка подключения к статическим файлам: ${error.message}`, 'error');
+            }
+        }
+
+        function clearCache() {
+            localStorage.clear();
+            sessionStorage.clear();
+            addResult('🧹 Кэш очищен, перезагрузите страницу', 'info');
+        }
+
+        // Автоматический тест при загрузке
+        window.onload = function() {
+            addResult('🚀 Диагностика запущена', 'info');
+            setTimeout(() => {
+                testMainApp();
+                setTimeout(() => testAPI(), 1000);
+                setTimeout(() => testStatic(), 2000);
+            }, 500);
+        };
+    </script>
+</body>
+</html>

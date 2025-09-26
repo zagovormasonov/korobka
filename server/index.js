@@ -114,11 +114,25 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// SPA fallback - все остальные запросы возвращают index.html
+// Статические файлы для production
 if (process.env.NODE_ENV === 'production') {
+  // Отдача статических файлов из папки dist
+  app.use(express.static(path.join(projectRoot, 'dist')));
+  
+  // SPA fallback - все остальные запросы (не API) возвращают index.html
   app.get('*', (req, res) => {
+    // Не перенаправляем API запросы
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    
+    // Устанавливаем правильные заголовки для HTML
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.sendFile(path.join(projectRoot, 'dist', 'index.html'));
   });
+} else {
+  // Для разработки отдаем статические файлы из public
+  app.use(express.static(path.join(projectRoot, 'public')));
 }
 
 // Supabase health check
