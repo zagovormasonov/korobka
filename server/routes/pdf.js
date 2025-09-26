@@ -6,59 +6,34 @@ const router = express.Router();
 // Проверяем, отключена ли PDF генерация
 const isPdfDisabled = process.env.DISABLE_PDF === 'true';
 
-// Функция для форматирования содержимого плана
+// Простая функция для очистки и базового форматирования текста
 function formatPlanContent(text) {
   if (!text) return '';
   
-  // Сначала убираем все лишние символы
-  let formatted = text
-    // Убираем множественные символы
-    .replace(/\*{3,}/g, '') 
-    .replace(/#{4,}/g, '')  
-    .replace(/-{4,}/g, '---') 
+  // Убираем все markdown символы и создаем чистый текст
+  return text
+    // Убираем лишние символы
+    .replace(/\*{2,}/g, '') // Убираем звездочки
+    .replace(/#{1,}/g, '') // Убираем решетки
+    .replace(/-{3,}/g, '') // Убираем длинные тире
+    .replace(/[_~`]/g, '') // Убираем другие markdown символы
     
-    // Обрабатываем заголовки
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // Заменяем двойные переносы на разделители параграфов
+    .replace(/\n\s*\n/g, '</p><p>')
     
-    // Обрабатываем жирный текст
-    .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
+    // Оборачиваем в параграф
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>')
     
-    // Обрабатываем курсив (простой способ)
-    .replace(/\*([^*]+?)\*/g, '<em>$1</em>')
+    // Убираем пустые параграфы
+    .replace(/<p>\s*<\/p>/g, '')
     
-    // Обрабатываем нумерованные списки
-    .replace(/^(\d+)\.\s+(.+)$/gm, '<li>$2</li>')
+    // Заменяем одинарные переносы на пробелы для лучшего отображения
+    .replace(/\n/g, ' ')
     
-    // Обрабатываем маркированные списки
-    .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
-    
-    // Заменяем тройное тире на горизонтальную линию
-    .replace(/^---$/gm, '<hr>')
-    
-    // Разделяем на параграфы (двойные переносы)
-    .split(/\n\s*\n/)
-    .map(paragraph => {
-      paragraph = paragraph.trim();
-      if (!paragraph) return '';
-      
-      // Если это заголовок, HR или список - не оборачиваем в <p>
-      if (paragraph.startsWith('<h') || paragraph.startsWith('<hr') || paragraph.includes('<li>')) {
-        // Для списков оборачиваем в <ul>
-        if (paragraph.includes('<li>')) {
-          return '<ul>' + paragraph + '</ul>';
-        }
-        return paragraph;
-      }
-      
-      // Обычный параграф
-      return '<p>' + paragraph.replace(/\n/g, '<br>') + '</p>';
-    })
-    .filter(p => p) // Убираем пустые
-    .join('\n');
-  
-  return formatted;
+    // Убираем лишние пробелы
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // Генерировать PDF персонального плана
@@ -98,80 +73,113 @@ router.post('/personal-plan', async (req, res) => {
         <meta charset="UTF-8">
         <title>Персональный план</title>
         <style>
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+          }
+          
           body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 40px;
-            color: #333;
-            max-width: 800px;
-            margin: 40px auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.7;
+            color: #2c3e50;
+            background: #f8f9fa;
+            padding: 20px;
           }
-          h1 {
-            color: #00695c;
-            border-bottom: 2px solid #00695c;
-            padding-bottom: 10px;
-          }
-          h2 {
-            color: #00695c;
-            margin-top: 30px;
-          }
-          h3 {
-            color: #00695c;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 40px;
-          }
+          
           .content {
             max-width: 800px;
             margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
           }
-          ul, ol {
-            margin-left: 20px;
-          }
-          li {
-            margin-bottom: 8px;
-          }
-          .footer {
-            margin-top: 50px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-          }
-          .print-button {
-            background: #00695c;
+          
+          .header {
+            background: linear-gradient(135deg, #00695c 0%, #4db6ac 100%);
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
+            padding: 40px 30px;
+            text-align: center;
+          }
+          
+          .header h1 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+          }
+          
+          .header p {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 25px;
+          }
+          
+          .print-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 25px;
+            border-radius: 25px;
             cursor: pointer;
-            margin: 20px 0;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
           }
-          p {
-            margin-bottom: 15px;
+          
+          .print-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+          }
+          
+          .plan-content {
+            padding: 40px;
+            font-size: 16px;
+            line-height: 1.8;
+          }
+          
+          .plan-content p {
+            margin-bottom: 20px;
             text-align: justify;
+            color: #34495e;
           }
-          strong {
+          
+          .plan-content p:first-child {
+            font-size: 18px;
             color: #00695c;
-            font-weight: 600;
+            font-weight: 500;
+            border-left: 4px solid #00695c;
+            padding-left: 20px;
+            margin-bottom: 30px;
+            text-align: left;
           }
-          em {
-            color: #666;
-            font-style: italic;
+          
+          .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
           }
-          ul {
-            margin: 15px 0;
-            padding-left: 25px;
+          
+          .footer p {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 10px;
           }
-          li {
-            margin-bottom: 8px;
-            line-height: 1.5;
-          }
-          hr {
-            border: none;
-            height: 2px;
-            background: linear-gradient(to right, #00695c, transparent);
-            margin: 25px 0;
+          
+          @media print {
+            body { 
+              background: white;
+              padding: 0; 
+            }
+            .print-button { 
+              display: none; 
+            }
+            .content { 
+              box-shadow: none;
+              border-radius: 0;
+            }
           }
         </style>
       </head>
@@ -243,61 +251,122 @@ router.post('/session-preparation', async (req, res) => {
         <meta charset="UTF-8">
         <title>Подготовка к сеансу</title>
         <style>
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+          }
+          
           body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 40px;
-            color: #333;
-            max-width: 800px;
-            margin: 40px auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.7;
+            color: #2c3e50;
+            background: #f8f9fa;
+            padding: 20px;
           }
-          h1 {
-            color: #00695c;
-            border-bottom: 2px solid #00695c;
-            padding-bottom: 10px;
-          }
-          h2 {
-            color: #00695c;
-            margin-top: 30px;
-          }
-          h3 {
-            color: #00695c;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 40px;
-          }
+          
           .content {
             max-width: 800px;
             margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
           }
-          ul, ol {
-            margin-left: 20px;
-          }
-          li {
-            margin-bottom: 8px;
-          }
-          .footer {
-            margin-top: 50px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-          }
-          .warning {
-            background: #fff7e6;
-            border: 1px solid #ffd591;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 20px 0;
-          }
-          .print-button {
-            background: #00695c;
+          
+          .header {
+            background: linear-gradient(135deg, #00695c 0%, #4db6ac 100%);
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
+            padding: 40px 30px;
+            text-align: center;
+          }
+          
+          .header h1 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+          }
+          
+          .header p {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 25px;
+          }
+          
+          .print-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 25px;
+            border-radius: 25px;
             cursor: pointer;
-            margin: 20px 0;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+          }
+          
+          .print-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+          }
+          
+          .warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left: 4px solid #f39c12;
+            padding: 20px;
+            margin: 0;
+            color: #856404;
+            font-weight: 500;
+          }
+          
+          .preparation-content {
+            padding: 40px;
+            font-size: 16px;
+            line-height: 1.8;
+          }
+          
+          .preparation-content p {
+            margin-bottom: 20px;
+            text-align: justify;
+            color: #34495e;
+          }
+          
+          .preparation-content p:first-child {
+            font-size: 18px;
+            color: #00695c;
+            font-weight: 500;
+            border-left: 4px solid #00695c;
+            padding-left: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+          }
+          
+          .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+          }
+          
+          .footer p {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 10px;
+          }
+          
+          @media print {
+            body { 
+              background: white;
+              padding: 0; 
+            }
+            .print-button { 
+              display: none; 
+            }
+            .content { 
+              box-shadow: none;
+              border-radius: 0;
+            }
           }
         </style>
       </head>
