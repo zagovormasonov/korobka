@@ -148,6 +148,19 @@ app.get('/api/test-cors', (req, res) => {
   });
 });
 
+// Test deployment version endpoint
+app.get('/api/test-version', (req, res) => {
+  console.log('🔍 Version check endpoint called');
+  
+  res.json({ 
+    success: true, 
+    version: '2.0-table-schema-fix',
+    message: 'Server updated with test_type column fix',
+    timestamp: new Date().toISOString(),
+    fixApplied: 'test_name -> test_type column name fix'
+  });
+});
+
 // Статические файлы для production
 if (process.env.NODE_ENV === 'production') {
   // Отдача статических файлов из папки dist

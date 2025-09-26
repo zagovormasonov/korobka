@@ -485,9 +485,10 @@ router.post('/additional/save-result', async (req, res) => {
   try {
     const { sessionId, testName, testUrl, testResult } = req.body;
     
-    console.log('💾 Получен запрос на сохранение результата теста');
+    console.log('💾 [ВЕРСИЯ 2.0] Получен запрос на сохранение результата теста');
     console.log('📋 Тело запроса:', JSON.stringify(req.body, null, 2));
     console.log('💾 Извлеченные данные:', { sessionId, testName, testUrl, testResult });
+    console.log('🔧 Используем колонку test_type (не test_name)');
     
     // Проверяем все обязательные поля
     if (!sessionId || sessionId.trim() === '') {
@@ -522,12 +523,18 @@ router.post('/additional/save-result', async (req, res) => {
     console.log('✅ Primary test найден для sessionId:', sessionId);
     
     // Проверяем, существует ли уже результат для этого теста
+    console.log('🔍 Ищем существующий результат с test_type =', testName);
     const { data: existingResult, error: existingError } = await supabase
       .from('additional_test_results')
       .select('id')
       .eq('session_id', sessionId)
       .eq('test_type', testName)
       .single();
+    
+    if (existingError && existingError.code !== 'PGRST116') {
+      console.log('❌ Ошибка при поиске существующего результата:', existingError);
+      throw existingError;
+    }
     
     console.log('🔍 Существующий результат:', existingResult);
     
@@ -551,6 +558,12 @@ router.post('/additional/save-result', async (req, res) => {
     } else {
       // Создаем новый результат
       console.log('➕ Создаем новый результат');
+      console.log('📝 Данные для вставки:', {
+        session_id: sessionId,
+        test_type: testName,
+        test_url: testUrl,
+        test_result: testResult
+      });
       const { data, error } = await supabase
         .from('additional_test_results')
         .insert({
