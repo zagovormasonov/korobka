@@ -136,6 +136,7 @@ router.post('/personal-plan', async (req, res) => {
       <head>
         <meta charset="UTF-8">
         <title>Персональный план</title>
+        <!-- CSS Version: 2.0 - Force browser refresh -->
         <style>
           * {
             box-sizing: border-box;
@@ -358,6 +359,9 @@ router.post('/personal-plan', async (req, res) => {
     
     // Отправляем HTML с улучшенными стилями для печати
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.send(html);
   } catch (error) {
     console.error('Error generating plan:', error);
