@@ -10,42 +10,55 @@ const isPdfDisabled = process.env.DISABLE_PDF === 'true';
 function formatPlanContent(text) {
   if (!text) return '';
   
-  return text
-    // Убираем лишние markdown символы
-    .replace(/###\s*/g, '<h3>') // Заголовки h3
-    .replace(/##\s*/g, '<h2>')  // Заголовки h2
-    .replace(/#\s*/g, '<h1>')   // Заголовки h1
+  // Сначала убираем все лишние символы
+  let formatted = text
+    // Убираем множественные символы
+    .replace(/\*{3,}/g, '') 
+    .replace(/#{4,}/g, '')  
+    .replace(/-{4,}/g, '---') 
+    
+    // Обрабатываем заголовки
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
     
     // Обрабатываем жирный текст
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
     
-    // Обрабатываем курсив
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    // Обрабатываем курсив (простой способ)
+    .replace(/\*([^*]+?)\*/g, '<em>$1</em>')
     
-    // Обрабатываем списки
-    .replace(/^\d+\.\s+(.*)$/gm, '<li>$1</li>')
-    .replace(/^-\s+(.*)$/gm, '<li>$1</li>')
-    .replace(/^•\s+(.*)$/gm, '<li>$1</li>')
+    // Обрабатываем нумерованные списки
+    .replace(/^(\d+)\.\s+(.+)$/gm, '<li>$2</li>')
     
-    // Оборачиваем списки в ul/ol
-    .replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>')
+    // Обрабатываем маркированные списки
+    .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
     
-    // Обрабатываем параграфы
-    .replace(/\n\n+/g, '</p><p>')
-    .replace(/\n/g, '<br>')
+    // Заменяем тройное тире на горизонтальную линию
+    .replace(/^---$/gm, '<hr>')
     
-    // Убираем лишние символы
-    .replace(/\*{3,}/g, '') // Убираем звездочки
-    .replace(/#{4,}/g, '')  // Убираем лишние решетки
-    .replace(/-{3,}/g, '<hr>') // Заменяем тире на горизонтальную линию
-    
-    // Оборачиваем в параграфы
-    .replace(/^/, '<p>')
-    .replace(/$/, '</p>')
-    
-    // Убираем пустые параграфы
-    .replace(/<p>\s*<\/p>/g, '')
-    .replace(/<p><br><\/p>/g, '');
+    // Разделяем на параграфы (двойные переносы)
+    .split(/\n\s*\n/)
+    .map(paragraph => {
+      paragraph = paragraph.trim();
+      if (!paragraph) return '';
+      
+      // Если это заголовок, HR или список - не оборачиваем в <p>
+      if (paragraph.startsWith('<h') || paragraph.startsWith('<hr') || paragraph.includes('<li>')) {
+        // Для списков оборачиваем в <ul>
+        if (paragraph.includes('<li>')) {
+          return '<ul>' + paragraph + '</ul>';
+        }
+        return paragraph;
+      }
+      
+      // Обычный параграф
+      return '<p>' + paragraph.replace(/\n/g, '<br>') + '</p>';
+    })
+    .filter(p => p) // Убираем пустые
+    .join('\n');
+  
+  return formatted;
 }
 
 // Генерировать PDF персонального плана
@@ -94,16 +107,16 @@ router.post('/personal-plan', async (req, res) => {
             margin: 40px auto;
           }
           h1 {
-            color: #1890ff;
-            border-bottom: 2px solid #1890ff;
+            color: #00695c;
+            border-bottom: 2px solid #00695c;
             padding-bottom: 10px;
           }
           h2 {
-            color: #52c41a;
+            color: #00695c;
             margin-top: 30px;
           }
           h3 {
-            color: #fa8c16;
+            color: #00695c;
           }
           .header {
             text-align: center;
@@ -126,13 +139,39 @@ router.post('/personal-plan', async (req, res) => {
             color: #666;
           }
           .print-button {
-            background: #1890ff;
+            background: #00695c;
             color: white;
             border: none;
             padding: 10px 20px;
             border-radius: 6px;
             cursor: pointer;
             margin: 20px 0;
+          }
+          p {
+            margin-bottom: 15px;
+            text-align: justify;
+          }
+          strong {
+            color: #00695c;
+            font-weight: 600;
+          }
+          em {
+            color: #666;
+            font-style: italic;
+          }
+          ul {
+            margin: 15px 0;
+            padding-left: 25px;
+          }
+          li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+          }
+          hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, #00695c, transparent);
+            margin: 25px 0;
           }
         </style>
       </head>
@@ -213,16 +252,16 @@ router.post('/session-preparation', async (req, res) => {
             margin: 40px auto;
           }
           h1 {
-            color: #1890ff;
-            border-bottom: 2px solid #1890ff;
+            color: #00695c;
+            border-bottom: 2px solid #00695c;
             padding-bottom: 10px;
           }
           h2 {
-            color: #52c41a;
+            color: #00695c;
             margin-top: 30px;
           }
           h3 {
-            color: #fa8c16;
+            color: #00695c;
           }
           .header {
             text-align: center;
@@ -252,7 +291,7 @@ router.post('/session-preparation', async (req, res) => {
             margin: 20px 0;
           }
           .print-button {
-            background: #1890ff;
+            background: #00695c;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -275,7 +314,7 @@ router.post('/session-preparation', async (req, res) => {
           </div>
           
           <div class="preparation-content">
-            ${preparation.replace(/\n/g, '<br>')}
+            ${formatPlanContent(preparation)}
           </div>
           
           <div class="footer">
