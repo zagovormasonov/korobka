@@ -485,10 +485,10 @@ router.post('/additional/save-result', async (req, res) => {
   try {
     const { sessionId, testName, testUrl, testResult } = req.body;
     
-    console.log('💾 [ВЕРСИЯ 2.0] Получен запрос на сохранение результата теста');
+    console.log('💾 [ВЕРСИЯ 2.1] Получен запрос на сохранение результата теста');
     console.log('📋 Тело запроса:', JSON.stringify(req.body, null, 2));
     console.log('💾 Извлеченные данные:', { sessionId, testName, testUrl, testResult });
-    console.log('🔧 Используем колонку test_type (не test_name)');
+    console.log('🔧 Используем колонки: test_type и answers (не test_name и test_result)');
     
     // Проверяем все обязательные поля
     if (!sessionId || sessionId.trim() === '') {
@@ -545,7 +545,7 @@ router.post('/additional/save-result', async (req, res) => {
       const { data, error } = await supabase
         .from('additional_test_results')
         .update({
-          test_result: testResult,
+          answers: testResult,
           test_url: testUrl
         })
         .eq('session_id', sessionId)
@@ -562,7 +562,7 @@ router.post('/additional/save-result', async (req, res) => {
         session_id: sessionId,
         test_type: testName,
         test_url: testUrl,
-        test_result: testResult
+        answers: testResult
       });
       const { data, error } = await supabase
         .from('additional_test_results')
@@ -570,7 +570,7 @@ router.post('/additional/save-result', async (req, res) => {
           session_id: sessionId,
           test_type: testName,
           test_url: testUrl,
-          test_result: testResult
+          answers: testResult
         })
         .select()
         .single();

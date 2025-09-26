@@ -154,10 +154,10 @@ app.get('/api/test-version', (req, res) => {
   
   res.json({ 
     success: true, 
-    version: '2.0-table-schema-fix',
-    message: 'Server updated with test_type column fix',
+    version: '2.1-column-names-fix',
+    message: 'Server updated with correct column names',
     timestamp: new Date().toISOString(),
-    fixApplied: 'test_name -> test_type column name fix'
+    fixApplied: 'test_name -> test_type, test_result -> answers'
   });
 });
 

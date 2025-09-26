@@ -336,7 +336,7 @@ router.post('/personal-plan', async (req, res) => {
     // Получаем результаты дополнительных тестов по email
     const { data: additionalTests, error: additionalError } = await supabase
       .from('additional_test_results')
-      .select('test_type, test_result')
+      .select('test_type, answers')
       .eq('email', userEmail);
 
     // Определяем пол пользователя из ответов
@@ -347,7 +347,7 @@ router.post('/personal-plan', async (req, res) => {
     let secondaryTestResults = 'Дополнительные тесты не пройдены';
     if (additionalTests && additionalTests.length > 0) {
       secondaryTestResults = additionalTests.map(test =>
-        `${test.test_type}: ${test.test_result}`
+        `${test.test_type}: ${test.answers}`
       ).join('; ');
     }
 
@@ -399,7 +399,7 @@ router.post('/session-preparation', async (req, res) => {
     // Получаем результаты дополнительных тестов по email
     const { data: additionalTests, error: additionalError } = await supabase
       .from('additional_test_results')
-      .select('test_type, test_result')
+      .select('test_type, answers')
       .eq('email', userEmail);
 
     // Формируем результаты дополнительных тестов
@@ -498,7 +498,7 @@ router.post('/session-feedback', async (req, res) => {
     // Получаем результаты дополнительных тестов по email
     const { data: additionalTests, error: additionalError } = await supabase
       .from('additional_test_results')
-      .select('test_type, test_result')
+      .select('test_type, answers')
       .eq('email', userEmail);
 
     // Формируем результаты дополнительных тестов
