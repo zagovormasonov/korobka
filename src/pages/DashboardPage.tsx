@@ -146,6 +146,9 @@ const DashboardPage: React.FC = () => {
 
   const fetchAdditionalTestResults = async () => {
     try {
+      console.log('🔄 [FETCH RESULTS] Начинаем загрузку результатов дополнительных тестов');
+      console.log('🔄 [FETCH RESULTS] Текущее состояние testResults:', testResults);
+      
       // Проверяем, что sessionId существует
       if (!sessionId || sessionId.trim() === '') {
         console.log('❌ SessionId пустой, пропускаем загрузку результатов');
@@ -186,7 +189,9 @@ const DashboardPage: React.FC = () => {
           }
         });
         setTestResults(resultsMap);
-        console.log('📊 Загружено результатов дополнительных тестов:', data.results.length);
+        console.log('📊 [FETCH RESULTS] Загружено результатов дополнительных тестов:', data.results.length);
+        console.log('📊 [FETCH RESULTS] Новое состояние testResults:', resultsMap);
+        console.log('📊 [FETCH RESULTS] Данные из API:', data.results);
       }
     } catch (error) {
       console.error('Error fetching additional test results:', error);
@@ -261,8 +266,13 @@ const DashboardPage: React.FC = () => {
 
       if (response.ok) {
         message.success('Результат теста сохранен!');
-        // Обновляем состояние завершенности тестов
-        fetchAdditionalTestResults();
+        // Сначала обновляем локальное состояние немедленно
+        setTestResults(prev => ({ ...prev, [testId]: result.trim() }));
+        
+        // Затем через небольшую задержку загружаем данные с сервера для синхронизации
+        setTimeout(() => {
+          fetchAdditionalTestResults();
+        }, 1000);
       } else {
         message.error('Ошибка при сохранении результата');
       }
