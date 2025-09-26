@@ -167,8 +167,8 @@ const DashboardPage: React.FC = () => {
       const userEmail = primaryData.data.email;
       console.log('📧 Email пользователя для загрузки результатов:', userEmail);
       
-      // Загружаем результаты дополнительных тестов по email
-      const response = await apiRequest(`api/tests/additional/results-by-email/${encodeURIComponent(userEmail)}`);
+      // Загружаем результаты дополнительных тестов по sessionId
+      const response = await apiRequest(`api/tests/additional/results/${sessionId}`);
       
       if (!response.ok) {
         console.error('❌ Ошибка HTTP:', response.status, response.statusText);

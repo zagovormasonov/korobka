@@ -599,17 +599,25 @@ router.get('/additional/results/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
     
+    console.log('🔍 [RESULTS BY SESSION] Загружаем результаты по sessionId:', sessionId);
+    
     const { data, error } = await supabase
       .from('additional_test_results')
       .select('*')
       .eq('session_id', sessionId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    console.log('🔍 [RESULTS BY SESSION] Найдено записей для sessionId', sessionId, ':', data?.length || 0);
+    console.log('🔍 [RESULTS BY SESSION] Записи для sessionId:', data);
 
-    res.json({ success: true, results: data });
+    if (error) {
+      console.error('❌ [RESULTS BY SESSION] Ошибка запроса:', error);
+      throw error;
+    }
+
+    res.json({ success: true, results: data || [] });
   } catch (error) {
-    console.error('Error fetching additional tests:', error);
+    console.error('❌ [RESULTS BY SESSION] Error fetching additional tests:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -619,20 +627,35 @@ router.get('/additional/results-by-email/:email', async (req, res) => {
   try {
     const { email } = req.params;
     
-    console.log('📧 Загружаем результаты по email:', email);
+    console.log('📧 [RESULTS BY EMAIL] Загружаем результаты по email:', email);
     
+    // Сначала проверим, есть ли вообще записи в таблице
+    const { data: allData, error: allError } = await supabase
+      .from('additional_test_results')
+      .select('*')
+      .limit(10);
+    
+    console.log('📊 [RESULTS BY EMAIL] Всего записей в таблице:', allData?.length || 0);
+    console.log('📊 [RESULTS BY EMAIL] Первые записи:', allData?.slice(0, 3));
+    
+    // Теперь ищем по email
     const { data, error } = await supabase
       .from('additional_test_results')
       .select('*')
       .eq('email', email)
       .order('created_at', { ascending: false });
+    
+    console.log('📧 [RESULTS BY EMAIL] Найдено записей для email', email, ':', data?.length || 0);
+    console.log('📧 [RESULTS BY EMAIL] Записи для email:', data);
+    
+    if (error) {
+      console.error('❌ [RESULTS BY EMAIL] Ошибка запроса:', error);
+      throw error;
+    }
 
-    if (error) throw error;
-
-    console.log('📊 Найдено результатов:', data.length);
-    res.json({ success: true, results: data });
+    res.json({ success: true, results: data || [] });
   } catch (error) {
-    console.error('Error fetching additional tests by email:', error);
+    console.error('❌ [RESULTS BY EMAIL] Error fetching additional tests:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
