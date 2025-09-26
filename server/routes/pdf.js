@@ -120,7 +120,7 @@ router.post('/personal-plan', async (req, res) => {
 
     const plan = planData.plan;
 
-    // HTML шаблон для PDF
+    // HTML шаблон для персонального плана (скопирован из подготовки к сеансу)
     const html = `
       <!DOCTYPE html>
       <html>
@@ -188,14 +188,14 @@ router.post('/personal-plan', async (req, res) => {
             border-color: rgba(255, 255, 255, 0.5);
           }
           
-          .plan-content {
+          .preparation-content {
             padding: 40px;
             font-size: 16px;
             line-height: 1.8;
           }
           
-          /* Заголовки */
-          .main-title {
+          /* Используем те же стили что и для персонального плана */
+          .preparation-content .main-title {
             font-size: 28px;
             color: #00695c;
             font-weight: 600;
@@ -205,11 +205,11 @@ router.post('/personal-plan', async (req, res) => {
             text-align: center;
           }
           
-          .main-title:first-child {
+          .preparation-content .main-title:first-child {
             margin-top: 0;
           }
           
-          .section-title {
+          .preparation-content .section-title {
             font-size: 22px;
             color: #2c3e50;
             font-weight: 600;
@@ -220,7 +220,7 @@ router.post('/personal-plan', async (req, res) => {
             padding: 15px 0 15px 15px;
           }
           
-          .subsection-title {
+          .preparation-content .subsection-title {
             font-size: 19px;
             color: #34495e;
             font-weight: 600;
@@ -229,7 +229,7 @@ router.post('/personal-plan', async (req, res) => {
             border-left: 3px solid #81c784;
           }
           
-          .minor-title {
+          .preparation-content .minor-title {
             font-size: 17px;
             color: #5d6d7e;
             font-weight: 500;
@@ -238,25 +238,24 @@ router.post('/personal-plan', async (req, res) => {
             border-left: 2px solid #a5d6a7;
           }
           
-          /* Параграфы */
-          .plan-paragraph {
+          .preparation-content .plan-paragraph {
             margin-bottom: 18px;
             text-align: justify;
             color: #34495e;
             line-height: 1.7;
           }
           
-          .plan-paragraph strong {
+          .preparation-content .plan-paragraph strong {
             color: #2c3e50;
             font-weight: 600;
           }
           
-          .plan-paragraph em {
+          .preparation-content .plan-paragraph em {
             color: #5d6d7e;
             font-style: italic;
           }
           
-          .plan-paragraph code {
+          .preparation-content .plan-paragraph code {
             background: #f8f9fa;
             padding: 2px 6px;
             border-radius: 4px;
@@ -265,14 +264,13 @@ router.post('/personal-plan', async (req, res) => {
             color: #e74c3c;
           }
           
-          /* Списки */
-          .plan-list {
+          .preparation-content .plan-list {
             margin: 20px 0;
             padding-left: 0;
             list-style: none;
           }
           
-          .plan-list li {
+          .preparation-content .plan-list li {
             margin-bottom: 12px;
             padding-left: 25px;
             position: relative;
@@ -280,7 +278,7 @@ router.post('/personal-plan', async (req, res) => {
             line-height: 1.6;
           }
           
-          .plan-list li:before {
+          .preparation-content .plan-list li:before {
             content: "→";
             position: absolute;
             left: 0;
@@ -289,7 +287,7 @@ router.post('/personal-plan', async (req, res) => {
             font-size: 16px;
           }
           
-          .plan-list li strong {
+          .preparation-content .plan-list li strong {
             color: #2c3e50;
             font-weight: 600;
           }
@@ -330,7 +328,7 @@ router.post('/personal-plan', async (req, res) => {
             <button class="print-button" onclick="window.print()">Печать</button>
           </div>
           
-          <div class="plan-content">
+          <div class="preparation-content">
             ${formatPlanContent(plan)}
           </div>
           
@@ -339,7 +337,6 @@ router.post('/personal-plan', async (req, res) => {
             <p>При возникновении кризисных ситуаций обращайтесь к специалистам.</p>
           </div>
         </div>
-        
       </body>
       </html>
     `;
