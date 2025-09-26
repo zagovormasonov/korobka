@@ -153,7 +153,7 @@ const DashboardPage: React.FC = () => {
       }
 
       // Сначала получаем email пользователя из primary test results
-      const primaryResponse = await fetch(`/api/tests/primary/${sessionId}`);
+      const primaryResponse = await apiRequest(`api/tests/primary/${sessionId}`);
       const primaryData = await primaryResponse.json();
       
       if (!primaryData.success || !primaryData.data?.email) {
@@ -165,7 +165,7 @@ const DashboardPage: React.FC = () => {
       console.log('📧 Email пользователя для загрузки результатов:', userEmail);
       
       // Загружаем результаты дополнительных тестов по email
-      const response = await fetch(`/api/tests/additional/results-by-email/${encodeURIComponent(userEmail)}`);
+      const response = await apiRequest(`api/tests/additional/results-by-email/${encodeURIComponent(userEmail)}`);
       
       if (!response.ok) {
         console.error('❌ Ошибка HTTP:', response.status, response.statusText);
@@ -180,9 +180,9 @@ const DashboardPage: React.FC = () => {
         // Загружаем существующие результаты
         const resultsMap: {[key: number]: string} = {};
         data.results.forEach((result: any) => {
-          const test = recommendedTests.find(t => t.name === result.test_name);
+          const test = recommendedTests.find(t => t.name === result.test_type);
           if (test) {
-            resultsMap[test.id] = result.test_result;
+            resultsMap[test.id] = result.answers;
           }
         });
         setTestResults(resultsMap);
