@@ -84,6 +84,9 @@ const DashboardPage: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentTestId, setCurrentTestId] = useState<number | null>(null);
   const [modalText, setModalText] = useState('');
+  
+  // Состояние режима персонального плана
+  const [personalPlanMode, setPersonalPlanMode] = useState(false);
 
   useEffect(() => {
     if (sessionId) {
@@ -316,16 +319,81 @@ const DashboardPage: React.FC = () => {
         },
         body: JSON.stringify({
           sessionId,
-          feedback: feedbackText
+          feedbackText: feedbackText
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        message.success('Обратная связь получена!');
+        
+        // Показываем результат анализа в новом окне
+        const analysisHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Анализ обратной связи</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                margin: 40px;
+                color: #333;
+                max-width: 800px;
+                margin: 40px auto;
+              }
+              h1 {
+                color: #00695c;
+                border-bottom: 2px solid #00695c;
+                padding-bottom: 10px;
+              }
+              h2 {
+                color: #52c41a;
+                margin-top: 30px;
+              }
+              .header {
+                text-align: center;
+                margin-bottom: 40px;
+              }
+              .content {
+                max-width: 800px;
+                margin: 0 auto;
+              }
+              .print-button {
+                background: #00695c;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                margin: 20px 0;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="content">
+              <div class="header">
+                <h1>Анализ вашей обратной связи</h1>
+                <p>Персонализированный анализ сеанса</p>
+                <button class="print-button" onclick="window.print()">Печать</button>
+              </div>
+              
+              <div class="analysis-content">
+                ${data.analysis.replace(/\n/g, '<br>')}
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+        
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(analysisHtml);
+          newWindow.document.close();
+        }
+        
+        message.success('Анализ обратной связи готов!');
         setFeedbackText('');
-        // Здесь можно показать результат анализа
-        console.log('Feedback analysis:', data.analysis);
       } else {
         message.error('Ошибка при обработке обратной связи');
       }
@@ -349,16 +417,31 @@ const DashboardPage: React.FC = () => {
       });
 
       if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'personal-plan.pdf';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        message.success('Персональный план скачан!');
+        // Проверяем тип контента
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('text/html')) {
+          // Если получили HTML, открываем в новом окне
+          const html = await response.text();
+          const newWindow = window.open('', '_blank');
+          if (newWindow) {
+            newWindow.document.write(html);
+            newWindow.document.close();
+          }
+          message.success('Персональный план открыт в новом окне!');
+        } else {
+          // Если получили PDF, скачиваем как файл
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'personal-plan.pdf';
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          message.success('Персональный план скачан!');
+        }
       } else {
         message.error('Ошибка при скачивании плана');
       }
@@ -382,16 +465,31 @@ const DashboardPage: React.FC = () => {
       });
 
       if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'session-preparation.pdf';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        message.success('Подготовка к сеансу скачана!');
+        // Проверяем тип контента
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('text/html')) {
+          // Если получили HTML, открываем в новом окне
+          const html = await response.text();
+          const newWindow = window.open('', '_blank');
+          if (newWindow) {
+            newWindow.document.write(html);
+            newWindow.document.close();
+          }
+          message.success('Подготовка к сеансу открыта в новом окне!');
+        } else {
+          // Если получили PDF, скачиваем как файл
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'session-preparation.pdf';
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          message.success('Подготовка к сеансу скачана!');
+        }
       } else {
         message.error('Ошибка при скачивании подготовки');
       }
@@ -441,106 +539,154 @@ const DashboardPage: React.FC = () => {
         </div>
       </Card>
 
-      <Card title="Рекомендуемые тесты" style={{ marginBottom: '40px' }}>
-        <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: '#f6ffed', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
-          <Text style={{ color: '#00695C', fontSize: '16px', fontWeight: '500' }}>
-            Перейди по ссылке каждого теста, пройди тест и впиши результаты в поле ввода результатов
-          </Text>
-        </div>
-        
-        <Row gutter={[16, 16]}>
-          {recommendedTests.map((test) => (
-            <Col xs={24} md={12} key={test.id}>
-              <Card 
-                size="small" 
-                hoverable
-                style={{ height: '100%' }}
-                actions={[
-                  <Button 
-                    type="link" 
-                    href={test.url} 
-                    target="_blank"
-                    style={{ color: '#00695C' }}
-                  >
-                    Пройти тест
-                  </Button>
-                ]}
+      {!personalPlanMode ? (
+        <Card title="Рекомендуемые тесты" style={{ marginBottom: '40px' }}>
+          {allTestsCompleted && (
+            <div style={{ 
+              textAlign: 'center', 
+              marginBottom: '30px', 
+              padding: '30px 16px',
+              backgroundColor: '#f6ffed',
+              borderRadius: '8px',
+              border: '2px solid #00695c'
+            }}>
+              <CheckOutlined 
+                style={{ 
+                  fontSize: '80px', 
+                  color: '#00695c', 
+                  marginBottom: '20px',
+                  display: 'block'
+                }} 
+              />
+              <Title level={2} style={{ color: '#00695c', marginBottom: '20px', margin: 0 }}>
+                Все тесты пройдены!
+              </Title>
+              <Button 
+                type="primary" 
+                size="large"
+                onClick={() => setPersonalPlanMode(true)}
+                style={{ 
+                  height: '50px', 
+                  fontSize: '16px', 
+                  fontWeight: 'bold',
+                  padding: '0 30px',
+                  marginTop: '20px'
+                }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  {/* Кружочек со статусом теста */}
-                  <div 
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      border: `2px solid ${testResults[test.id] ? '#52c41a' : '#d9d9d9'}`,
-                      backgroundColor: testResults[test.id] ? '#52c41a' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      marginTop: '2px'
-                    }}
-                  >
-                    {testResults[test.id] && (
-                      <CheckOutlined 
-                        style={{ 
-                          fontSize: '12px',
-                          color: 'white'
-                        }} 
-                      />
-                    )}
-                  </div>
-                  
-                  <div style={{ flex: 1 }}>
-                    <Title level={5} style={{ color: '#00695C', marginBottom: '8px' }}>
-                      {test.name}
-                    </Title>
-                    <Text type="secondary" style={{ fontSize: '14px', marginBottom: '16px', display: 'block' }}>
-                      {test.description}
-                    </Text>
-                    
-                    <Space direction="vertical" style={{ width: '100%' }}>
-                      {/* Отображение результата (обрезанный текст) */}
+                Перейти к персональному плану
+              </Button>
+            </div>
+          )}
+          
+          <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: '#f6ffed', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
+            <Text style={{ color: '#00695C', fontSize: '16px', fontWeight: '500' }}>
+              Перейди по ссылке каждого теста, пройди тест и впиши результаты в поле ввода результатов
+            </Text>
+          </div>
+          
+          <Row gutter={[16, 16]}>
+            {recommendedTests.map((test) => (
+              <Col xs={24} md={12} key={test.id}>
+                <Card 
+                  size="small" 
+                  hoverable
+                  style={{ height: '100%' }}
+                  actions={[
+                    <Button 
+                      type="link" 
+                      href={test.url} 
+                      target="_blank"
+                      style={{ color: '#00695C' }}
+                    >
+                      Пройти тест
+                    </Button>
+                  ]}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                    {/* Кружочек со статусом теста */}
+                    <div 
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        border: `2px solid ${testResults[test.id] ? '#00695c' : '#d9d9d9'}`,
+                        backgroundColor: testResults[test.id] ? '#00695c' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: '2px'
+                      }}
+                    >
                       {testResults[test.id] && (
-                        <div style={{ 
-                          padding: '8px 12px', 
-                          backgroundColor: '#f6ffed', 
-                          border: '1px solid #b7eb8f', 
-                          borderRadius: '6px',
-                          marginBottom: '8px'
-                        }}>
-                          <Text style={{ fontSize: '14px', color: '#00695C' }}>
-                            {truncateText(testResults[test.id])}
-                          </Text>
-                        </div>
+                        <CheckOutlined 
+                          style={{ 
+                            fontSize: '12px',
+                            color: 'white'
+                          }} 
+                        />
                       )}
+                    </div>
+                    
+                    <div style={{ flex: 1 }}>
+                      <Title level={5} style={{ color: '#00695C', marginBottom: '8px' }}>
+                        {test.name}
+                      </Title>
+                      <Text type="secondary" style={{ fontSize: '14px', marginBottom: '16px', display: 'block' }}>
+                        {test.description}
+                      </Text>
                       
-                      <Button
-                        type="primary"
-                        size="small"
-                        onClick={() => openModal(test.id)}
-                        style={{ width: '100%' }}
-                      >
-                        {testResults[test.id] ? 'Изменить результат' : 'Ввести результат'}
-                      </Button>
-                    </Space>
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                        {/* Отображение результата (обрезанный текст) */}
+                        {testResults[test.id] && (
+                          <div style={{ 
+                            padding: '8px 12px', 
+                            backgroundColor: '#f6ffed', 
+                            border: '1px solid #b7eb8f', 
+                            borderRadius: '6px',
+                            marginBottom: '8px'
+                          }}>
+                            <Text style={{ fontSize: '14px', color: '#00695C' }}>
+                              {truncateText(testResults[test.id])}
+                            </Text>
+                          </div>
+                        )}
+                        
+                        <Button
+                          type="primary"
+                          size="small"
+                          onClick={() => openModal(test.id)}
+                          style={{ width: '100%' }}
+                        >
+                          {testResults[test.id] ? 'Изменить результат' : 'Ввести результат'}
+                        </Button>
+                      </Space>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </Card>
-
-      {allTestsCompleted && (
-        <>
-          <Divider style={{ margin: '40px 0' }} />
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Card>
+      ) : (
+        <div>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <Title level={2} style={{ color: '#00695c', marginBottom: '10px' }}>
+              Персональный план
+            </Title>
+            <Button 
+              type="default" 
+              onClick={() => setPersonalPlanMode(false)}
+              style={{ marginBottom: '20px' }}
+            >
+              ← Вернуться к тестам
+            </Button>
+          </div>
           
           <Row gutter={[24, 24]}>
             <Col xs={24} md={12}>
               <Card 
-                title="Персональный план"
+                title="Скачать персональный план"
                 extra={<DownloadOutlined style={{ color: '#00695C' }} />}
                 hoverable
                 style={{ height: '100%' }}
@@ -661,8 +807,9 @@ const DashboardPage: React.FC = () => {
               </Card>
             </Col>
           </Row>
-        </>
+        </div>
       )}
+
 
       {/* Модальное окно для ввода результата теста */}
       <Modal

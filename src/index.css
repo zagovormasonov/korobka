@@ -31,3 +31,9 @@ code {
   padding-left: 16px !important;
   padding-right: 16px !important;
 }
+
+/* Анимация спиннера */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

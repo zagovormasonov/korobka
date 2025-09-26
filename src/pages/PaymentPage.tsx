@@ -169,14 +169,35 @@ const PaymentPage: React.FC = () => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-            <img 
-              src="/mascot.png"  
-              alt="Луми" 
-              style={{ width: '60px', height: '60px', flexShrink: 0, objectFit: 'contain' }}
-            />
+            <div style={{ position: 'relative', width: '60px', height: '60px', flexShrink: 0 }}>
+              <img 
+                src="/mascot.png"  
+                alt="Луми" 
+                style={{ 
+                  width: '60px', 
+                  height: '60px', 
+                  objectFit: 'contain',
+                  animation: paymentLoading ? 'spin 2s linear infinite' : 'none'
+                }}
+              />
+              {paymentLoading && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '70px',
+                  height: '70px',
+                  border: '3px solid #b7eb8f',
+                  borderTop: '3px solid #00695C',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+              )}
+            </div>
             <div style={{ flex: 1 }}>
               <Paragraph style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
-                {mascotMessage}
+                {paymentLoading ? 'Луми обрабатывает ваш запрос...' : mascotMessage}
               </Paragraph>
             </div>
           </div>
