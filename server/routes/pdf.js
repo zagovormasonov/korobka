@@ -10,7 +10,13 @@ const isPdfDisabled = process.env.DISABLE_PDF === 'true';
 
 // Функция для правильного форматирования markdown в HTML
 function formatPlanContent(text) {
-  if (!text) return '';
+  if (!text) {
+    console.log('⚠️ [FORMAT PLAN] Пустой текст получен');
+    return '<p class="plan-paragraph">Контент не загружен</p>';
+  }
+  
+  console.log('📝 [FORMAT PLAN] Обрабатываем текст длиной:', text.length);
+  console.log('📝 [FORMAT PLAN] Первые 200 символов:', text.substring(0, 200));
   
   // Разбиваем текст на строки для обработки
   let lines = text.split('\n');
@@ -87,6 +93,9 @@ function formatPlanContent(text) {
   if (inList) {
     html += '</ul>\n';
   }
+  
+  console.log('✅ [FORMAT PLAN] Сгенерированный HTML длиной:', html.length);
+  console.log('✅ [FORMAT PLAN] Первые 300 символов HTML:', html.substring(0, 300));
   
   return html;
 }
@@ -341,8 +350,14 @@ router.post('/personal-plan', async (req, res) => {
       </html>
     `;
 
+    // Логируем первые 500 символов HTML для отладки
+    console.log('📄 [PERSONAL PLAN] Отправляем HTML, первые 500 символов:');
+    console.log(html.substring(0, 500));
+    console.log('📄 [PERSONAL PLAN] Content-Type:', 'text/html');
+    console.log('📄 [PERSONAL PLAN] HTML length:', html.length);
+    
     // Отправляем HTML с улучшенными стилями для печати
-    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   } catch (error) {
     console.error('Error generating plan:', error);
