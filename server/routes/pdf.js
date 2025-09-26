@@ -6,6 +6,17 @@ const router = express.Router();
 // Проверяем, отключена ли PDF генерация
 const isPdfDisabled = process.env.DISABLE_PDF === 'true';
 
+// Функция для динамического импорта PDF библиотеки
+async function getHtmlPdf() {
+  try {
+    const htmlPdfModule = await import('html-pdf-node');
+    return htmlPdfModule.default || htmlPdfModule;
+  } catch (error) {
+    console.log('html-pdf-node не установлен, используем HTML режим');
+    return null;
+  }
+}
+
 // Функция для правильного форматирования markdown в HTML
 function formatPlanContent(text) {
   if (!text) return '';
@@ -118,7 +129,7 @@ router.post('/personal-plan', async (req, res) => {
 
     const plan = planData.plan;
 
-    // Возвращаем HTML вместо PDF
+    // HTML шаблон для PDF
     const html = `
       <!DOCTYPE html>
       <html>
@@ -341,7 +352,37 @@ router.post('/personal-plan', async (req, res) => {
       </html>
     `;
 
-    // Отправляем HTML
+    // Пытаемся сгенерировать PDF, если библиотека доступна
+    const htmlPdf = await getHtmlPdf();
+    if (htmlPdf && !isPdfDisabled) {
+      try {
+        const options = {
+          format: 'A4',
+          margin: {
+            top: '20mm',
+            right: '15mm',
+            bottom: '20mm',
+            left: '15mm'
+          },
+          printBackground: true,
+          displayHeaderFooter: false
+        };
+
+        const file = { content: html };
+        const pdfBuffer = await htmlPdf.generatePdf(file, options);
+
+        // Отправляем PDF файл
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename="personal-plan.pdf"');
+        res.send(pdfBuffer);
+        return;
+      } catch (pdfError) {
+        console.error('Ошибка генерации PDF:', pdfError);
+        // Если ошибка PDF, отправляем HTML
+      }
+    }
+
+    // Если PDF недоступен, отправляем HTML
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   } catch (error) {
