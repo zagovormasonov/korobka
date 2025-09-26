@@ -485,12 +485,24 @@ router.post('/additional/save-result', async (req, res) => {
   try {
     const { sessionId, testName, testUrl, testResult } = req.body;
     
-    console.log('💾 Сохраняем результат теста:', { sessionId, testName, testResult });
+    console.log('💾 Получен запрос на сохранение результата теста');
+    console.log('📋 Тело запроса:', JSON.stringify(req.body, null, 2));
+    console.log('💾 Извлеченные данные:', { sessionId, testName, testUrl, testResult });
     
-    // Проверяем, что sessionId не пустой
+    // Проверяем все обязательные поля
     if (!sessionId || sessionId.trim() === '') {
       console.log('❌ SessionId пустой или отсутствует');
       return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
+    
+    if (!testName || testName.trim() === '') {
+      console.log('❌ TestName пустой или отсутствует');
+      return res.status(400).json({ success: false, error: 'TestName is required' });
+    }
+    
+    if (!testResult || testResult.trim() === '') {
+      console.log('❌ TestResult пустой или отсутствует');
+      return res.status(400).json({ success: false, error: 'TestResult is required' });
     }
     
     // Получаем email пользователя из primary_test_results
@@ -558,6 +570,13 @@ router.post('/additional/save-result', async (req, res) => {
     res.json({ success: true, data: result.data });
   } catch (error) {
     console.error('❌ Ошибка при сохранении результата теста:', error);
+    console.error('❌ Stack trace:', error.stack);
+    console.error('❌ Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
     res.status(500).json({ success: false, error: error.message });
   }
 });
