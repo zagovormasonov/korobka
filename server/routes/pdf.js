@@ -100,7 +100,7 @@ function formatPlanContent(text) {
   return html;
 }
 
-// Генерировать PDF персонального плана
+// Генерировать персональный план (скопировано из session-preparation)
 router.post('/personal-plan', async (req, res) => {
   try {
     if (isPdfDisabled) {
@@ -129,14 +129,13 @@ router.post('/personal-plan', async (req, res) => {
 
     const plan = planData.plan;
 
-    // HTML шаблон для персонального плана (скопирован из подготовки к сеансу)
+    // HTML шаблон - ТОЧНАЯ копия из session-preparation
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="UTF-8">
         <title>Персональный план</title>
-        <!-- CSS Version: 2.0 - Force browser refresh -->
         <style>
           * {
             box-sizing: border-box;
@@ -351,17 +350,8 @@ router.post('/personal-plan', async (req, res) => {
       </html>
     `;
 
-    // Логируем первые 500 символов HTML для отладки
-    console.log('📄 [PERSONAL PLAN] Отправляем HTML, первые 500 символов:');
-    console.log(html.substring(0, 500));
-    console.log('📄 [PERSONAL PLAN] Content-Type:', 'text/html');
-    console.log('📄 [PERSONAL PLAN] HTML length:', html.length);
-    
-    // Отправляем HTML с улучшенными стилями для печати
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+    // Отправляем HTML точно так же, как session-preparation
+    res.setHeader('Content-Type', 'text/html');
     res.send(html);
   } catch (error) {
     console.error('Error generating plan:', error);
