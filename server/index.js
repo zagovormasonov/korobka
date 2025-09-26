@@ -47,36 +47,25 @@ const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // Middleware
+// Временно разрешаем все CORS запросы для отладки
+console.log('🚀 Starting server with CORS configuration...');
+console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
+console.log('🌍 FRONTEND_URL:', FRONTEND_URL);
+
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (process.env.NODE_ENV !== 'production') return callback(null, true);
-    
-    // Список разрешенных доменов
-    const allowedOrigins = [
-      'https://idenself.com',
-      'http://idenself.com',
-      'https://www.idenself.com',
-      'http://www.idenself.com'
-    ];
-    
-    // Разрешаем запросы с render.com доменов
-    if (origin && origin.includes('render.com')) return callback(null, true);
-    
-    // Разрешаем запросы с нашего домена
-    if (origin && allowedOrigins.includes(origin)) return callback(null, true);
-    
-    // Разрешаем запросы с поддоменов idenself.com
-    if (origin && origin.includes('idenself.com')) return callback(null, true);
-    
-    // Разрешаем запросы с FRONTEND_URL если установлен
-    if (FRONTEND_URL && origin === FRONTEND_URL) return callback(null, true);
-    
-    console.log(`❌ CORS blocked origin: ${origin}`);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true
+  origin: true, // Временно разрешаем все домены
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 200
 }));
+
+// Логируем все входящие запросы для отладки
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.path} from origin: ${req.get('Origin') || 'no-origin'}`);
+  next();
+});
 app.use(express.json());
 app.use(express.static('public'));
 
