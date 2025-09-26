@@ -527,8 +527,7 @@ router.post('/additional/save-result', async (req, res) => {
         .from('additional_test_results')
         .update({
           test_result: testResult,
-          test_url: testUrl,
-          email: email
+          test_url: testUrl
         })
         .eq('session_id', sessionId)
         .eq('test_name', testName)
@@ -544,7 +543,6 @@ router.post('/additional/save-result', async (req, res) => {
         .from('additional_test_results')
         .insert({
           session_id: sessionId,
-          email: email,
           test_name: testName,
           test_url: testUrl,
           test_result: testResult
