@@ -52,10 +52,27 @@ app.use(cors({
     if (!origin) return callback(null, true);
     if (process.env.NODE_ENV !== 'production') return callback(null, true);
     
+    // Список разрешенных доменов
+    const allowedOrigins = [
+      'https://idenself.com',
+      'http://idenself.com',
+      'https://www.idenself.com',
+      'http://www.idenself.com'
+    ];
+    
     // Разрешаем запросы с render.com доменов
     if (origin && origin.includes('render.com')) return callback(null, true);
+    
+    // Разрешаем запросы с нашего домена
+    if (origin && allowedOrigins.includes(origin)) return callback(null, true);
+    
+    // Разрешаем запросы с поддоменов idenself.com
+    if (origin && origin.includes('idenself.com')) return callback(null, true);
+    
+    // Разрешаем запросы с FRONTEND_URL если установлен
     if (FRONTEND_URL && origin === FRONTEND_URL) return callback(null, true);
     
+    console.log(`❌ CORS blocked origin: ${origin}`);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true

@@ -42,3 +42,5 @@ services:
         value: true
       - key: DISABLE_PDF
         value: true
+      - key: FRONTEND_URL
+        value: https://idenself.com

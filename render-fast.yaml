@@ -40,3 +40,5 @@ services:
         sync: false
       - key: DISABLE_PROXY
         value: true
+      - key: FRONTEND_URL
+        value: https://idenself.com
