@@ -6,34 +6,87 @@ const router = express.Router();
 // Проверяем, отключена ли PDF генерация
 const isPdfDisabled = process.env.DISABLE_PDF === 'true';
 
-// Простая функция для очистки и базового форматирования текста
+// Функция для правильного форматирования markdown в HTML
 function formatPlanContent(text) {
   if (!text) return '';
   
-  // Убираем все markdown символы и создаем чистый текст
-  return text
-    // Убираем лишние символы
-    .replace(/\*{2,}/g, '') // Убираем звездочки
-    .replace(/#{1,}/g, '') // Убираем решетки
-    .replace(/-{3,}/g, '') // Убираем длинные тире
-    .replace(/[_~`]/g, '') // Убираем другие markdown символы
+  // Разбиваем текст на строки для обработки
+  let lines = text.split('\n');
+  let html = '';
+  let inList = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
     
-    // Заменяем двойные переносы на разделители параграфов
-    .replace(/\n\s*\n/g, '</p><p>')
+    // Пропускаем пустые строки
+    if (line === '') {
+      if (inList) {
+        html += '</ul>\n';
+        inList = false;
+      }
+      continue;
+    }
     
-    // Оборачиваем в параграф
-    .replace(/^/, '<p>')
-    .replace(/$/, '</p>')
+    // Обрабатываем заголовки
+    if (line.match(/^#{1,6}\s/)) {
+      if (inList) {
+        html += '</ul>\n';
+        inList = false;
+      }
+      
+      const level = line.match(/^#+/)[0].length;
+      const title = line.replace(/^#+\s*/, '').replace(/\*+/g, '');
+      
+      if (level === 1) {
+        html += `<h1 class="main-title">${title}</h1>\n`;
+      } else if (level === 2) {
+        html += `<h2 class="section-title">${title}</h2>\n`;
+      } else if (level === 3) {
+        html += `<h3 class="subsection-title">${title}</h3>\n`;
+      } else {
+        html += `<h4 class="minor-title">${title}</h4>\n`;
+      }
+      continue;
+    }
     
-    // Убираем пустые параграфы
-    .replace(/<p>\s*<\/p>/g, '')
+    // Обрабатываем списки
+    if (line.match(/^[\-\*\+]\s/) || line.match(/^\d+\.\s/)) {
+      if (!inList) {
+        html += '<ul class="plan-list">\n';
+        inList = true;
+      }
+      
+      const content = line.replace(/^[\-\*\+\d\.]\s*/, '').replace(/\*+/g, '');
+      html += `<li>${content}</li>\n`;
+      continue;
+    }
     
-    // Заменяем одинарные переносы на пробелы для лучшего отображения
-    .replace(/\n/g, ' ')
+    // Закрываем список если он был открыт
+    if (inList) {
+      html += '</ul>\n';
+      inList = false;
+    }
     
-    // Убираем лишние пробелы
-    .replace(/\s+/g, ' ')
-    .trim();
+    // Обрабатываем обычные параграфы
+    if (line.length > 0) {
+      // Убираем markdown символы из текста
+      const cleanLine = line
+        .replace(/\*{2,}(.*?)\*{2,}/g, '<strong>$1</strong>') // Жирный текст
+        .replace(/\*(.*?)\*/g, '<em>$1</em>') // Курсив
+        .replace(/`(.*?)`/g, '<code>$1</code>') // Код
+        .replace(/_{2,}(.*?)_{2,}/g, '<strong>$1</strong>') // Альтернативный жирный
+        .replace(/_(.*?)_/g, '<em>$1</em>'); // Альтернативный курсив
+      
+      html += `<p class="plan-paragraph">${cleanLine}</p>\n`;
+    }
+  }
+  
+  // Закрываем список если он остался открытым
+  if (inList) {
+    html += '</ul>\n';
+  }
+  
+  return html;
 }
 
 // Генерировать PDF персонального плана
@@ -139,20 +192,104 @@ router.post('/personal-plan', async (req, res) => {
             line-height: 1.8;
           }
           
-          .plan-content p {
-            margin-bottom: 20px;
-            text-align: justify;
-            color: #34495e;
+          /* Заголовки */
+          .main-title {
+            font-size: 28px;
+            color: #00695c;
+            font-weight: 600;
+            margin: 40px 0 25px 0;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #00695c;
+            text-align: center;
           }
           
-          .plan-content p:first-child {
-            font-size: 18px;
-            color: #00695c;
+          .main-title:first-child {
+            margin-top: 0;
+          }
+          
+          .section-title {
+            font-size: 22px;
+            color: #2c3e50;
+            font-weight: 600;
+            margin: 35px 0 20px 0;
+            padding-left: 15px;
+            border-left: 4px solid #4db6ac;
+            background: linear-gradient(90deg, #f8f9fa 0%, transparent 100%);
+            padding: 15px 0 15px 15px;
+          }
+          
+          .subsection-title {
+            font-size: 19px;
+            color: #34495e;
+            font-weight: 600;
+            margin: 25px 0 15px 0;
+            padding-left: 10px;
+            border-left: 3px solid #81c784;
+          }
+          
+          .minor-title {
+            font-size: 17px;
+            color: #5d6d7e;
             font-weight: 500;
-            border-left: 4px solid #00695c;
-            padding-left: 20px;
-            margin-bottom: 30px;
-            text-align: left;
+            margin: 20px 0 10px 0;
+            padding-left: 8px;
+            border-left: 2px solid #a5d6a7;
+          }
+          
+          /* Параграфы */
+          .plan-paragraph {
+            margin-bottom: 18px;
+            text-align: justify;
+            color: #34495e;
+            line-height: 1.7;
+          }
+          
+          .plan-paragraph strong {
+            color: #2c3e50;
+            font-weight: 600;
+          }
+          
+          .plan-paragraph em {
+            color: #5d6d7e;
+            font-style: italic;
+          }
+          
+          .plan-paragraph code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #e74c3c;
+          }
+          
+          /* Списки */
+          .plan-list {
+            margin: 20px 0;
+            padding-left: 0;
+            list-style: none;
+          }
+          
+          .plan-list li {
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+            color: #34495e;
+            line-height: 1.6;
+          }
+          
+          .plan-list li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #00695c;
+            font-weight: bold;
+            font-size: 16px;
+          }
+          
+          .plan-list li strong {
+            color: #2c3e50;
+            font-weight: 600;
           }
           
           .footer {
@@ -326,20 +463,102 @@ router.post('/session-preparation', async (req, res) => {
             line-height: 1.8;
           }
           
-          .preparation-content p {
-            margin-bottom: 20px;
-            text-align: justify;
-            color: #34495e;
+          /* Используем те же стили что и для персонального плана */
+          .preparation-content .main-title {
+            font-size: 28px;
+            color: #00695c;
+            font-weight: 600;
+            margin: 40px 0 25px 0;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #00695c;
+            text-align: center;
           }
           
-          .preparation-content p:first-child {
-            font-size: 18px;
-            color: #00695c;
+          .preparation-content .main-title:first-child {
+            margin-top: 0;
+          }
+          
+          .preparation-content .section-title {
+            font-size: 22px;
+            color: #2c3e50;
+            font-weight: 600;
+            margin: 35px 0 20px 0;
+            padding-left: 15px;
+            border-left: 4px solid #4db6ac;
+            background: linear-gradient(90deg, #f8f9fa 0%, transparent 100%);
+            padding: 15px 0 15px 15px;
+          }
+          
+          .preparation-content .subsection-title {
+            font-size: 19px;
+            color: #34495e;
+            font-weight: 600;
+            margin: 25px 0 15px 0;
+            padding-left: 10px;
+            border-left: 3px solid #81c784;
+          }
+          
+          .preparation-content .minor-title {
+            font-size: 17px;
+            color: #5d6d7e;
             font-weight: 500;
-            border-left: 4px solid #00695c;
-            padding-left: 20px;
-            margin-bottom: 30px;
-            text-align: left;
+            margin: 20px 0 10px 0;
+            padding-left: 8px;
+            border-left: 2px solid #a5d6a7;
+          }
+          
+          .preparation-content .plan-paragraph {
+            margin-bottom: 18px;
+            text-align: justify;
+            color: #34495e;
+            line-height: 1.7;
+          }
+          
+          .preparation-content .plan-paragraph strong {
+            color: #2c3e50;
+            font-weight: 600;
+          }
+          
+          .preparation-content .plan-paragraph em {
+            color: #5d6d7e;
+            font-style: italic;
+          }
+          
+          .preparation-content .plan-paragraph code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #e74c3c;
+          }
+          
+          .preparation-content .plan-list {
+            margin: 20px 0;
+            padding-left: 0;
+            list-style: none;
+          }
+          
+          .preparation-content .plan-list li {
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+            color: #34495e;
+            line-height: 1.6;
+          }
+          
+          .preparation-content .plan-list li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #00695c;
+            font-weight: bold;
+            font-size: 16px;
+          }
+          
+          .preparation-content .plan-list li strong {
+            color: #2c3e50;
+            font-weight: 600;
           }
           
           .footer {
