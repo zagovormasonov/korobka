@@ -7,8 +7,8 @@ const getApiBaseUrl = (): string => {
     return '';
   }
   
-  // В production используем переменную окружения или fallback на Render URL
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://korobka-1.onrender.com';
+  // В production используем переменную окружения или fallback на тот же домен
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin;
   
   console.log('🔧 API Base URL:', apiUrl);
   console.log('🔧 Environment:', import.meta.env.MODE);
