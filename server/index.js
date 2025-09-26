@@ -61,9 +61,23 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Логируем все входящие запросы для отладки
+// Добавляем CORS заголовки вручную для всех запросов
 app.use((req, res, next) => {
-  console.log(`📥 ${req.method} ${req.path} from origin: ${req.get('Origin') || 'no-origin'}`);
+  const origin = req.get('Origin');
+  console.log(`📥 ${req.method} ${req.path} from origin: ${origin || 'no-origin'}`);
+  
+  // Устанавливаем CORS заголовки вручную
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Отвечаем на preflight OPTIONS запросы
+  if (req.method === 'OPTIONS') {
+    console.log('✅ Handling preflight OPTIONS request');
+    return res.status(200).end();
+  }
+  
   next();
 });
 app.use(express.json());
@@ -118,6 +132,20 @@ app.use('/api/pdf', pdfRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Test CORS endpoint
+app.get('/api/test-cors', (req, res) => {
+  console.log('🧪 CORS test endpoint called from:', req.get('Origin') || 'no-origin');
+  console.log('🧪 Headers:', JSON.stringify(req.headers, null, 2));
+  
+  res.json({ 
+    success: true, 
+    message: 'CORS is working!',
+    timestamp: new Date().toISOString(),
+    origin: req.get('Origin'),
+    userAgent: req.get('User-Agent')
+  });
 });
 
 // Статические файлы для production

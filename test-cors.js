@@ -1,109 +1,56 @@
-#!/usr/bin/env node
+// Простой тест CORS с локальной машины
+const fetch = require('node-fetch');
 
-/**
- * Тестирование CORS для домена idenself.com
- */
-
-import https from 'https';
-import http from 'http';
-
-const TEST_ORIGINS = [
-  'https://idenself.com',
-  'http://idenself.com',
-  'https://www.idenself.com',
-  'https://app.idenself.com',
-  'https://test.idenself.com',
-  'https://some-random-domain.com'
-];
-
-const SERVER_URL = 'https://idenself.com'; // или ваш Render URL
-
-function testCORS(origin) {
-  return new Promise((resolve) => {
-    const url = new URL(`${SERVER_URL}/api/health`);
-    const options = {
-      hostname: url.hostname,
-      path: url.pathname,
-      method: 'OPTIONS',
+async function testCORS() {
+  console.log('🧪 Тестируем CORS...');
+  
+  try {
+    // Тест 1: Health check
+    console.log('\n1️⃣ Тестируем health endpoint...');
+    const healthResponse = await fetch('https://korobka-1.onrender.com/api/health');
+    const healthData = await healthResponse.json();
+    console.log('✅ Health check:', healthData);
+    
+    // Тест 2: CORS test endpoint
+    console.log('\n2️⃣ Тестируем CORS endpoint...');
+    const corsResponse = await fetch('https://korobka-1.onrender.com/api/test-cors', {
+      method: 'GET',
       headers: {
-        'Origin': origin,
-        'Access-Control-Request-Method': 'GET',
-        'Access-Control-Request-Headers': 'Content-Type'
-      },
-      timeout: 10000
-    };
-
-    const client = url.protocol === 'https:' ? https : http;
-    const req = client.request(options, (res) => {
-      const allowOrigin = res.headers['access-control-allow-origin'];
-      const allowMethods = res.headers['access-control-allow-methods'];
-      
-      resolve({
-        origin,
-        status: res.statusCode,
-        allowed: allowOrigin === origin || allowOrigin === '*',
-        allowOrigin,
-        allowMethods,
-        success: res.statusCode === 200 || res.statusCode === 204
-      });
+        'Origin': 'https://idenself.com',
+        'Content-Type': 'application/json'
+      }
     });
-
-    req.on('error', (error) => {
-      resolve({
-        origin,
-        status: 0,
-        error: error.message,
-        allowed: false,
-        success: false
-      });
+    
+    console.log('📊 Response status:', corsResponse.status);
+    console.log('📊 Response headers:', Object.fromEntries(corsResponse.headers));
+    
+    const corsData = await corsResponse.json();
+    console.log('✅ CORS test:', corsData);
+    
+    // Тест 3: Questions endpoint
+    console.log('\n3️⃣ Тестируем questions endpoint...');
+    const questionsResponse = await fetch('https://korobka-1.onrender.com/api/tests/primary/questions', {
+      method: 'GET',
+      headers: {
+        'Origin': 'https://idenself.com',
+        'Content-Type': 'application/json'
+      }
     });
-
-    req.on('timeout', () => {
-      req.destroy();
-      resolve({
-        origin,
-        status: 0,
-        error: 'Timeout',
-        allowed: false,
-        success: false
-      });
-    });
-
-    req.end();
-  });
-}
-
-async function testAllOrigins() {
-  console.log('🔍 Тестирование CORS для различных origins...\n');
-  console.log(`🎯 Сервер: ${SERVER_URL}\n`);
-  
-  for (const origin of TEST_ORIGINS) {
-    const result = await testCORS(origin);
     
-    const status = result.allowed ? '✅' : '❌';
-    const statusText = result.success ? `${result.status}` : `ERR (${result.error || result.status})`;
+    console.log('📊 Questions status:', questionsResponse.status);
+    console.log('📊 Questions headers:', Object.fromEntries(questionsResponse.headers));
     
-    console.log(`${status} ${origin}`);
-    console.log(`   Статус: ${statusText}`);
-    
-    if (result.allowOrigin) {
-      console.log(`   Allow-Origin: ${result.allowOrigin}`);
+    if (questionsResponse.ok) {
+      const questionsData = await questionsResponse.json();
+      console.log('✅ Questions count:', questionsData.length);
+    } else {
+      const error = await questionsResponse.text();
+      console.log('❌ Questions error:', error);
     }
     
-    if (result.allowMethods) {
-      console.log(`   Allow-Methods: ${result.allowMethods}`);
-    }
-    
-    if (result.error) {
-      console.log(`   Ошибка: ${result.error}`);
-    }
-    
-    console.log('');
+  } catch (error) {
+    console.error('❌ Ошибка теста:', error.message);
   }
-  
-  console.log('💡 Ожидаемые результаты:');
-  console.log('   ✅ Все домены *idenself.com должны быть разрешены');
-  console.log('   ❌ Случайные домены должны быть заблокированы');
 }
 
-testAllOrigins().catch(console.error);
+testCORS();

@@ -37,13 +37,29 @@ export const createApiUrl = (endpoint: string): string => {
 export const apiRequest = async (endpoint: string, options?: RequestInit) => {
   const url = createApiUrl(endpoint);
   console.log(`🌐 API Request: ${options?.method || 'GET'} ${url}`);
+  console.log(`🌐 Current origin: ${window.location.origin}`);
+  console.log(`🌐 Target URL: ${url}`);
   
-  return fetch(url, {
+  const requestOptions = {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
+    // Добавляем cache: 'no-cache' чтобы избежать кэширования
+    cache: 'no-cache' as RequestCache,
+  };
+  
+  console.log(`🌐 Request options:`, requestOptions);
+  
+  try {
+    const response = await fetch(url, requestOptions);
+    console.log(`🌐 Response status: ${response.status}`);
+    console.log(`🌐 Response headers:`, Object.fromEntries(response.headers.entries()));
+    return response;
+  } catch (error) {
+    console.error(`🌐 Fetch error:`, error);
+    throw error;
+  }
 };
 
