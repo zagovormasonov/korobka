@@ -3,7 +3,7 @@ services:
     name: mental-health-test-fast
     env: node
     plan: starter
-    buildCommand: npm ci --no-audit --no-fund && npm run build
+    buildCommand: npm ci --no-audit --no-fund && npm run build:render
     startCommand: npm start
     envVars:
       - key: NODE_ENV
