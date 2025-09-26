@@ -526,7 +526,7 @@ router.post('/additional/save-result', async (req, res) => {
       .from('additional_test_results')
       .select('id')
       .eq('session_id', sessionId)
-      .eq('test_name', testName)
+      .eq('test_type', testName)
       .single();
     
     console.log('🔍 Существующий результат:', existingResult);
@@ -542,7 +542,7 @@ router.post('/additional/save-result', async (req, res) => {
           test_url: testUrl
         })
         .eq('session_id', sessionId)
-        .eq('test_name', testName)
+        .eq('test_type', testName)
         .select()
         .single();
       
@@ -555,7 +555,7 @@ router.post('/additional/save-result', async (req, res) => {
         .from('additional_test_results')
         .insert({
           session_id: sessionId,
-          test_name: testName,
+          test_type: testName,
           test_url: testUrl,
           test_result: testResult
         })
