@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Typography, Spin, Button, Card, Space, message } from 'antd';
 import { CheckCircleOutlined, CopyOutlined, MailOutlined } from '@ant-design/icons';
 import { sendDashboardAccessEmail, checkEmailJSConfig } from '../services/emailService';
+import { apiRequest } from '../config/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -30,7 +31,7 @@ const PaymentSuccessPage: React.FC = () => {
   const fetchDashboardToken = async () => {
     try {
       console.log('🔍 Загружаем данные дашборда для sessionId:', sessionId);
-      const response = await fetch(`/api/tests/primary/${sessionId}`);
+      const response = await apiRequest(`api/tests/primary/${sessionId}`);
       const data = await response.json();
 
       console.log('📥 Ответ от API:', data);

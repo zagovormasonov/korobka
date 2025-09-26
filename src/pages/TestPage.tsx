@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Typography, Progress, Card, Input, Slider, Space, Checkbox, InputNumber } from 'antd';
+import { apiRequest } from '../config/api';
 import { ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -99,7 +100,7 @@ const TestPage: React.FC = () => {
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch('/api/tests/primary/questions');
+       const response = await apiRequest('api/tests/primary/questions');
       const data = await response.json();
       console.log('📋 Загружено вопросов:', data.length);
       console.log('📋 Последний вопрос:', data[data.length - 1]);
@@ -272,11 +273,8 @@ const TestPage: React.FC = () => {
         total: questions.length
       });
 
-      const response = await fetch('/api/tests/primary/submit', {
+      const response = await apiRequest('api/tests/primary/submit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           sessionId,
           answers: finalAnswers,

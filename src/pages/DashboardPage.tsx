@@ -13,7 +13,8 @@ import {
   Divider,
   Modal,
   Spin
-} from 'antd'; 
+} from 'antd';
+import { apiRequest } from '../config/api'; 
 import { 
   DownloadOutlined, 
   UserOutlined, 
@@ -118,11 +119,8 @@ const DashboardPage: React.FC = () => {
       setLoadingMascotMessage(true);
       console.log('🤖 Запрос на генерацию сообщения маскота для dashboard:', { sessionId });
       
-      const response = await fetch('/api/ai/mascot-message/dashboard', {
+      const response = await apiRequest('api/ai/mascot-message/dashboard', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ sessionId }),
       });
 
@@ -251,11 +249,8 @@ const DashboardPage: React.FC = () => {
       const test = recommendedTests.find(t => t.id === testId);
       if (!test) return;
 
-      const response = await fetch('/api/tests/additional/save-result', {
+      const response = await apiRequest('api/tests/additional/save-result', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           sessionId,
           testName: test.name,
@@ -281,11 +276,8 @@ const DashboardPage: React.FC = () => {
 
   const handlePsychologistRequest = async (values: any) => {
     try {
-      const response = await fetch('/api/telegram/psychologist-request', {
+      const response = await apiRequest('api/telegram/psychologist-request', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           sessionId,
           ...values
@@ -312,11 +304,8 @@ const DashboardPage: React.FC = () => {
 
     setLoadingFeedback(true);
     try {
-      const response = await fetch('/api/ai/session-feedback', {
+      const response = await apiRequest('api/ai/session-feedback', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           sessionId,
           feedbackText: feedbackText
@@ -408,11 +397,8 @@ const DashboardPage: React.FC = () => {
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
-      const response = await fetch('/api/pdf/personal-plan', {
+      const response = await apiRequest('api/pdf/personal-plan', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ sessionId }),
       });
 
@@ -478,11 +464,8 @@ const DashboardPage: React.FC = () => {
   const downloadSessionPreparation = async () => {
     setLoadingSessionPreparation(true);
     try {
-      const response = await fetch('/api/pdf/session-preparation', {
+      const response = await apiRequest('api/pdf/session-preparation', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ sessionId }),
       });
 

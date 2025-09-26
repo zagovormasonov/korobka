@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Spin, Card, Input, Button, Form, message } from 'antd';
 import { MailOutlined, LockOutlined, KeyOutlined } from '@ant-design/icons';
+import { apiRequest } from '../config/api';
 
 const { Text, Title } = Typography;
 
@@ -26,7 +27,7 @@ const DashboardTokenPage: React.FC = () => {
 
   const fetchDashboardByToken = async (dashboardToken: string) => {
     try {
-      const response = await fetch(`/api/tests/dashboard/${dashboardToken}`);
+      const response = await apiRequest(`api/tests/dashboard/${dashboardToken}`);
       const data = await response.json();
 
       if (data.success) {
@@ -49,11 +50,8 @@ const DashboardTokenPage: React.FC = () => {
     
     setVerifyingEmail(true);
     try {
-      const response = await fetch('/api/tests/verify-credentials', {
+      const response = await apiRequest('api/tests/verify-credentials', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           sessionId,
           email: values.email,

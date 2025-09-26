@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Typography, Button, Card, Row, Col, Space, message, List, Checkbox } from 'antd';
+import { apiRequest } from '../config/api';
 import { 
   FileTextOutlined, 
   UserOutlined, 
@@ -9,6 +10,7 @@ import {
   MessageOutlined,
   CheckCircleOutlined
 } from '@ant-design/icons';
+import { apiRequest } from '../config/api';
 
 const { Title, Paragraph } = Typography;
 
@@ -78,11 +80,8 @@ const PaymentPage: React.FC = () => {
 
   const generateMascotMessage = async () => {
     try {
-      const response = await fetch('/api/ai/mascot-message/payment', {
+      const response = await apiRequest('api/ai/mascot-message/payment', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ sessionId }),
       });
 
@@ -115,11 +114,8 @@ const PaymentPage: React.FC = () => {
     try {
       console.log('💳 Начинаем создание платежа для sessionId:', sessionId);
       
-      const response = await fetch('/api/payments/create', {
+      const response = await apiRequest('api/payments/create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ sessionId }),
       });
 
