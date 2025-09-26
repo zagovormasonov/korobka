@@ -99,8 +99,8 @@ const PaymentSuccessPage: React.FC = () => {
 
   const getDashboardUrl = () => {
     if (!dashboardToken) return '';
-    // Для отображения можем использовать текущий домен, но для писем - всегда idenself.com
-    const baseUrl = process.env.REACT_APP_FRONTEND_URL || window.location.origin;
+    // Используем правильный домен и для отображения тоже
+    const baseUrl = process.env.REACT_APP_FRONTEND_URL || 'https://idenself.com';
     console.log('🔧 REACT_APP_FRONTEND_URL для отображения:', process.env.REACT_APP_FRONTEND_URL);
     console.log('🌐 window.location.origin для отображения:', window.location.origin);
     console.log('📧 Используемый baseUrl для отображения:', baseUrl);
