@@ -327,10 +327,7 @@ router.post('/personal-plan', async (req, res) => {
           <div class="header">
             <h1>Персональный план психического здоровья</h1>
             <p>Создан на основе результатов тестирования</p>
-            <div class="button-group">
-              <button class="print-button" onclick="window.print()">Сохранить как PDF</button>
-              <button class="download-button" onclick="downloadAsFile()">Скачать файл</button>
-            </div>
+            <button class="print-button" onclick="window.print()">Печать</button>
           </div>
           
           <div class="plan-content">
@@ -343,37 +340,6 @@ router.post('/personal-plan', async (req, res) => {
           </div>
         </div>
         
-        <script>
-          function downloadAsFile() {
-            // Создаем текстовый файл с содержимым плана
-            const content = document.querySelector('.plan-content').innerText;
-            const filename = 'personal-plan.txt';
-            
-            const element = document.createElement('a');
-            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
-            element.setAttribute('download', filename);
-            element.style.display = 'none';
-            
-            document.body.appendChild(element);
-            element.click();
-            document.body.removeChild(element);
-            
-            // Показываем инструкцию для PDF
-            setTimeout(() => {
-              alert('📄 Для сохранения как PDF:\\n\\n1. Нажмите Ctrl+P (или Cmd+P на Mac)\\n2. Выберите "Сохранить как PDF"\\n3. Нажмите "Сохранить"\\n\\nИли используйте кнопку "Сохранить как PDF" выше!');
-            }, 500);
-          }
-          
-          // Автоматически предлагаем сохранить при загрузке страницы
-          window.addEventListener('load', function() {
-            setTimeout(() => {
-              const shouldDownload = confirm('💾 Сохранить персональный план как PDF?\\n\\nНажмите "ОК" для открытия диалога печати, где можно выбрать "Сохранить как PDF"');
-              if (shouldDownload) {
-                window.print();
-              }
-            }, 1000);
-          });
-        </script>
       </body>
       </html>
     `;
