@@ -29,12 +29,18 @@ router.post('/psychologist-request', async (req, res) => {
     
     // Отправляем уведомление в Telegram
     const chatId = process.env.TELEGRAM_CHAT_ID;
+    
+    // Форматируем Telegram username (избегаем дублирования @)
+    const formattedTelegramUsername = telegramUsername 
+      ? (telegramUsername.startsWith('@') ? telegramUsername : `@${telegramUsername}`)
+      : 'Не указан';
+    
     const message = `🔔 Новая заявка на подбор психолога!
 
 👤 Имя: ${name}
 📞 Телефон: ${phone}
 📧 Email: ${email}
-💬 Telegram: @${telegramUsername}
+💬 Telegram: ${formattedTelegramUsername}
 🆔 Session ID: ${sessionId}
 ⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
 

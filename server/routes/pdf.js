@@ -6,6 +6,48 @@ const router = express.Router();
 // Проверяем, отключена ли PDF генерация
 const isPdfDisabled = process.env.DISABLE_PDF === 'true';
 
+// Функция для форматирования содержимого плана
+function formatPlanContent(text) {
+  if (!text) return '';
+  
+  return text
+    // Убираем лишние markdown символы
+    .replace(/###\s*/g, '<h3>') // Заголовки h3
+    .replace(/##\s*/g, '<h2>')  // Заголовки h2
+    .replace(/#\s*/g, '<h1>')   // Заголовки h1
+    
+    // Обрабатываем жирный текст
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    
+    // Обрабатываем курсив
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    
+    // Обрабатываем списки
+    .replace(/^\d+\.\s+(.*)$/gm, '<li>$1</li>')
+    .replace(/^-\s+(.*)$/gm, '<li>$1</li>')
+    .replace(/^•\s+(.*)$/gm, '<li>$1</li>')
+    
+    // Оборачиваем списки в ul/ol
+    .replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>')
+    
+    // Обрабатываем параграфы
+    .replace(/\n\n+/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    
+    // Убираем лишние символы
+    .replace(/\*{3,}/g, '') // Убираем звездочки
+    .replace(/#{4,}/g, '')  // Убираем лишние решетки
+    .replace(/-{3,}/g, '<hr>') // Заменяем тире на горизонтальную линию
+    
+    // Оборачиваем в параграфы
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>')
+    
+    // Убираем пустые параграфы
+    .replace(/<p>\s*<\/p>/g, '')
+    .replace(/<p><br><\/p>/g, '');
+}
+
 // Генерировать PDF персонального плана
 router.post('/personal-plan', async (req, res) => {
   try {
@@ -103,7 +145,7 @@ router.post('/personal-plan', async (req, res) => {
           </div>
           
           <div class="plan-content">
-            ${plan.replace(/\n/g, '<br>')}
+            ${formatPlanContent(plan)}
           </div>
           
           <div class="footer">

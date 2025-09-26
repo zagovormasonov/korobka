@@ -423,12 +423,34 @@ const DashboardPage: React.FC = () => {
         if (contentType && contentType.includes('text/html')) {
           // Если получили HTML, открываем в новом окне
           const html = await response.text();
+          
+          // Очищаем HTML от лишних символов и улучшаем форматирование
+          const cleanedHtml = html
+            .replace(/###/g, '') // Убираем markdown заголовки
+            .replace(/\*\*/g, '') // Убираем markdown жирный текст
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>') // Конвертируем курсив
+            .replace(/\n\n/g, '</p><p>') // Конвертируем двойные переносы в параграфы
+            .replace(/\n/g, '<br>') // Конвертируем одинарные переносы
+            .replace(/<br><br>/g, '</p><p>'); // Убираем лишние br между параграфами
+          
           const newWindow = window.open('', '_blank');
           if (newWindow) {
-            newWindow.document.write(html);
+            newWindow.document.write(cleanedHtml);
             newWindow.document.close();
+            
+            // Добавляем возможность скачать как PDF
+            setTimeout(() => {
+              if (newWindow && !newWindow.closed) {
+                const printButton = newWindow.document.querySelector('.print-button');
+                if (printButton) {
+                  printButton.addEventListener('click', () => {
+                    newWindow.print();
+                  });
+                }
+              }
+            }, 1000);
           }
-          message.success('Персональный план открыт в новом окне!');
+          message.success('Персональный план открыт в новом окне! Используйте кнопку "Печать" для сохранения в PDF.');
         } else {
           // Если получили PDF, скачиваем как файл
           const blob = await response.blob();
@@ -578,95 +600,100 @@ const DashboardPage: React.FC = () => {
             </div>
           )}
           
-          <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: '#f6ffed', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
-            <Text style={{ color: '#00695C', fontSize: '16px', fontWeight: '500' }}>
-              Перейди по ссылке каждого теста, пройди тест и впиши результаты в поле ввода результатов
-            </Text>
-          </div>
-          
-          <Row gutter={[16, 16]}>
-            {recommendedTests.map((test) => (
-              <Col xs={24} md={12} key={test.id}>
-                <Card 
-                  size="small" 
-                  hoverable
-                  style={{ height: '100%' }}
-                  actions={[
-                    <Button 
-                      type="link" 
-                      href={test.url} 
-                      target="_blank"
-                      style={{ color: '#00695C' }}
-                    >
-                      Пройти тест
-                    </Button>
-                  ]}
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    {/* Кружочек со статусом теста */}
-                    <div 
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        border: `2px solid ${testResults[test.id] ? '#00695c' : '#d9d9d9'}`,
-                        backgroundColor: testResults[test.id] ? '#00695c' : 'transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        marginTop: '2px'
-                      }}
-                    >
-                      {testResults[test.id] && (
-                        <CheckOutlined 
-                          style={{ 
-                            fontSize: '12px',
-                            color: 'white'
-                          }} 
-                        />
-                      )}
-                    </div>
-                    
-                    <div style={{ flex: 1 }}>
-                      <Title level={5} style={{ color: '#00695C', marginBottom: '8px' }}>
-                        {test.name}
-                      </Title>
-                      <Text type="secondary" style={{ fontSize: '14px', marginBottom: '16px', display: 'block' }}>
-                        {test.description}
-                      </Text>
-                      
-                      <Space direction="vertical" style={{ width: '100%' }}>
-                        {/* Отображение результата (обрезанный текст) */}
-                        {testResults[test.id] && (
-                          <div style={{ 
-                            padding: '8px 12px', 
-                            backgroundColor: '#f6ffed', 
-                            border: '1px solid #b7eb8f', 
-                            borderRadius: '6px',
-                            marginBottom: '8px'
-                          }}>
-                            <Text style={{ fontSize: '14px', color: '#00695C' }}>
-                              {truncateText(testResults[test.id])}
-                            </Text>
-                          </div>
-                        )}
-                        
-                        <Button
-                          type="primary"
-                          size="small"
-                          onClick={() => openModal(test.id)}
-                          style={{ width: '100%' }}
+          {/* Показываем блоки тестов только если не все тесты пройдены */}
+          {!allTestsCompleted && (
+            <>
+              <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: '#f6ffed', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
+                <Text style={{ color: '#00695C', fontSize: '16px', fontWeight: '500' }}>
+                  Перейди по ссылке каждого теста, пройди тест и впиши результаты в поле ввода результатов
+                </Text>
+              </div>
+              
+              <Row gutter={[16, 16]}>
+                {recommendedTests.map((test) => (
+                  <Col xs={24} md={12} key={test.id}>
+                    <Card 
+                      size="small" 
+                      hoverable
+                      style={{ height: '100%' }}
+                      actions={[
+                        <Button 
+                          type="link" 
+                          href={test.url} 
+                          target="_blank"
+                          style={{ color: '#00695C' }}
                         >
-                          {testResults[test.id] ? 'Изменить результат' : 'Ввести результат'}
+                          Пройти тест
                         </Button>
-                      </Space>
-                    </div>
-                  </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+                      ]}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        {/* Кружочек со статусом теста */}
+                        <div 
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            border: `2px solid ${testResults[test.id] ? '#00695c' : '#d9d9d9'}`,
+                            backgroundColor: testResults[test.id] ? '#00695c' : 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            marginTop: '2px'
+                          }}
+                        >
+                          {testResults[test.id] && (
+                            <CheckOutlined 
+                              style={{ 
+                                fontSize: '12px',
+                                color: 'white'
+                              }} 
+                            />
+                          )}
+                        </div>
+                        
+                        <div style={{ flex: 1 }}>
+                          <Title level={5} style={{ color: '#00695C', marginBottom: '8px' }}>
+                            {test.name}
+                          </Title>
+                          <Text type="secondary" style={{ fontSize: '14px', marginBottom: '16px', display: 'block' }}>
+                            {test.description}
+                          </Text>
+                          
+                          <Space direction="vertical" style={{ width: '100%' }}>
+                            {/* Отображение результата (обрезанный текст) */}
+                            {testResults[test.id] && (
+                              <div style={{ 
+                                padding: '8px 12px', 
+                                backgroundColor: '#f6ffed', 
+                                border: '1px solid #b7eb8f', 
+                                borderRadius: '6px',
+                                marginBottom: '8px'
+                              }}>
+                                <Text style={{ fontSize: '14px', color: '#00695C' }}>
+                                  {truncateText(testResults[test.id])}
+                                </Text>
+                              </div>
+                            )}
+                            
+                            <Button
+                              type="primary"
+                              size="small"
+                              onClick={() => openModal(test.id)}
+                              style={{ width: '100%' }}
+                            >
+                              {testResults[test.id] ? 'Изменить результат' : 'Ввести результат'}
+                            </Button>
+                          </Space>
+                        </div>
+                      </div>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            </>
+          )}
         </Card>
       ) : (
         <div>
@@ -744,9 +771,9 @@ const DashboardPage: React.FC = () => {
                   </Form.Item>
                   <Form.Item
                     name="telegramUsername"
-                    label="Telegram"
+                    label="Telegram (необязательно)"
                   >
-                    <Input placeholder="@username" />
+                    <Input placeholder="username или @username" />
                   </Form.Item>
                   <Button 
                     type="primary" 
