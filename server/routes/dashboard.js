@@ -4,6 +4,16 @@ import crypto from 'crypto';
 
 const router = express.Router();
 
+// Тестовый endpoint для проверки работы роута
+router.get('/test-route', (req, res) => {
+  console.log('🧪 [DASHBOARD] Test route called');
+  res.json({ 
+    success: true, 
+    message: 'Dashboard route is working!',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Создать учетные данные для доступа к ЛК
 router.post('/create-credentials', async (req, res) => {
   try {

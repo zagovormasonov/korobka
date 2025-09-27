@@ -136,6 +136,16 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Test dashboard endpoint
+app.get('/api/dashboard/test', (req, res) => {
+  console.log('🧪 [TEST] Dashboard test endpoint called');
+  res.json({ 
+    status: 'Dashboard route working', 
+    timestamp: new Date().toISOString(),
+    message: 'Dashboard router is properly connected'
+  });
+});
+
 // Test CORS endpoint
 app.get('/api/test-cors', (req, res) => {
   console.log('🧪 CORS test endpoint called from:', req.get('Origin') || 'no-origin');
