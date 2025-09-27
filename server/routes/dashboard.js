@@ -32,19 +32,42 @@ router.post('/create-credentials', async (req, res) => {
       });
     }
 
-    // Сначала проверим, существует ли сессия
+    // Сначала проверим, что вообще есть в таблице
+    console.log('🔍 [DASHBOARD] Проверяем все записи в таблице...');
+    const { data: allRecords, error: allError } = await supabase
+      .from('primary_test_results')
+      .select('id, session_id')
+      .limit(5);
+
+    if (allError) {
+      console.error('❌ [DASHBOARD] Ошибка при получении всех записей:', allError);
+    } else {
+      console.log('📊 [DASHBOARD] Всего записей в таблице:', allRecords?.length || 0);
+      console.log('📊 [DASHBOARD] Первые записи:', allRecords);
+    }
+
+    // Теперь проверим, существует ли конкретная сессия
     console.log('🔍 [DASHBOARD] Проверяем существование сессии:', sessionId);
     const { data: existingSession, error: checkError } = await supabase
       .from('primary_test_results')
       .select('id, session_id')
       .eq('session_id', sessionId)
-      .single();
+      .maybeSingle(); // Используем maybeSingle вместо single
 
     if (checkError) {
       console.error('❌ [DASHBOARD] Ошибка при проверке сессии:', checkError);
+      return res.status(500).json({ 
+        success: false, 
+        error: `Ошибка при проверке сессии: ${checkError.message}` 
+      });
+    }
+
+    if (!existingSession) {
+      console.log('❌ [DASHBOARD] Сессия не найдена в базе данных');
+      console.log('🔍 [DASHBOARD] Искали sessionId:', sessionId);
       return res.status(404).json({ 
         success: false, 
-        error: 'Сессия не найдена' 
+        error: 'Сессия не найдена в базе данных' 
       });
     }
 
@@ -72,7 +95,7 @@ router.post('/create-credentials', async (req, res) => {
       })
       .eq('session_id', sessionId)
       .select()
-      .single();
+      .maybeSingle();
 
     // Если ошибка связана с отсутствием поля nickname, попробуем без него
     if (error && error.message && error.message.includes('nickname')) {
@@ -87,7 +110,7 @@ router.post('/create-credentials', async (req, res) => {
         })
         .eq('session_id', sessionId)
         .select()
-        .single();
+        .maybeSingle();
       
       data = result.data;
       error = result.error;
