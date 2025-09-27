@@ -158,17 +158,17 @@ const DashboardPage: React.FC = () => {
         return;
       }
 
-      // Сначала получаем email пользователя из primary test results
+      // Проверяем существование primary test results (email больше не обязателен)
       const primaryResponse = await apiRequest(`api/tests/primary/${sessionId}`);
       const primaryData = await primaryResponse.json();
       
-      if (!primaryData.success || !primaryData.data?.email) {
-        console.error('❌ Не удалось получить email пользователя');
+      if (!primaryData.success) {
+        console.error('❌ Не удалось получить данные пользователя');
         return;
       }
       
-      const userEmail = primaryData.data.email;
-      console.log('📧 Email пользователя для загрузки результатов:', userEmail);
+      const userEmail = primaryData.data?.email;
+      console.log('📧 Email пользователя для загрузки результатов:', userEmail || 'не указан');
       
       // Загружаем результаты дополнительных тестов по sessionId
       const response = await apiRequest(`api/tests/additional/results/${sessionId}`);
@@ -1152,7 +1152,8 @@ const DashboardPage: React.FC = () => {
                 height: '40px',
                 backgroundColor: '#00695c',
                 borderColor: '#00695c',
-                fontWeight: '500'
+                fontWeight: '500',
+                color: 'white'
               }}
             >
               Сохранить
@@ -1167,11 +1168,13 @@ const DashboardPage: React.FC = () => {
             }
           }}
         >
-          <Space direction="vertical" style={{ width: '100%', marginTop: '20px' }}>
+          <div style={{ marginTop: '20px' }}>
             <Text style={{ 
               color: '#7B8794',
               fontSize: '14px',
-              lineHeight: '1.5'
+              lineHeight: '1.5',
+              display: 'block',
+              marginBottom: '15px'
             }}>
               Введите результат теста (например: "46 баллов по Беку, выраженная депрессия")
             </Text>
@@ -1184,10 +1187,11 @@ const DashboardPage: React.FC = () => {
               showCount
               style={{
                 borderRadius: '12px',
-                resize: 'none'
+                resize: 'none',
+                marginBottom: '20px'
               }}
             />
-          </Space>
+          </div>
         </Modal>
       </div>
     </div>
