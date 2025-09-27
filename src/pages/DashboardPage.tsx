@@ -543,9 +543,9 @@ const DashboardPage: React.FC = () => {
                 onClick={() => setPersonalPlanMode(true)}
                 style={{
                   height: '50px',
-                  fontSize: '16px',
+                  fontSize: '14px',
                   fontWeight: 'bold',
-                  padding: '20px',
+                  padding: '25px',
                   marginTop: '20px'
                 }}
               >
