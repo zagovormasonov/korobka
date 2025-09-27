@@ -2,15 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Typography, 
-  Card, 
   Button, 
   Space, 
   Input, 
   Form, 
   message, 
-  Row, 
-  Col,
-  Divider,
   Modal,
   Spin
 } from 'antd'; 
@@ -20,11 +16,10 @@ import {
   UserOutlined, 
   FileTextOutlined, 
   MessageOutlined,
-  CheckOutlined,
-  LogoutOutlined
+  CheckOutlined
 } from '@ant-design/icons';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const recommendedTests = [
@@ -486,236 +481,444 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+    <div style={{ 
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      padding: '20px'
+    }}>
+      {/* Header with Exit button */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'flex-end', 
+        marginBottom: '20px',
+        maxWidth: '800px',
+        margin: '0 auto 20px auto'
+      }}>
         <Button 
-          type="default" 
-          icon={<LogoutOutlined />}
+          type="text" 
           onClick={handleLogout}
           style={{ 
-            borderColor: '#ff4d4f',
-            color: '#ff4d4f'
+            color: '#8B5A3C',
+            fontSize: '16px',
+            fontWeight: '500'
           }}
         >
           Выйти
         </Button>
       </div>
-      
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <Title level={1} style={{ color: '#00695C', margin: 0 }}>
-          Личный кабинет
-        </Title>
-      </div>
 
-      <Card 
-        style={{ 
-          marginBottom: '40px', 
-          backgroundColor: '#f6ffed',
-          border: '1px solid #b7eb8f'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-          <img 
-            src="/mascot.png"  
-            alt="Луми" 
-            style={{ width: '60px', height: '60px', flexShrink: 0, objectFit: 'contain' }}
-          />
-          <div style={{ flex: 1 }}>
+      {/* Main container */}
+      <div style={{ 
+        maxWidth: '800px', 
+        margin: '0 auto',
+        textAlign: 'center'
+      }}>
+        
+        {/* Mascot section */}
+        <div style={{ marginBottom: '60px' }}>
+          <div style={{
+            width: '120px',
+            height: '120px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #8B5A3C 0%, #D4A574 100%)',
+            margin: '0 auto 30px auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 8px 32px rgba(139, 90, 60, 0.3)'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <img 
+                src="/mascot.png"  
+                alt="Луми" 
+                style={{ 
+                  width: '60px', 
+                  height: '60px', 
+                  objectFit: 'contain',
+                  filter: 'brightness(1.2)'
+                }}
+              />
+            </div>
+          </div>
+          
+          <Title level={2} style={{ 
+            color: '#2C3E50',
+            fontSize: '32px',
+            fontWeight: '600',
+            marginBottom: '10px',
+            margin: '0 0 10px 0'
+          }}>
+            Луми
+          </Title>
+          
+          <Text style={{ 
+            color: '#7B8794',
+            fontSize: '18px',
+            display: 'block',
+            marginBottom: '30px'
+          }}>
+            Ваш AI компаньон
+          </Text>
+
+          {/* Mascot message */}
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '20px',
+            padding: '25px 30px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            maxWidth: '600px',
+            margin: '0 auto',
+            textAlign: 'left'
+          }}>
             {loadingMascotMessage ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
                 <Spin size="small" />
-                <Text style={{ color: '#00695C', fontSize: '16px' }}>
+                <Text style={{ color: '#7B8794', fontSize: '16px' }}>
                   Луми анализирует твой тест...
                 </Text>
               </div>
             ) : (
-              <Paragraph style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
+              <Text style={{ 
+                color: '#2C3E50', 
+                fontSize: '16px', 
+                lineHeight: '1.6',
+                display: 'block'
+              }}>
                 {mascotMessage || 'Привет! На основе твоего теста я рекомендую пройти дополнительные тесты для более точной диагностики.'}
-              </Paragraph>
+              </Text>
             )}
           </div>
         </div>
-      </Card>
 
-      {!personalPlanMode ? (
-      <Card title="Рекомендуемые тесты" style={{ marginBottom: '40px' }}>
-          {allTestsCompleted && (
-            <div style={{ 
-              textAlign: 'center', 
-              marginBottom: '30px', 
-              padding: '30px 16px',
-              backgroundColor: '#f6ffed',
-              borderRadius: '8px',
-              border: '2px solid #00695c'
+        {!personalPlanMode ? (
+          <div>
+            {/* Section title */}
+            <Title level={3} style={{ 
+              color: '#2C3E50',
+              fontSize: '24px',
+              fontWeight: '600',
+              marginBottom: '40px',
+              textAlign: 'center'
             }}>
-              <CheckOutlined 
-                style={{ 
-                  fontSize: '80px', 
-                  color: '#00695c', 
-                  marginBottom: '20px',
-                  display: 'block'
-                }} 
-              />
-              <Title level={2} style={{ color: '#00695c', marginBottom: '20px', margin: 0 }}>
-                Все тесты пройдены!
-              </Title>
-              <Button 
-                type="primary" 
-                size="large"
-                onClick={() => setPersonalPlanMode(true)}
-                style={{
-                  height: '50px',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  padding: '25px',
-                  marginTop: '20px'
-                }}
-              >
-                Перейти к персональному плану
-              </Button>
-            </div>
-          )}
-          
-          {/* Показываем блоки тестов только если не все тесты пройдены */}
-          {!allTestsCompleted && (
-            <>
-        <div style={{ marginBottom: '20px', padding: '16px', backgroundColor: '#f6ffed', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
-          <Text style={{ color: '#00695C', fontSize: '16px', fontWeight: '500' }}>
-            Перейди по ссылке каждого теста, пройди тест и впиши результаты в поле ввода результатов
-          </Text>
-        </div>
-        
-        <Row gutter={[16, 16]}>
-          {recommendedTests.map((test) => (
-            <Col xs={24} md={12} key={test.id}>
-              <Card 
-                size="small" 
-                hoverable
-                style={{ height: '100%' }}
-                actions={[
-                  <Button 
-                    type="link" 
-                    href={test.url} 
-                    target="_blank"
-                    style={{ color: '#00695C' }}
-                  >
-                    Пройти тест
-                  </Button>
-                ]}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  {/* Кружочек со статусом теста */}
-                  <div 
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                            border: `2px solid ${testResults[test.id] ? '#00695c' : '#d9d9d9'}`,
-                            backgroundColor: testResults[test.id] ? '#00695c' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      marginTop: '2px'
-                    }}
-                  >
-                    {testResults[test.id] && (
-                      <CheckOutlined 
-                        style={{ 
-                          fontSize: '12px',
-                          color: 'white'
-                        }} 
-                      />
-                    )}
-                  </div>
-                  
-                  <div style={{ flex: 1 }}>
-                    <Title level={5} style={{ color: '#00695C', marginBottom: '8px' }}>
-                      {test.name}
-                    </Title>
-                    <Text type="secondary" style={{ fontSize: '14px', marginBottom: '16px', display: 'block' }}>
-                      {test.description}
-                    </Text>
-                    
-                    <Space direction="vertical" style={{ width: '100%' }}>
-                      {/* Отображение результата (обрезанный текст) */}
+              Рекомендуемые тесты
+            </Title>
+
+            {allTestsCompleted && (
+              <div style={{ 
+                textAlign: 'center', 
+                marginBottom: '40px', 
+                padding: '40px 30px',
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+              }}>
+                <CheckOutlined 
+                  style={{ 
+                    fontSize: '60px', 
+                    color: '#52C41A', 
+                    marginBottom: '20px',
+                    display: 'block'
+                  }} 
+                />
+                <Title level={2} style={{ 
+                  color: '#2C3E50', 
+                  marginBottom: '20px', 
+                  margin: '0 0 20px 0',
+                  fontSize: '24px'
+                }}>
+                  Все тесты пройдены!
+                </Title>
+                <Button 
+                  type="primary" 
+                  size="large"
+                  onClick={() => setPersonalPlanMode(true)}
+                  style={{
+                    height: '50px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    padding: '0 30px',
+                    marginTop: '20px',
+                    borderRadius: '25px',
+                    backgroundColor: '#8B5A3C',
+                    borderColor: '#8B5A3C'
+                  }}
+                >
+                  Перейти к персональному плану
+                </Button>
+              </div>
+            )}
+            
+            {/* Tests grid */}
+            {!allTestsCompleted && (
+              <>
+                <div style={{ 
+                  marginBottom: '30px', 
+                  padding: '20px', 
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)', 
+                  borderRadius: '15px',
+                  textAlign: 'center'
+                }}>
+                  <Text style={{ 
+                    color: '#7B8794', 
+                    fontSize: '16px', 
+                    fontWeight: '500',
+                    lineHeight: '1.5'
+                  }}>
+                    Перейди по ссылке каждого теста, пройди тест и впиши результаты в поле ввода результатов
+                  </Text>
+                </div>
+                
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+                  gap: '20px',
+                  marginBottom: '40px'
+                }}>
+                  {recommendedTests.map((test) => (
+                    <div 
+                      key={test.id}
+                      style={{
+                        backgroundColor: 'white',
+                        borderRadius: '20px',
+                        padding: '25px',
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px', marginBottom: '20px' }}>
+                        {/* Status indicator */}
+                        <div 
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            backgroundColor: testResults[test.id] ? '#52C41A' : '#E8E8E8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            marginTop: '2px'
+                          }}
+                        >
+                          {testResults[test.id] && (
+                            <CheckOutlined 
+                              style={{ 
+                                fontSize: '10px',
+                                color: 'white'
+                              }} 
+                            />
+                          )}
+                        </div>
+                        
+                        <div style={{ flex: 1 }}>
+                          <Title level={5} style={{ 
+                            color: '#2C3E50', 
+                            marginBottom: '8px',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            lineHeight: '1.4'
+                          }}>
+                            {test.name.replace('Тест на ', '')}
+                          </Title>
+                          <Text style={{ 
+                            color: '#7B8794', 
+                            fontSize: '14px', 
+                            display: 'block',
+                            lineHeight: '1.4'
+                          }}>
+                            {test.description}
+                          </Text>
+                        </div>
+                      </div>
+                      
+                      {/* Test result display */}
                       {testResults[test.id] && (
                         <div style={{ 
-                          padding: '8px 12px', 
-                          backgroundColor: '#f6ffed', 
-                          border: '1px solid #b7eb8f', 
-                          borderRadius: '6px',
-                          marginBottom: '8px'
+                          padding: '12px 16px', 
+                          backgroundColor: '#F8F9FA', 
+                          borderRadius: '12px',
+                          marginBottom: '15px'
                         }}>
-                          <Text style={{ fontSize: '14px', color: '#00695C' }}>
+                          <Text style={{ 
+                            fontSize: '14px', 
+                            color: '#2C3E50',
+                            lineHeight: '1.4'
+                          }}>
                             {truncateText(testResults[test.id])}
                           </Text>
                         </div>
                       )}
                       
-                      <Button
-                        type="primary"
-                        size="small"
-                        onClick={() => openModal(test.id)}
-                        style={{ width: '100%', padding: '30px 16px' }}
-                      >
-                        {testResults[test.id] ? 'Изменить результат' : 'Ввести результат'}
-                      </Button>
-                    </Space>
-                  </div>
+                      {/* Action buttons */}
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <Button
+                          href={test.url}
+                          target="_blank"
+                          style={{
+                            flex: 1,
+                            height: '40px',
+                            borderRadius: '20px',
+                            backgroundColor: '#E8F4FD',
+                            borderColor: '#E8F4FD',
+                            color: '#1890FF',
+                            fontWeight: '500'
+                          }}
+                        >
+                          Пройти тест
+                        </Button>
+                        <Button
+                          type="primary"
+                          onClick={() => openModal(test.id)}
+                          style={{
+                            flex: 1,
+                            height: '40px',
+                            borderRadius: '20px',
+                            backgroundColor: '#8B5A3C',
+                            borderColor: '#8B5A3C',
+                            fontWeight: '500'
+                          }}
+                        >
+                          {testResults[test.id] ? 'Изменить' : 'Ввести результат'}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-            </>
-          )}
-      </Card>
-      ) : (
-        <div>
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <Title level={2} style={{ color: '#00695c', marginBottom: '10px' }}>
-              Персональный план
-            </Title>
-            <Button 
-              type="default" 
-              onClick={() => setPersonalPlanMode(false)}
-              style={{ marginBottom: '20px', padding: '30px 20px' }}
-            >
-              ← Вернуться к тестам
-            </Button>
+              </>
+            )}
           </div>
-          
-          <Row gutter={[24, 24]}>
-            <Col xs={24} md={12}>
-              <Card 
-                title="Скачать персональный план"
-                extra={<DownloadOutlined style={{ color: '#00695C' }} />}
-                hoverable
-                style={{ height: '100%' }}
+        ) : (
+          <div>
+            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <Title level={3} style={{ 
+                color: '#2C3E50', 
+                marginBottom: '20px',
+                fontSize: '24px',
+                fontWeight: '600'
+              }}>
+                Персональный план
+              </Title>
+              <Button 
+                type="text" 
+                onClick={() => setPersonalPlanMode(false)}
+                style={{ 
+                  color: '#8B5A3C',
+                  fontSize: '16px',
+                  fontWeight: '500'
+                }}
               >
-                <Paragraph>
+                ← Вернуться к тестам
+              </Button>
+            </div>
+            
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+              gap: '20px',
+              marginBottom: '40px'
+            }}>
+              {/* Personal Plan Card */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                padding: '30px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#E8F4FD',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px auto'
+                }}>
+                  <DownloadOutlined style={{ fontSize: '24px', color: '#1890FF' }} />
+                </div>
+                <Title level={4} style={{ 
+                  color: '#2C3E50', 
+                  marginBottom: '15px',
+                  fontSize: '18px',
+                  fontWeight: '600'
+                }}>
+                  Скачать персональный план
+                </Title>
+                <Text style={{ 
+                  color: '#7B8794', 
+                  fontSize: '14px',
+                  display: 'block',
+                  marginBottom: '25px',
+                  lineHeight: '1.5'
+                }}>
                   Скачай персональный план, созданный на основе всех твоих тестов
-                </Paragraph>
+                </Text>
                 <Button 
-                  type="primary" 
-                  icon={<DownloadOutlined />}
+                  type="primary"
                   onClick={downloadPersonalPlan}
                   loading={loadingPersonalPlan}
-                  style={{ width: '100%', padding: '30px 16px' }}
+                  style={{
+                    width: '100%',
+                    height: '45px',
+                    borderRadius: '22px',
+                    backgroundColor: '#8B5A3C',
+                    borderColor: '#8B5A3C',
+                    fontSize: '16px',
+                    fontWeight: '500'
+                  }}
                 >
-                  {loadingPersonalPlan ? 'Генерируем план...' : 'Скачать персональный план'}
+                  {loadingPersonalPlan ? 'Генерируем план...' : 'Скачать план'}
                 </Button>
-              </Card>
-            </Col>
+              </div>
 
-            <Col xs={24} md={12}>
-              <Card 
-                title="Подбор психолога"
-                extra={<UserOutlined style={{ color: '#00695C' }} />}
-                hoverable
-                style={{ height: '100%' }}
-              >
+              {/* Psychologist Selection Card */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                padding: '30px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+              }}>
+                <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    backgroundColor: '#FFF2E8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 20px auto'
+                  }}>
+                    <UserOutlined style={{ fontSize: '24px', color: '#FA8C16' }} />
+                  </div>
+                  <Title level={4} style={{ 
+                    color: '#2C3E50', 
+                    marginBottom: '0',
+                    fontSize: '18px',
+                    fontWeight: '600'
+                  }}>
+                    Подбор психолога
+                  </Title>
+                </div>
+                
                 <Form
                   form={psychologistForm}
                   onFinish={handlePsychologistRequest}
@@ -723,133 +926,269 @@ const DashboardPage: React.FC = () => {
                 >
                   <Form.Item
                     name="name"
-                    label="Имя"
+                    label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Имя</span>}
                     rules={[{ required: true, message: 'Введите ваше имя' }]}
                   >
-                    <Input placeholder="Ваше имя" />
+                    <Input 
+                      placeholder="Ваше имя" 
+                      style={{ 
+                        borderRadius: '12px',
+                        height: '40px'
+                      }}
+                    />
                   </Form.Item>
                   <Form.Item
                     name="phone"
-                    label="Телефон"
+                    label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Телефон</span>}
                     rules={[{ required: true, message: 'Введите номер телефона' }]}
                   >
-                    <Input placeholder="+7 (999) 123-45-67" />
+                    <Input 
+                      placeholder="+7 (999) 123-45-67" 
+                      style={{ 
+                        borderRadius: '12px',
+                        height: '40px'
+                      }}
+                    />
                   </Form.Item>
                   <Form.Item
                     name="email"
-                    label="Email"
+                    label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Email</span>}
                     rules={[
                       { required: true, message: 'Введите email' },
                       { type: 'email', message: 'Введите корректный email' }
                     ]}
                   >
-                    <Input placeholder="example@email.com" />
+                    <Input 
+                      placeholder="example@email.com" 
+                      style={{ 
+                        borderRadius: '12px',
+                        height: '40px'
+                      }}
+                    />
                   </Form.Item>
                   <Form.Item
                     name="telegramUsername"
-                    label="Telegram (необязательно)"
+                    label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Telegram (необязательно)</span>}
                   >
-                    <Input placeholder="username или @username" />
+                    <Input 
+                      placeholder="username или @username" 
+                      style={{ 
+                        borderRadius: '12px',
+                        height: '40px'
+                      }}
+                    />
                   </Form.Item>
                   <Button 
                     type="primary" 
                     htmlType="submit"
-                    style={{ width: '100%', padding: '30px 16px' }}
+                    style={{
+                      width: '100%',
+                      height: '45px',
+                      borderRadius: '22px',
+                      backgroundColor: '#8B5A3C',
+                      borderColor: '#8B5A3C',
+                      fontSize: '16px',
+                      fontWeight: '500'
+                    }}
                   >
                     Оставить заявку
                   </Button>
                 </Form>
-              </Card>
-            </Col>
+              </div>
 
-            <Col xs={24} md={12}>
-              <Card 
-                title="Подготовка к сеансу"
-                extra={<FileTextOutlined style={{ color: '#00695C' }} />}
-                hoverable
-                style={{ height: '100%' }}
-              >
-                <Paragraph>
+              {/* Session Preparation Card */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                padding: '30px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#F6FFED',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px auto'
+                }}>
+                  <FileTextOutlined style={{ fontSize: '24px', color: '#52C41A' }} />
+                </div>
+                <Title level={4} style={{ 
+                  color: '#2C3E50', 
+                  marginBottom: '15px',
+                  fontSize: '18px',
+                  fontWeight: '600'
+                }}>
+                  Подготовка к сеансу
+                </Title>
+                <Text style={{ 
+                  color: '#7B8794', 
+                  fontSize: '14px',
+                  display: 'block',
+                  marginBottom: '25px',
+                  lineHeight: '1.5'
+                }}>
                   PDF с рекомендациями для психолога и психиатра
-                </Paragraph>
-                 <Button 
-                   type="primary" 
-                   icon={<DownloadOutlined />}
-                   onClick={() => downloadSessionPreparation('psychologist')}
-                   loading={loadingSessionPreparation}
-                   style={{ width: '100%', padding: '30px 16px' }}
-                 >
-                   {loadingSessionPreparation ? 'Генерируем подготовку...' : 'Скачать подготовку к сеансу'}
-                 </Button>
-              </Card>
-            </Col>
+                </Text>
+                <Button 
+                  type="primary"
+                  onClick={() => downloadSessionPreparation('psychologist')}
+                  loading={loadingSessionPreparation}
+                  style={{
+                    width: '100%',
+                    height: '45px',
+                    borderRadius: '22px',
+                    backgroundColor: '#8B5A3C',
+                    borderColor: '#8B5A3C',
+                    fontSize: '16px',
+                    fontWeight: '500'
+                  }}
+                >
+                  {loadingSessionPreparation ? 'Генерируем...' : 'Скачать подготовку'}
+                </Button>
+              </div>
 
-            <Col xs={24} md={12}>
-              <Card 
-                title="Обратная связь"
-                extra={<MessageOutlined style={{ color: '#00695C' }} />}
-                hoverable
-                style={{ height: '100%' }}
-              >
+              {/* Feedback Card */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                padding: '30px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+              }}>
+                <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    backgroundColor: '#FFF0F6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 20px auto'
+                  }}>
+                    <MessageOutlined style={{ fontSize: '24px', color: '#EB2F96' }} />
+                  </div>
+                  <Title level={4} style={{ 
+                    color: '#2C3E50', 
+                    marginBottom: '0',
+                    fontSize: '18px',
+                    fontWeight: '600'
+                  }}>
+                    Обратная связь
+                  </Title>
+                </div>
+                
                 <Space direction="vertical" style={{ width: '100%' }}>
                   <TextArea
                     placeholder="Расскажите о вашем опыте на сеансе у психолога..."
                     value={feedbackText}
-                    onChange={(e) => setFeedbackText(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFeedbackText(e.target.value)}
                     rows={4}
+                    style={{ 
+                      borderRadius: '12px',
+                      resize: 'none'
+                    }}
                   />
                   <Button 
                     type="primary" 
                     onClick={handleFeedbackSubmit}
                     loading={loadingFeedback}
-                    style={{ width: '100%', padding: '30px 16px' }}
+                    style={{
+                      width: '100%',
+                      height: '45px',
+                      borderRadius: '22px',
+                      backgroundColor: '#8B5A3C',
+                      borderColor: '#8B5A3C',
+                      fontSize: '16px',
+                      fontWeight: '500'
+                    }}
                   >
-                    {loadingFeedback ? 'Анализируем обратную связь...' : 'Получить обратную связь'}
+                    {loadingFeedback ? 'Анализируем...' : 'Получить обратную связь'}
                   </Button>
                 </Space>
-              </Card>
-            </Col>
-          </Row>
-        </div>
-      )}
+              </div>
+            </div>
+          </div>
+        )}
 
 
-      {/* Модальное окно для ввода результата теста */}
-      <Modal
-        title="Ввести результат теста"
-        open={modalVisible}
-        onCancel={closeModal}
-        footer={[
-          <Button key="cancel" onClick={closeModal}>
-            Отмена
-          </Button>,
-          <Button 
-            key="save" 
-            type="primary" 
-            onClick={saveModalResult}
-            loading={currentTestId ? savingResults[currentTestId] : false}
-            disabled={!modalText.trim()}
-          >
-            Сохранить
-          </Button>
-        ]}
-        width={600}
-        style={{ marginTop: '20px', marginBottom: '20px' }}
-      >
-        <Space direction="vertical" style={{ width: '100%', marginTop: '16px', marginBottom: '16px' }}>
-          <Text type="secondary">
-            Введите результат теста (например: "46 баллов по Беку, выраженная депрессия")
-          </Text>
-          <Input.TextArea
-            placeholder="Введите результат теста..."
-            value={modalText}
-            onChange={(e) => setModalText(e.target.value)}
-            rows={6}
-            maxLength={500}
-            showCount
-          />
-        </Space>
-      </Modal>
+        {/* Модальное окно для ввода результата теста */}
+        <Modal
+          title={
+            <span style={{ 
+              color: '#2C3E50', 
+              fontSize: '18px', 
+              fontWeight: '600' 
+            }}>
+              Ввести результат теста
+            </span>
+          }
+          open={modalVisible}
+          onCancel={closeModal}
+          footer={[
+            <Button 
+              key="cancel" 
+              onClick={closeModal}
+              style={{
+                borderRadius: '20px',
+                height: '40px',
+                fontWeight: '500'
+              }}
+            >
+              Отмена
+            </Button>,
+            <Button 
+              key="save" 
+              type="primary" 
+              onClick={saveModalResult}
+              loading={currentTestId ? savingResults[currentTestId] : false}
+              disabled={!modalText.trim()}
+              style={{
+                borderRadius: '20px',
+                height: '40px',
+                backgroundColor: '#8B5A3C',
+                borderColor: '#8B5A3C',
+                fontWeight: '500'
+              }}
+            >
+              Сохранить
+            </Button>
+          ]}
+          width={600}
+          centered
+          styles={{
+            content: {
+              borderRadius: '20px',
+              padding: '30px'
+            }
+          }}
+        >
+          <Space direction="vertical" style={{ width: '100%', marginTop: '20px' }}>
+            <Text style={{ 
+              color: '#7B8794',
+              fontSize: '14px',
+              lineHeight: '1.5'
+            }}>
+              Введите результат теста (например: "46 баллов по Беку, выраженная депрессия")
+            </Text>
+            <Input.TextArea
+              placeholder="Введите результат теста..."
+              value={modalText}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setModalText(e.target.value)}
+              rows={6}
+              maxLength={500}
+              showCount
+              style={{
+                borderRadius: '12px',
+                resize: 'none'
+              }}
+            />
+          </Space>
+        </Modal>
+      </div>
     </div>
   );
 };
