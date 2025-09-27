@@ -498,7 +498,7 @@ const DashboardPage: React.FC = () => {
           type="text" 
           onClick={handleLogout}
           style={{ 
-            color: '#8B5A3C',
+            color: '#00695c',
             fontSize: '16px',
             fontWeight: '500'
           }}
@@ -520,12 +520,12 @@ const DashboardPage: React.FC = () => {
             width: '120px',
             height: '120px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #8B5A3C 0%, #D4A574 100%)',
+            background: 'linear-gradient(135deg, #00695c 0%, #52c41a 100%)',
             margin: '0 auto 30px auto',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 8px 32px rgba(139, 90, 60, 0.3)'
+            boxShadow: '0 8px 32px rgba(0, 105, 92, 0.3)'
           }}>
             <div style={{
               width: '80px',
@@ -647,8 +647,8 @@ const DashboardPage: React.FC = () => {
                     padding: '0 30px',
                     marginTop: '20px',
                     borderRadius: '25px',
-                    backgroundColor: '#8B5A3C',
-                    borderColor: '#8B5A3C'
+                    backgroundColor: '#00695c',
+                    borderColor: '#00695c'
                   }}
                 >
                   Перейти к персональному плану
@@ -691,7 +691,8 @@ const DashboardPage: React.FC = () => {
                         padding: '25px',
                         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
                         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        textAlign: 'left'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
@@ -709,7 +710,7 @@ const DashboardPage: React.FC = () => {
                             width: '20px',
                             height: '20px',
                             borderRadius: '50%',
-                            backgroundColor: testResults[test.id] ? '#52C41A' : '#E8E8E8',
+                            backgroundColor: testResults[test.id] ? '#00695c' : '#E8E8E8',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -790,8 +791,8 @@ const DashboardPage: React.FC = () => {
                             flex: 1,
                             height: '40px',
                             borderRadius: '20px',
-                            backgroundColor: '#8B5A3C',
-                            borderColor: '#8B5A3C',
+                            backgroundColor: '#00695c',
+                            borderColor: '#00695c',
                             fontWeight: '500'
                           }}
                         >
@@ -817,12 +818,12 @@ const DashboardPage: React.FC = () => {
               </Title>
               <Button 
                 type="text" 
-                onClick={() => setPersonalPlanMode(false)}
-                style={{ 
-                  color: '#8B5A3C',
-                  fontSize: '16px',
-                  fontWeight: '500'
-                }}
+              onClick={() => setPersonalPlanMode(false)}
+              style={{ 
+                color: '#00695c',
+                fontSize: '16px',
+                fontWeight: '500'
+              }}
               >
                 ← Вернуться к тестам
               </Button>
@@ -879,8 +880,8 @@ const DashboardPage: React.FC = () => {
                     width: '100%',
                     height: '45px',
                     borderRadius: '22px',
-                    backgroundColor: '#8B5A3C',
-                    borderColor: '#8B5A3C',
+                    backgroundColor: '#00695c',
+                    borderColor: '#00695c',
                     fontSize: '16px',
                     fontWeight: '500'
                   }}
@@ -985,8 +986,8 @@ const DashboardPage: React.FC = () => {
                       width: '100%',
                       height: '45px',
                       borderRadius: '22px',
-                      backgroundColor: '#8B5A3C',
-                      borderColor: '#8B5A3C',
+                      backgroundColor: '#00695c',
+                      borderColor: '#00695c',
                       fontSize: '16px',
                       fontWeight: '500'
                     }}
@@ -1041,8 +1042,8 @@ const DashboardPage: React.FC = () => {
                     width: '100%',
                     height: '45px',
                     borderRadius: '22px',
-                    backgroundColor: '#8B5A3C',
-                    borderColor: '#8B5A3C',
+                    backgroundColor: '#00695c',
+                    borderColor: '#00695c',
                     fontSize: '16px',
                     fontWeight: '500'
                   }}
@@ -1100,8 +1101,8 @@ const DashboardPage: React.FC = () => {
                       width: '100%',
                       height: '45px',
                       borderRadius: '22px',
-                      backgroundColor: '#8B5A3C',
-                      borderColor: '#8B5A3C',
+                      backgroundColor: '#00695c',
+                      borderColor: '#00695c',
                       fontSize: '16px',
                       fontWeight: '500'
                     }}
@@ -1149,8 +1150,8 @@ const DashboardPage: React.FC = () => {
               style={{
                 borderRadius: '20px',
                 height: '40px',
-                backgroundColor: '#8B5A3C',
-                borderColor: '#8B5A3C',
+                backgroundColor: '#00695c',
+                borderColor: '#00695c',
                 fontWeight: '500'
               }}
             >
