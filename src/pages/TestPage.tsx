@@ -257,15 +257,8 @@ const TestPage: React.FC = () => {
       console.log('📤 Отправляем результаты теста:', { sessionId, answersCount: finalAnswers.length });
       console.log('📊 Все ответы (включая последний):', finalAnswers);
       
-      // Находим email в ответах
-      const emailAnswer = finalAnswers.find(answer => {
-        const question = questions.find(q => q.id === answer.questionId);
-        return question && question.type === 'email';
-      });
-      
-      const email = emailAnswer ? emailAnswer.answer : null;
-      console.log('📧 Email ответ:', emailAnswer);
-      console.log('📧 Отправляем email:', email);
+      // Email больше не нужен, так как удален из теста
+      console.log('📧 Email больше не используется');
       
       // Логируем статистику ответов
       console.log('📊 Статистика ответов:', { 
@@ -277,8 +270,7 @@ const TestPage: React.FC = () => {
         method: 'POST',
         body: JSON.stringify({
           sessionId,
-          answers: finalAnswers,
-          email: email
+          answers: finalAnswers
         }),
       });
 

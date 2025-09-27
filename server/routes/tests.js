@@ -276,11 +276,6 @@ router.get('/primary/questions', (req, res) => {
       text: "Какие ваши сильные стороны или ресурсы (хобби, поддержка), которые можно использовать в терапии?",
       type: "open_text"
     },
-    {
-      id: 46,
-      text: "Введите почту, на которую мы пришлём персональный план:",
-      type: "email"
-    }
   ];
 
   res.json(questions);
@@ -319,9 +314,7 @@ router.post('/primary/submit', async (req, res) => {
     console.log('📥 Получены результаты теста для sessionId:', sessionId);
     console.log('📊 Количество ответов:', answers.length);
     
-    const { email } = req.body;
-    console.log('📧 Email из запроса:', email);
-    
+    // Email больше не обязателен, так как удален из теста
     // Генерируем уникальный токен и пароль для доступа к ЛК
     const dashboardToken = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
     const dashboardPassword = generateDashboardPassword();
@@ -330,7 +323,6 @@ router.post('/primary/submit', async (req, res) => {
       .from('primary_test_results')
       .upsert({
         session_id: sessionId,
-        email: email,
         answers: answers,
         dashboard_token: dashboardToken,
         dashboard_password: dashboardPassword,

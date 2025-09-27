@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Typography, Spin, Button, Card, Space, message } from 'antd';
-import { CheckCircleOutlined, CopyOutlined, MailOutlined } from '@ant-design/icons';
-import { sendDashboardAccessEmail, checkEmailJSConfig } from '../services/emailService';
+import { Typography, Spin, Button, Card, Space, message, Input, Form, Checkbox } from 'antd';
+import { CheckCircleOutlined, CopyOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
 import { apiRequest } from '../config/api';
 
 const { Title, Text, Paragraph } = Typography;
@@ -11,122 +10,96 @@ const PaymentSuccessPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [step, setStep] = useState(1); // 1 - ввод данных, 2 - сохранение данных
+  const [nickname, setNickname] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [dataSaved, setDataSaved] = useState(false);
   const [dashboardToken, setDashboardToken] = useState<string | null>(null);
-  const [dashboardPassword, setDashboardPassword] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [emailSent, setEmailSent] = useState(false);
-  const [sendingEmail, setSendingEmail] = useState(false);
+  const [saving, setSaving] = useState(false);
   const sessionId = searchParams.get('sessionId');
 
   useEffect(() => {
     if (sessionId) {
-      fetchDashboardToken();
+      // Просто проверяем, что сессия валидна
+      setLoading(false);
     } else {
       setError('Неверные параметры');
       setLoading(false);
     }
   }, [sessionId]);
 
-  const fetchDashboardToken = async () => {
-    try {
-      console.log('🔍 Загружаем данные дашборда для sessionId:', sessionId);
-      const response = await apiRequest(`api/tests/primary/${sessionId}`);
-      const data = await response.json();
-
-      console.log('📥 Ответ от API:', data);
-
-      if (data.success && data.data.dashboard_token) {
-        console.log('✅ Токен дашборда получен:', data.data.dashboard_token);
-        setDashboardToken(data.data.dashboard_token);
-        setDashboardPassword(data.data.dashboard_password);
-        setUserEmail(data.data.email);
-        
-        // Автоматически отправляем email, если EmailJS настроен
-        if (checkEmailJSConfig()) {
-          sendEmailWithData(data.data.email, data.data.dashboard_password, data.data.dashboard_token);
-        } else {
-          console.log('⚠️ EmailJS не настроен. Данные отображаются только на странице.');
-        }
-      } else {
-        console.error('❌ Токен дашборда не найден в ответе:', data);
-        setError('Не удалось получить ссылку на личный кабинет');
-      }
-    } catch (error) {
-      console.error('❌ Ошибка при получении токена дашборда:', error);
-      setError('Ошибка при получении ссылки на личный кабинет');
-    } finally {
-      setLoading(false);
+  const handleFirstStep = () => {
+    if (!nickname || !password || !confirmPassword) {
+      message.error('Пожалуйста, заполните все поля');
+      return;
     }
+
+    if (password !== confirmPassword) {
+      message.error('Пароли не совпадают');
+      return;
+    }
+
+    if (password.length < 6) {
+      message.error('Пароль должен содержать минимум 6 символов');
+      return;
+    }
+
+    setStep(2);
   };
 
-  const sendEmailWithData = async (email: string, password: string, token: string) => {
-    setSendingEmail(true);
+  const saveCredentials = async () => {
+    if (!dataSaved) {
+      message.error('Пожалуйста, подтвердите, что вы сохранили данные для входа');
+      return;
+    }
+
+    setSaving(true);
     try {
-      // Используем правильный домен для ссылки в письме
-      // Принудительно используем idenself.com для писем
-      const baseUrl = process.env.REACT_APP_FRONTEND_URL || 'https://idenself.com';
-      console.log('🔧 REACT_APP_FRONTEND_URL:', process.env.REACT_APP_FRONTEND_URL);
-      console.log('🌐 window.location.origin:', window.location.origin);
-      console.log('📧 Используемый baseUrl для письма:', baseUrl);
-      
-      const dashboardUrl = `${baseUrl}/lk/${token}`;
-      console.log('🔗 Финальный URL для письма:', dashboardUrl);
-      
-      const success = await sendDashboardAccessEmail({
-        userEmail: email,
-        dashboardPassword: password,
-        dashboardUrl: dashboardUrl
+      // Создаем dashboard token и сохраняем данные в Supabase
+      const response = await apiRequest('api/dashboard/create-credentials', {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionId,
+          nickname,
+          password
+        }),
       });
 
-      if (success) {
-        setEmailSent(true);
-        message.success('📧 Данные для доступа отправлены на вашу почту!');
+      const data = await response.json();
+
+      if (data.success) {
+        setDashboardToken(data.dashboardToken);
+        message.success('Данные успешно сохранены!');
+        
+        // Перенаправляем в личный кабинет через 2 секунды
+        setTimeout(() => {
+          navigate(`/lk/${data.dashboardToken}`);
+        }, 2000);
       } else {
-        message.warning('Не удалось отправить email с данными доступа');
+        message.error(data.error || 'Ошибка при сохранении данных');
       }
     } catch (error) {
-      console.error('Error sending email:', error);
-      message.error('Ошибка при отправке email');
+      console.error('Error saving credentials:', error);
+      message.error('Произошла ошибка при сохранении данных');
     } finally {
-      setSendingEmail(false);
+      setSaving(false);
     }
   };
 
-  const manualSendEmail = async () => {
-    if (!userEmail || !dashboardPassword || !dashboardToken) return;
-    await sendEmailWithData(userEmail, dashboardPassword, dashboardToken);
-  };
+  const copyToClipboard = () => {
+    const textToCopy = `Данные для входа idenself.com
+Логин: ${nickname}
+Пароль: ${password}
 
-  const getDashboardUrl = () => {
-    if (!dashboardToken) return '';
-    // Используем правильный домен и для отображения тоже
-    const baseUrl = process.env.REACT_APP_FRONTEND_URL || 'https://idenself.com';
-    console.log('🔧 REACT_APP_FRONTEND_URL для отображения:', process.env.REACT_APP_FRONTEND_URL);
-    console.log('🌐 window.location.origin для отображения:', window.location.origin);
-    console.log('📧 Используемый baseUrl для отображения:', baseUrl);
-    return `${baseUrl}/lk/${dashboardToken}`;
-  };
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(getDashboardUrl());
-      message.success('Ссылка скопирована в буфер обмена!');
-    } catch (error) {
-      message.error('Не удалось скопировать ссылку');
-    }
-  };
-
-  const goToDashboard = () => {
-    console.log('🚀 Переход в дашборд, токен:', dashboardToken);
-    if (dashboardToken) {
-      const dashboardUrl = `/lk/${dashboardToken}`;
-      console.log('🔗 URL дашборда:', dashboardUrl);
-      navigate(dashboardUrl);
-    } else {
-      console.error('❌ Токен дашборда отсутствует');
-      message.error('Токен дашборда не найден');
-    }
+#тесты #план #прл #психолог`;
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      message.success('Текст скопирован в буфер обмена!');
+    }).catch(() => {
+      message.error('Не удалось скопировать текст');
+    });
   };
 
   if (loading) {
@@ -135,12 +108,13 @@ const PaymentSuccessPage: React.FC = () => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        height: '100vh',
-        flexDirection: 'column',
-        gap: '16px'
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
       }}>
-        <Spin size="large" />
-        <Text>Подготавливаем ваш личный кабинет...</Text>
+        <Card style={{ textAlign: 'center', padding: '40px' }}>
+          <Spin size="large" />
+          <Paragraph style={{ marginTop: '20px' }}>Загрузка...</Paragraph>
+        </Card>
       </div>
     );
   }
@@ -151,18 +125,16 @@ const PaymentSuccessPage: React.FC = () => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        height: '100vh',
-        flexDirection: 'column',
-        gap: '16px',
-        textAlign: 'center',
-        padding: '20px'
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
       }}>
-        <Text type="danger" style={{ fontSize: '18px' }}>
-          {error}
-        </Text>
-        <Button type="primary" onClick={() => navigate('/')}>
-          На главную
-        </Button>
+        <Card style={{ textAlign: 'center', padding: '40px' }}>
+          <Title level={2} type="danger">Ошибка</Title>
+          <Paragraph>{error}</Paragraph>
+          <Button type="primary" onClick={() => navigate('/')}>
+            На главную
+          </Button>
+        </Card>
       </div>
     );
   }
@@ -173,168 +145,203 @@ const PaymentSuccessPage: React.FC = () => {
       justifyContent: 'center', 
       alignItems: 'center', 
       minHeight: '100vh',
-      padding: '20px',
-      backgroundColor: '#f0f2f5'
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: '20px'
     }}>
-      <Card style={{ maxWidth: '600px', width: '100%', textAlign: 'center' }}>
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <CheckCircleOutlined 
-            style={{ 
-              fontSize: '64px', 
-              color: '#52c41a' 
-            }} 
-          />
-          
-          <Title level={2} style={{ color: '#00695C', margin: 0 }}>
-            Оплата прошла успешно!
-          </Title>
-          
-          <Paragraph style={{ fontSize: '16px', color: '#666' }}>
-            Спасибо за оплату! Ваш личный кабинет готов. 
-            Сохраните данные ниже для доступа с любого устройства.
-          </Paragraph>
-
-          <Card 
-            size="small" 
-            style={{ 
-              backgroundColor: '#f6ffed',
-              border: '1px solid #b7eb8f'
-            }}
-          >
-            <Title level={5} style={{ margin: '0 0 16px 0' }}>
-              Данные для входа в личный кабинет:
-            </Title>
-            
-            <div style={{ marginBottom: '16px' }}>
-              <Text strong style={{ display: 'block', marginBottom: '4px' }}>
-                Ссылка:
-              </Text>
-              <div style={{ 
-                padding: '8px 12px',
-                backgroundColor: 'white',
-                border: '1px solid #d9d9d9',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontFamily: 'monospace',
-                wordBreak: 'break-all',
-                marginBottom: '8px'
-              }}>
-                {getDashboardUrl()}
-              </div>
+      <Card style={{ 
+        width: '100%', 
+        maxWidth: '500px', 
+        padding: '20px',
+        borderRadius: '12px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+      }}>
+        {step === 1 ? (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+              <CheckCircleOutlined 
+                style={{ 
+                  fontSize: '48px', 
+                  color: '#52c41a', 
+                  marginBottom: '16px' 
+                }} 
+              />
+              <Title level={2} style={{ color: '#00695c', marginBottom: '8px' }}>
+                Оплата прошла успешно!
+              </Title>
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <Text strong style={{ display: 'block', marginBottom: '4px' }}>
-                Email:
+            <div style={{ 
+              background: '#f6ffed', 
+              border: '1px solid #b7eb8f', 
+              borderRadius: '8px', 
+              padding: '16px', 
+              marginBottom: '30px',
+              textAlign: 'center'
+            }}>
+              <Text style={{ color: '#389e0d', fontSize: '14px' }}>
+                В целях вашей анонимности мы не сохраняем ваше имя и контактные данные
               </Text>
-              <div style={{ 
-                padding: '8px 12px',
-                backgroundColor: 'white',
-                border: '1px solid #d9d9d9',
-                borderRadius: '6px',
-                fontSize: '16px',
-                marginBottom: '8px'
-              }}>
-                {userEmail}
-              </div>
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <Text strong style={{ display: 'block', marginBottom: '4px' }}>
-                Пароль:
-              </Text>
-              <div style={{ 
-                padding: '8px 12px',
-                backgroundColor: 'white',
-                border: '1px solid #d9d9d9',
-                borderRadius: '6px',
-                fontSize: '24px',
-                fontFamily: 'monospace',
-                textAlign: 'center',
-                letterSpacing: '2px',
-                fontWeight: 'bold',
-                marginBottom: '8px'
-              }}>
-                {dashboardPassword}
-              </div>
-            </div>
-            
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Button 
-                type="dashed" 
-                icon={<CopyOutlined />}
-                onClick={copyToClipboard}
-                style={{ width: '100%' }}
+            <Form layout="vertical">
+              <Form.Item 
+                label="Придумайте ник"
+                required
               >
-                Скопировать ссылку
-              </Button>
-              
-              {checkEmailJSConfig() && !emailSent && (
-                <Button 
-                  type="default" 
-                  icon={<MailOutlined />}
-                  onClick={manualSendEmail}
-                  loading={sendingEmail}
-                  style={{ width: '100%' }}
-                >
-                  {sendingEmail ? 'Отправляем email...' : 'Отправить данные на почту'}
-                </Button>
-              )}
-              
-              {!checkEmailJSConfig() && (
-                <div style={{ 
-                  padding: '8px 12px',
-                  backgroundColor: '#fff7e6',
-                  border: '1px solid #ffd591',
-                  borderRadius: '6px',
-                  textAlign: 'center'
-                }}>
-                  <Text style={{ color: '#fa8c16', fontSize: '14px' }}>
-                    ⚠️ Отправка email не настроена. Сохраните данные самостоятельно.
-                  </Text>
-                </div>
-              )}
-              
-              {emailSent && (
-                <div style={{ 
-                  padding: '8px 12px',
-                  backgroundColor: '#f6ffed',
-                  border: '1px solid #b7eb8f',
-                  borderRadius: '6px',
-                  textAlign: 'center'
-                }}>
-                  <Text style={{ color: '#52c41a', fontSize: '14px' }}>
-                    ✅ Данные отправлены на {userEmail}
-                  </Text>
-                </div>
-              )}
-            </Space>
-          </Card>
+                <Input
+                  prefix={<UserOutlined />}
+                  placeholder="Введите ваш ник"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  size="large"
+                />
+              </Form.Item>
 
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Form.Item 
+                label="Пароль"
+                required
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Введите пароль"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  size="large"
+                />
+              </Form.Item>
+
+              <Form.Item 
+                label="Подтверждение пароля"
+                required
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Повторите пароль"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  size="large"
+                />
+              </Form.Item>
+
+              <Button 
+                type="primary" 
+                size="large" 
+                onClick={handleFirstStep}
+                style={{ 
+                  width: '100%', 
+                  marginTop: '20px',
+                  padding: '25px',
+                  fontSize: '16px',
+                  fontWeight: 'bold'
+                }}
+              >
+                Далее
+              </Button>
+            </Form>
+          </>
+        ) : (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+              <CheckCircleOutlined 
+                style={{ 
+                  fontSize: '48px', 
+                  color: '#52c41a', 
+                  marginBottom: '16px' 
+                }} 
+              />
+              <Title level={3} style={{ color: '#00695c', marginBottom: '8px' }}>
+                Сохраните данные для входа
+              </Title>
+            </div>
+
+            <div style={{ 
+              background: '#fff2e8', 
+              border: '1px solid #ffbb96', 
+              borderRadius: '8px', 
+              padding: '16px', 
+              marginBottom: '20px'
+            }}>
+              <Text style={{ color: '#d46b08', fontSize: '14px' }}>
+                Сохраните данные для входа в заметки или менеджер паролей, чтобы не забыть, 
+                иначе данные могут быть утеряны
+              </Text>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <Text strong style={{ marginBottom: '8px', display: 'block' }}>
+                Пример текста:
+              </Text>
+              
+              <div style={{ 
+                background: '#f5f5f5', 
+                border: '1px solid #d9d9d9', 
+                borderRadius: '8px', 
+                padding: '16px',
+                position: 'relative'
+              }}>
+                <pre style={{ 
+                  margin: 0, 
+                  fontFamily: 'monospace', 
+                  fontSize: '13px',
+                  whiteSpace: 'pre-wrap'
+                }}>
+{`Данные для входа idenself.com
+Логин: ${nickname}
+Пароль: ${password}
+
+#тесты #план #прл #психолог`}
+                </pre>
+                
+                <Button
+                  type="text"
+                  icon={<CopyOutlined />}
+                  onClick={copyToClipboard}
+                  style={{ 
+                    position: 'absolute', 
+                    top: '8px', 
+                    right: '8px',
+                    background: 'rgba(255, 255, 255, 0.8)'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <Checkbox 
+                checked={dataSaved}
+                onChange={(e) => setDataSaved(e.target.checked)}
+              >
+                Я сохранил(а) данные для входа
+              </Checkbox>
+            </div>
+
             <Button 
               type="primary" 
-              size="large"
-              onClick={goToDashboard}
-              style={{ width: '100%' }}
+              size="large" 
+              onClick={saveCredentials}
+              loading={saving}
+              disabled={!dataSaved}
+              style={{ 
+                width: '100%',
+                padding: '25px',
+                fontSize: '16px',
+                fontWeight: 'bold'
+              }}
             >
-              Перейти в личный кабинет
+              {saving ? 'Сохраняем...' : 'Далее'}
             </Button>
-            <Button 
-              size="large"
-              onClick={() => navigate('/')}
-              style={{ width: '100%' }}
-            >
-              На главную
-            </Button>
-          </Space>
 
-          <Paragraph style={{ fontSize: '14px', color: '#999', margin: 0 }}>
-            <strong>Важно:</strong> Сохраните эти данные в надежном месте. 
-            Для входа в личный кабинет вам потребуется ввести email и пароль. 
-            Доступ возможен с любого устройства.
-          </Paragraph>
-        </Space>
+            {dashboardToken && (
+              <div style={{ 
+                textAlign: 'center', 
+                marginTop: '20px',
+                color: '#52c41a'
+              }}>
+                <Text>Перенаправляем в личный кабинет...</Text>
+              </div>
+            )}
+          </>
+        )}
       </Card>
     </div>
   );
