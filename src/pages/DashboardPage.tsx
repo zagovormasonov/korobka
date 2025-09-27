@@ -541,11 +541,11 @@ const DashboardPage: React.FC = () => {
                 type="primary" 
                 size="large"
                 onClick={() => setPersonalPlanMode(true)}
-                style={{ 
-                  height: '50px', 
-                  fontSize: '16px', 
+                style={{
+                  height: '50px',
+                  fontSize: '16px',
                   fontWeight: 'bold',
-                  padding: '0 30px',
+                  padding: '30px 30px',
                   marginTop: '20px'
                 }}
               >
@@ -635,7 +635,7 @@ const DashboardPage: React.FC = () => {
                         type="primary"
                         size="small"
                         onClick={() => openModal(test.id)}
-                        style={{ width: '100%' }}
+                        style={{ width: '100%', padding: '30px 16px' }}
                       >
                         {testResults[test.id] ? 'Изменить результат' : 'Ввести результат'}
                       </Button>
@@ -658,7 +658,7 @@ const DashboardPage: React.FC = () => {
             <Button 
               type="default" 
               onClick={() => setPersonalPlanMode(false)}
-              style={{ marginBottom: '20px' }}
+              style={{ marginBottom: '20px', padding: '30px 20px' }}
             >
               ← Вернуться к тестам
             </Button>
@@ -680,7 +680,7 @@ const DashboardPage: React.FC = () => {
                   icon={<DownloadOutlined />}
                   onClick={downloadPersonalPlan}
                   loading={loadingPersonalPlan}
-                  style={{ width: '100%' }}
+                  style={{ width: '100%', padding: '30px 16px' }}
                 >
                   {loadingPersonalPlan ? 'Генерируем план...' : 'Скачать персональный план'}
                 </Button>
@@ -732,7 +732,7 @@ const DashboardPage: React.FC = () => {
                   <Button 
                     type="primary" 
                     htmlType="submit"
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', padding: '30px 16px' }}
                   >
                     Оставить заявку
                   </Button>
@@ -750,24 +750,15 @@ const DashboardPage: React.FC = () => {
                 <Paragraph>
                   PDF с рекомендациями для психолога и психиатра
                 </Paragraph>
-                <Button 
-                  type="primary" 
-                  icon={<DownloadOutlined />}
-                  onClick={() => downloadSessionPreparation('psychologist')}
-                  loading={loadingSessionPreparation}
-                  style={{ width: '100%' }}
-                >
-                  {loadingSessionPreparation ? 'Генерируем подготовку...' : 'Скачать подготовку для психолога'}
-                </Button>
-                <Button 
-                  type="primary" 
-                  icon={<DownloadOutlined />}
-                  onClick={() => downloadSessionPreparation('psychiatrist')}
-                  loading={loadingSessionPreparation}
-                  style={{ width: '100%' }}
-                >
-                  {loadingSessionPreparation ? 'Генерируем подготовку...' : 'Скачать подготовку для психиатра'}
-                </Button>
+                 <Button 
+                   type="primary" 
+                   icon={<DownloadOutlined />}
+                   onClick={() => downloadSessionPreparation('psychologist')}
+                   loading={loadingSessionPreparation}
+                   style={{ width: '100%', padding: '30px 16px' }}
+                 >
+                   {loadingSessionPreparation ? 'Генерируем подготовку...' : 'Скачать подготовку к сеансу'}
+                 </Button>
               </Card>
             </Col>
 
@@ -789,7 +780,7 @@ const DashboardPage: React.FC = () => {
                     type="primary" 
                     onClick={handleFeedbackSubmit}
                     loading={loadingFeedback}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', padding: '30px 16px' }}
                   >
                     {loadingFeedback ? 'Анализируем обратную связь...' : 'Получить обратную связь'}
                   </Button>
