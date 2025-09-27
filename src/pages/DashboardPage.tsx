@@ -487,29 +487,24 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '40px' 
-      }}>
-        <div style={{ flex: 1 }}></div>
-        <Title level={1} style={{ color: '#00695C', margin: 0, flex: 1, textAlign: 'center' }}>
+      <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+        <Button 
+          type="default" 
+          icon={<LogoutOutlined />}
+          onClick={handleLogout}
+          style={{ 
+            borderColor: '#ff4d4f',
+            color: '#ff4d4f'
+          }}
+        >
+          Выйти
+        </Button>
+      </div>
+      
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <Title level={1} style={{ color: '#00695C', margin: 0 }}>
           Личный кабинет
         </Title>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button 
-            type="default" 
-            icon={<LogoutOutlined />}
-            onClick={handleLogout}
-            style={{ 
-              borderColor: '#ff4d4f',
-              color: '#ff4d4f'
-            }}
-          >
-            Выйти
-          </Button>
-        </div>
       </div>
 
       <Card 

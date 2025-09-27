@@ -152,7 +152,7 @@ const HomePage = () => {
 
         {/* Кнопки */}
         <div style={{ textAlign: 'center' }}>
-          <Space size="large">
+          <Space direction="vertical" size="large">
             <Button 
               type="primary" 
               size="large"
@@ -162,7 +162,7 @@ const HomePage = () => {
                 fontSize: '18px', 
                 fontWeight: 'bold',
                 padding: '0 80px',
-                minWidth: '200px',
+                minWidth: '300px',
                 background: '#333',
                 borderColor: '#333',
                 borderRadius: '30px',
@@ -181,7 +181,7 @@ const HomePage = () => {
                 fontSize: '18px', 
                 fontWeight: 'bold',
                 padding: '0 80px',
-                minWidth: '200px',
+                minWidth: '300px',
                 background: 'white',
                 borderColor: '#333',
                 color: '#333',
