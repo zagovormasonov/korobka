@@ -403,7 +403,69 @@ router.get('/dashboard/:token', async (req, res) => {
   }
 });
 
-// Проверить email и пароль для доступа к ЛК
+// Проверить nickname и пароль для доступа к ЛК
+router.post('/verify-nickname-credentials', async (req, res) => {
+  try {
+    const { nickname, password } = req.body;
+    
+    console.log('🔐 [VERIFY NICKNAME] Проверяем credentials для nickname:', nickname);
+    
+    if (!nickname || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Никнейм и пароль обязательны' 
+      });
+    }
+    
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .select('nickname, dashboard_password, dashboard_token')
+      .eq('nickname', nickname)
+      .maybeSingle();
+
+    if (error) {
+      console.error('❌ [VERIFY NICKNAME] Ошибка запроса:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Ошибка при проверке данных' 
+      });
+    }
+
+    if (!data) {
+      console.log('❌ [VERIFY NICKNAME] Пользователь не найден для nickname:', nickname);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Неверный никнейм или пароль' 
+      });
+    }
+
+    const storedPassword = data.dashboard_password;
+    console.log('🔐 [VERIFY NICKNAME] Пароль из БД найден');
+    
+    // Сравниваем пароли (регистр важен)
+    if (storedPassword === password) {
+      console.log('✅ [VERIFY NICKNAME] Пароли совпадают, доступ разрешен');
+      res.json({ 
+        success: true, 
+        dashboardToken: data.dashboard_token 
+      });
+    } else {
+      console.log('❌ [VERIFY NICKNAME] Пароли не совпадают, доступ запрещен');
+      res.status(400).json({ 
+        success: false, 
+        error: 'Неверный никнейм или пароль' 
+      });
+    }
+  } catch (error) {
+    console.error('❌ [VERIFY NICKNAME] Критическая ошибка:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Внутренняя ошибка сервера' 
+    });
+  }
+});
+
+// Проверить email и пароль для доступа к ЛК (старый метод)
 router.post('/verify-credentials', async (req, res) => {
   try {
     const { sessionId, email, password } = req.body;

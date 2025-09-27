@@ -73,9 +73,9 @@ const PaymentSuccessPage: React.FC = () => {
         setDashboardToken(data.dashboardToken);
         message.success('Данные успешно сохранены!');
         
-        // Перенаправляем в личный кабинет через 2 секунды
+        // Перенаправляем на страницу входа в ЛК через 2 секунды
         setTimeout(() => {
-          navigate(`/lk/${data.dashboardToken}`);
+          navigate('/lk/login');
         }, 2000);
       } else {
         message.error(data.error || 'Ошибка при сохранении данных');
@@ -337,7 +337,7 @@ const PaymentSuccessPage: React.FC = () => {
                 marginTop: '20px',
                 color: '#52c41a'
               }}>
-                <Text>Перенаправляем в личный кабинет...</Text>
+                <Text>Перенаправляем на страницу входа в личный кабинет...</Text>
               </div>
             )}
           </>

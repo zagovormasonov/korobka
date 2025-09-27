@@ -7,6 +7,7 @@ import PaymentPage from './pages/PaymentPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import DashboardPage from './pages/DashboardPage';
 import DashboardTokenPage from './pages/DashboardTokenPage';
+import DashboardLoginPage from './pages/DashboardLoginPage';
 import OfferPage from './pages/OfferPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ConsentPage from './pages/ConsentPage';
@@ -56,6 +57,7 @@ function App() {
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/payment-success" element={<PaymentSuccessPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/lk/login" element={<DashboardLoginPage />} />
             <Route path="/lk/:token" element={<DashboardTokenPage />} />
             <Route path="/offer" element={<OfferPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
