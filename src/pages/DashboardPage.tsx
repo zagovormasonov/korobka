@@ -545,7 +545,7 @@ const DashboardPage: React.FC = () => {
                   height: '50px',
                   fontSize: '16px',
                   fontWeight: 'bold',
-                  padding: '30px 30px',
+                  padding: '20px',
                   marginTop: '20px'
                 }}
               >
