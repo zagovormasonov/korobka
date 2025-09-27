@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Typography, 
   Card, 
@@ -20,7 +20,8 @@ import {
   UserOutlined, 
   FileTextOutlined, 
   MessageOutlined,
-  CheckOutlined
+  CheckOutlined,
+  LogoutOutlined
 } from '@ant-design/icons';
 
 const { Title, Paragraph, Text } = Typography;
@@ -67,6 +68,7 @@ const recommendedTests = [
 
 const DashboardPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [sessionId] = useState(() => searchParams.get('sessionId') || '');
   const [mascotMessage, setMascotMessage] = useState('');
   const [psychologistForm] = Form.useForm();
@@ -142,6 +144,12 @@ const DashboardPage: React.FC = () => {
     } finally {
       setLoadingMascotMessage(false);
     }
+  };
+
+  const handleLogout = () => {
+    console.log('🚪 [LOGOUT] Выход из ЛК');
+    message.success('Вы вышли из личного кабинета');
+    navigate('/', { replace: true });
   };
 
   const fetchAdditionalTestResults = async () => {
@@ -479,10 +487,29 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <Title level={1} style={{ color: '#00695C' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '40px' 
+      }}>
+        <div style={{ flex: 1 }}></div>
+        <Title level={1} style={{ color: '#00695C', margin: 0, flex: 1, textAlign: 'center' }}>
           Личный кабинет
         </Title>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button 
+            type="default" 
+            icon={<LogoutOutlined />}
+            onClick={handleLogout}
+            style={{ 
+              borderColor: '#ff4d4f',
+              color: '#ff4d4f'
+            }}
+          >
+            Выйти
+          </Button>
+        </div>
       </div>
 
       <Card 

@@ -60,6 +60,10 @@ const HomePage = () => {
     navigate('/test');
   };
 
+  const handleLogin = () => {
+    navigate('/lk/login');
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -146,26 +150,48 @@ const HomePage = () => {
           ))}
         </Row>
 
-        {/* Кнопка */}
+        {/* Кнопки */}
         <div style={{ textAlign: 'center' }}>
-          <Button 
-            type="primary" 
-            size="large"
-            onClick={handleStart}
-            style={{ 
-              height: '60px', 
-              fontSize: '18px', 
-              fontWeight: 'bold',
-              padding: '0 80px',
-              minWidth: '200px',
-              background: '#333',
-              borderColor: '#333',
-              borderRadius: '30px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.2)'
-            }}
-          >
-            Начать
-          </Button>
+          <Space size="large">
+            <Button 
+              type="primary" 
+              size="large"
+              onClick={handleStart}
+              style={{ 
+                height: '60px', 
+                fontSize: '18px', 
+                fontWeight: 'bold',
+                padding: '0 80px',
+                minWidth: '200px',
+                background: '#333',
+                borderColor: '#333',
+                borderRadius: '30px',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)'
+              }}
+            >
+              Начать тест
+            </Button>
+            
+            <Button 
+              type="default" 
+              size="large"
+              onClick={handleLogin}
+              style={{ 
+                height: '60px', 
+                fontSize: '18px', 
+                fontWeight: 'bold',
+                padding: '0 80px',
+                minWidth: '200px',
+                background: 'white',
+                borderColor: '#333',
+                color: '#333',
+                borderRadius: '30px',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
+              }}
+            >
+              Войти в ЛК
+            </Button>
+          </Space>
         </div>
       </div>
     </div>
