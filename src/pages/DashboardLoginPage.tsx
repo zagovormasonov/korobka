@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Input, Button, Form, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
@@ -11,11 +11,33 @@ const DashboardLoginPage: React.FC = () => {
   const [verifying, setVerifying] = useState(false);
   const [form] = Form.useForm();
 
+  // Проверяем доступность API при загрузке страницы
+  useEffect(() => {
+    const checkApiHealth = async () => {
+      try {
+        console.log('🏥 [HEALTH] Проверяем доступность API...');
+        const response = await apiRequest('api/health');
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ [HEALTH] API доступен:', data);
+        } else {
+          console.log('⚠️ [HEALTH] API недоступен, статус:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ [HEALTH] Ошибка проверки API:', error);
+      }
+    };
+
+    checkApiHealth();
+  }, []);
+
   const verifyCredentialsAndEnter = async (values: { nickname: string; password: string }) => {
     setVerifying(true);
     
     try {
-      console.log('🔐 Проверяем учетные данные:', { nickname: values.nickname });
+      console.log('🔐 [LOGIN] Проверяем учетные данные:', { nickname: values.nickname });
+      console.log('🔗 [LOGIN] Отправляем запрос на:', 'api/tests/verify-nickname-credentials');
       
       const response = await apiRequest('api/tests/verify-nickname-credentials', {
         method: 'POST',
@@ -25,22 +47,49 @@ const DashboardLoginPage: React.FC = () => {
         }),
       });
 
+      console.log('📥 [LOGIN] Статус ответа:', response.status);
+      console.log('📥 [LOGIN] Заголовки ответа:', Object.fromEntries(response.headers.entries()));
+
+      // Проверяем, что ответ действительно JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('❌ [LOGIN] Сервер вернул не JSON:', contentType);
+        const textResponse = await response.text();
+        console.error('❌ [LOGIN] Содержимое ответа:', textResponse.substring(0, 500));
+        
+        if (response.status === 502) {
+          message.error('Сервер временно недоступен. Попробуйте позже.');
+        } else if (response.status >= 500) {
+          message.error('Ошибка сервера. Обратитесь в поддержку.');
+        } else {
+          message.error('Неожиданный ответ от сервера');
+        }
+        return;
+      }
+
       const data = await response.json();
-      console.log('📥 Ответ от API:', data);
+      console.log('📊 [LOGIN] Данные ответа:', data);
 
       if (data.success) {
-        console.log('✅ Учетные данные подтверждены, перенаправляем в ЛК');
+        console.log('✅ [LOGIN] Учетные данные подтверждены, перенаправляем в ЛК');
         message.success('Добро пожаловать в личный кабинет!');
         
         // Перенаправляем в ЛК с токеном
         navigate(`/lk/${data.dashboardToken}`);
       } else {
-        console.log('❌ Неверные учетные данные');
+        console.log('❌ [LOGIN] Неверные учетные данные');
         message.error(data.error || 'Неверный никнейм или пароль');
       }
     } catch (error) {
-      console.error('❌ Ошибка при проверке учетных данных:', error);
-      message.error('Произошла ошибка при входе в систему');
+      console.error('❌ [LOGIN] Критическая ошибка при проверке учетных данных:', error);
+      
+      if (error instanceof SyntaxError && error.message.includes('JSON')) {
+        message.error('Сервер вернул некорректный ответ. Возможно, сервер перегружен.');
+      } else if (error.message.includes('fetch')) {
+        message.error('Не удается подключиться к серверу. Проверьте интернет-соединение.');
+      } else {
+        message.error('Произошла ошибка при входе в систему');
+      }
     } finally {
       setVerifying(false);
     }
