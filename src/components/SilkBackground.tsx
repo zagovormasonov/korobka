@@ -28,6 +28,9 @@ const SilkBackground: React.FC<SilkBackgroundProps> = ({
         left: 0,
         width: '100%',
         height: '100%',
+        minHeight: '100vh',
+        minHeight: '100dvh',
+        minHeight: '-webkit-fill-available',
         zIndex: -1,
         transform: `rotate(${rotation}deg)`,
         ...style
