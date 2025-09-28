@@ -11,7 +11,7 @@ import DashboardLoginPage from './pages/DashboardLoginPage';
 import OfferPage from './pages/OfferPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ConsentPage from './pages/ConsentPage';
-import BpdTestPage from './pages/BpdTestPage';
+import BpdTestPage from './pages/BpdTestPage'; 
 
 const customTheme = {
   algorithm: theme.defaultAlgorithm,
