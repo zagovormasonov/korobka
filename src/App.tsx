@@ -3,6 +3,7 @@ import { ConfigProvider, theme } from 'antd';
 import ruRU from 'antd/locale/ru_RU';
 import HomePage from './pages/HomePage';
 import TestPage from './pages/TestPage';
+import BpdTestPage from './pages/BpdTestPage';
 import PaymentPage from './pages/PaymentPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import DashboardPage from './pages/DashboardPage';
@@ -54,6 +55,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/test" element={<TestPage />} />
+            <Route path="/bpd_test" element={<BpdTestPage />} />
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/payment-success" element={<PaymentSuccessPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
