@@ -56,11 +56,12 @@ const DashboardTokenPage: React.FC = () => {
         position: 'relative'
       }}>
         <SilkBackground
-          speed={3.3}
+          speed={1.0}
           scale={0.5}
           noiseIntensity={0.7}
           rotation={0}
-          color="rgb(0, 105, 92)"
+          color="rgb(80, 149, 140)"
+          accentColor="rgb(255, 213, 183)"
         />
         <Spin size="large" />
         <Text style={{ color: 'rgba(0, 0, 0, 0.7)', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>
@@ -84,11 +85,12 @@ const DashboardTokenPage: React.FC = () => {
         position: 'relative'
       }}>
         <SilkBackground
-          speed={3.3}
+          speed={1.0}
           scale={0.5}
           noiseIntensity={0.7}
           rotation={0}
-          color="rgb(0, 105, 92)"
+          color="rgb(80, 149, 140)"
+          accentColor="rgb(255, 213, 183)"
         />
         <Text type="danger" style={{ fontSize: '18px', color: '#ff4d4f', fontFamily: 'Comfortaa, sans-serif' }}>
           {error}

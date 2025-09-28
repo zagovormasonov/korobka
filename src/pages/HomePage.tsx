@@ -24,11 +24,12 @@ const HomePage = () => {
       flexDirection: 'column'
     }}>
       <SilkBackground
-        speed={3.3}
+        speed={1.0}
         scale={0.5}
         noiseIntensity={0.7}
         rotation={0}
-        color="rgb(0, 105, 92)"
+        color="rgb(80, 149, 140)"
+        accentColor="rgb(255, 213, 183)"
       />
       {/* Логотип вверху */}
       <div style={{ 
