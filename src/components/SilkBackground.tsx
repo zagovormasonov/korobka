@@ -44,8 +44,12 @@ const SilkBackground: React.FC<SilkBackgroundProps> = ({
       
       // Создаем градиент
       const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      
+      // Преобразуем rgb в rgba с прозрачностью
+      const rgbaColor = color.replace('rgb(', 'rgba(').replace(')', ', 0.5)');
+      
       gradient.addColorStop(0, color);
-      gradient.addColorStop(0.5, `${color}80`); // 50% прозрачности
+      gradient.addColorStop(0.5, rgbaColor); // 50% прозрачности
       gradient.addColorStop(1, color);
       
       ctx.fillStyle = gradient;
@@ -80,9 +84,12 @@ const SilkBackground: React.FC<SilkBackgroundProps> = ({
         ctx.closePath();
         
         const waveGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        waveGradient.addColorStop(0, `${color}20`);
-        waveGradient.addColorStop(0.5, `${color}40`);
-        waveGradient.addColorStop(1, `${color}20`);
+        const waveColor1 = color.replace('rgb(', 'rgba(').replace(')', ', 0.1)'); // 10% прозрачности
+        const waveColor2 = color.replace('rgb(', 'rgba(').replace(')', ', 0.2)'); // 20% прозрачности
+        
+        waveGradient.addColorStop(0, waveColor1);
+        waveGradient.addColorStop(0.5, waveColor2);
+        waveGradient.addColorStop(1, waveColor1);
         
         ctx.fillStyle = waveGradient;
         ctx.fill();
