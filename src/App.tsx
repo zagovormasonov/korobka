@@ -11,37 +11,43 @@ import DashboardLoginPage from './pages/DashboardLoginPage';
 import OfferPage from './pages/OfferPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ConsentPage from './pages/ConsentPage';
+import BpdTestPage from './pages/BpdTestPage';
 
 const customTheme = {
   algorithm: theme.defaultAlgorithm,
   token: {
-    colorPrimary: '#00695C',
+    colorPrimary: '#F7B98F',
     colorSuccess: '#52c41a',
     colorWarning: '#faad14',
     colorError: '#ff4d4f',
-    colorInfo: '#00695C',
-    borderRadius: 6,
+    colorInfo: '#A7D7C4',
+    borderRadius: 8,
     wireframe: false,
+    fontFamily: 'Comfortaa, sans-serif',
   },
   components: {
     Button: {
-      borderRadius: 6,
+      borderRadius: 8,
+      fontFamily: 'Comfortaa, sans-serif',
       // Кастомный размер для кнопок "Да" и "Нет"
       paddingInlineLG: 55,
       paddingBlockLG: 30,
     },
     Card: {
-      borderRadius: 8,
+      borderRadius: 12,
     },
     Input: {
-      borderRadius: 6,
+      borderRadius: 8,
     },
     Select: {
-      borderRadius: 6,
+      borderRadius: 8,
     },
     Slider: {
-      trackBg: '#00695C',
-      handleColor: '#00695C',
+      trackBg: '#F7B98F',
+      handleColor: '#F7B98F',
+    },
+    Typography: {
+      fontFamily: 'Comfortaa, sans-serif',
     },
   },
 };
@@ -50,7 +56,7 @@ function App() {
   return (
     <ConfigProvider theme={customTheme} locale={ruRU}>
       <Router>
-        <div style={{ minHeight: '100vh', backgroundColor: '#fafafa' }}>
+        <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF' }}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/test" element={<TestPage />} />
@@ -62,6 +68,7 @@ function App() {
             <Route path="/offer" element={<OfferPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/consent" element={<ConsentPage />} />
+            <Route path="/bpd_test" element={<BpdTestPage />} />
           </Routes>
         </div>
       </Router>

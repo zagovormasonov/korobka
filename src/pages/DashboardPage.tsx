@@ -483,24 +483,36 @@ const DashboardPage: React.FC = () => {
   return (
     <div style={{ 
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-      padding: '20px'
+      background: 'linear-gradient(135deg, #F7B98F, #A7D7C4)',
+      padding: '20px',
+      fontFamily: 'Comfortaa, sans-serif'
     }}>
-      {/* Header with Exit button */}
+      {/* Header with Logo and Exit button */}
       <div style={{ 
         display: 'flex', 
-        justifyContent: 'flex-end', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
         marginBottom: '20px',
         maxWidth: '800px',
         margin: '0 auto 20px auto'
       }}>
+        <Title level={2} style={{ 
+          margin: '0',
+          fontSize: '28px',
+          fontWeight: 'bold',
+          fontFamily: 'Comfortaa, sans-serif'
+        }}>
+          <span style={{ color: '#212121' }}>Iden</span>
+          <span style={{ color: '#F7B98F' }}>self</span>
+        </Title>
         <Button 
           type="text" 
           onClick={handleLogout}
           style={{ 
-            color: '#00695c',
+            color: '#212121',
             fontSize: '16px',
-            fontWeight: '500'
+            fontWeight: '500',
+            fontFamily: 'Comfortaa, sans-serif'
           }}
         >
           Выйти
@@ -520,7 +532,7 @@ const DashboardPage: React.FC = () => {
             width: '120px',
             height: '120px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #00695c 0%, #52c41a 100%)',
+            background: 'linear-gradient(135deg, #F7B98F, #A7D7C4)',
             margin: '0 auto 30px auto',
             display: 'flex',
             alignItems: 'center',
@@ -550,11 +562,12 @@ const DashboardPage: React.FC = () => {
           </div>
           
           <Title level={2} style={{ 
-            color: '#2C3E50',
+            color: '#212121',
             fontSize: '32px',
             fontWeight: '600',
             marginBottom: '10px',
-            margin: '0 0 10px 0'
+            margin: '0 0 10px 0',
+            fontFamily: 'Comfortaa, sans-serif'
           }}>
             Луми
           </Title>
