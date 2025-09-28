@@ -4,14 +4,6 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/',
-  resolve: {
-    alias: {
-      'react-native': 'react-native-web',
-    },
-  },
-  define: {
-    global: 'globalThis',
-  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

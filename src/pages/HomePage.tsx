@@ -1,6 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { Typography, Button, Space } from 'antd';
-import { GradientText } from 'react-bits';
 
 const { Title } = Typography;
 
@@ -30,10 +29,7 @@ const HomePage = () => {
         marginBottom: '60px',
         paddingTop: '20px'
       }}>
-        <GradientText
-          colors={['rgb(0, 105, 92)', 'rgb(115, 239, 224)']}
-          animationSpeed={3}
-          showBorder={false}
+        <div 
           className="gradient-text-logo"
           style={{
             fontSize: '32px',
@@ -43,7 +39,7 @@ const HomePage = () => {
           }}
         >
           idenself
-        </GradientText>
+        </div>
       </div>
 
       <div style={{ 
