@@ -73,7 +73,7 @@ const HomePage = () => {
             Если<br />у тебя ПРЛ
           </Title>
           <div style={{ 
-            color: 'rgba(0, 0, 0, 0.8)', 
+            color: 'rgba(255, 255, 255, 0.8)', 
             fontFamily: 'Inter, sans-serif',
             fontSize: '16px',
             fontWeight: 'normal',
