@@ -101,7 +101,7 @@ const DashboardLoginPage: React.FC = () => {
       justifyContent: 'center', 
       alignItems: 'center', 
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(180deg, #FFFAC0 0%, #FFA4B3 100%)',
       padding: '20px'
     }}>
       <Card style={{ 
@@ -111,7 +111,7 @@ const DashboardLoginPage: React.FC = () => {
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <Title level={2} style={{ color: '#00695c', marginBottom: '8px' }}>
+          <Title level={2} style={{ color: '#00695c', marginBottom: '8px', fontFamily: 'Comfortaa, sans-serif' }}>
             Вход в личный кабинет
           </Title>
           <Text type="secondary">

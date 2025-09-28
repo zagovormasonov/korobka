@@ -52,10 +52,10 @@ const DashboardTokenPage: React.FC = () => {
         minHeight: '100vh',
         flexDirection: 'column',
         gap: '16px',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        background: 'linear-gradient(180deg, #FFFAC0 0%, #FFA4B3 100%)'
       }}>
         <Spin size="large" />
-        <Text style={{ color: 'white', fontSize: '16px' }}>
+        <Text style={{ color: 'rgba(0, 0, 0, 0.7)', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>
           Загружаем ваш личный кабинет...
         </Text>
       </div>
@@ -73,12 +73,12 @@ const DashboardTokenPage: React.FC = () => {
         gap: '16px',
         textAlign: 'center',
         padding: '20px',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        background: 'linear-gradient(180deg, #FFFAC0 0%, #FFA4B3 100%)'
       }}>
-        <Text type="danger" style={{ fontSize: '18px', color: '#ff4d4f' }}>
+        <Text type="danger" style={{ fontSize: '18px', color: '#ff4d4f', fontFamily: 'Comfortaa, sans-serif' }}>
           {error}
         </Text>
-        <Text style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+        <Text style={{ color: 'rgba(0, 0, 0, 0.6)', fontFamily: 'Inter, sans-serif' }}>
           Проверьте правильность ссылки или обратитесь в поддержку
         </Text>
       </div>
