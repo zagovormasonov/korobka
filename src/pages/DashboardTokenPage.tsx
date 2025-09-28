@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Spin } from 'antd';
 import { apiRequest } from '../config/api';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 const DashboardTokenPage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -51,25 +51,11 @@ const DashboardTokenPage: React.FC = () => {
         alignItems: 'center', 
         minHeight: '100vh',
         flexDirection: 'column',
-        gap: '24px',
-        background: 'linear-gradient(135deg, #F7B98F, #A7D7C4)',
-        fontFamily: 'Comfortaa, sans-serif'
+        gap: '16px',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
       }}>
-        {/* Логотип */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <Typography.Title level={1} style={{ 
-            margin: '0',
-            fontSize: '36px',
-            fontWeight: 'bold',
-            fontFamily: 'Comfortaa, sans-serif'
-          }}>
-            <span style={{ color: '#212121' }}>Iden</span>
-            <span style={{ color: '#F7B98F' }}>self</span>
-          </Typography.Title>
-        </div>
-        
         <Spin size="large" />
-        <Text style={{ color: '#212121', fontSize: '16px', fontFamily: 'Comfortaa, sans-serif' }}>
+        <Text style={{ color: 'white', fontSize: '16px' }}>
           Загружаем ваш личный кабинет...
         </Text>
       </div>
@@ -84,29 +70,15 @@ const DashboardTokenPage: React.FC = () => {
         alignItems: 'center', 
         minHeight: '100vh',
         flexDirection: 'column',
-        gap: '24px',
+        gap: '16px',
         textAlign: 'center',
         padding: '20px',
-        background: 'linear-gradient(135deg, #F7B98F, #A7D7C4)',
-        fontFamily: 'Comfortaa, sans-serif'
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
       }}>
-        {/* Логотип */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <Title level={1} style={{ 
-            margin: '0',
-            fontSize: '36px',
-            fontWeight: 'bold',
-            fontFamily: 'Comfortaa, sans-serif'
-          }}>
-            <span style={{ color: '#212121' }}>Iden</span>
-            <span style={{ color: '#F7B98F' }}>self</span>
-          </Title>
-        </div>
-        
-        <Text type="danger" style={{ fontSize: '18px', color: '#ff4d4f', fontFamily: 'Comfortaa, sans-serif' }}>
+        <Text type="danger" style={{ fontSize: '18px', color: '#ff4d4f' }}>
           {error}
         </Text>
-        <Text style={{ color: '#212121', fontFamily: 'Comfortaa, sans-serif' }}>
+        <Text style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
           Проверьте правильность ссылки или обратитесь в поддержку
         </Text>
       </div>

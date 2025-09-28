@@ -158,17 +158,17 @@ const DashboardPage: React.FC = () => {
         return;
       }
 
-      // Сначала получаем email пользователя из primary test results
+      // Проверяем существование primary test results (email больше не обязателен)
       const primaryResponse = await apiRequest(`api/tests/primary/${sessionId}`);
       const primaryData = await primaryResponse.json();
       
-      if (!primaryData.success || !primaryData.data?.email) {
-        console.error('❌ Не удалось получить email пользователя');
+      if (!primaryData.success) {
+        console.error('❌ Не удалось получить данные пользователя');
         return;
       }
       
-      const userEmail = primaryData.data.email;
-      console.log('📧 Email пользователя для загрузки результатов:', userEmail);
+      const userEmail = primaryData.data?.email;
+      console.log('📧 Email пользователя для загрузки результатов:', userEmail || 'не указан');
       
       // Загружаем результаты дополнительных тестов по sessionId
       const response = await apiRequest(`api/tests/additional/results/${sessionId}`);
@@ -483,36 +483,24 @@ const DashboardPage: React.FC = () => {
   return (
     <div style={{ 
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #F7B98F, #A7D7C4)',
-      padding: '20px',
-      fontFamily: 'Comfortaa, sans-serif'
+      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      padding: '20px'
     }}>
-      {/* Header with Logo and Exit button */}
+      {/* Header with Exit button */}
       <div style={{ 
         display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
+        justifyContent: 'flex-end', 
         marginBottom: '20px',
         maxWidth: '800px',
         margin: '0 auto 20px auto'
       }}>
-        <Title level={2} style={{ 
-          margin: '0',
-          fontSize: '28px',
-          fontWeight: 'bold',
-          fontFamily: 'Comfortaa, sans-serif'
-        }}>
-          <span style={{ color: '#212121' }}>Iden</span>
-          <span style={{ color: '#F7B98F' }}>self</span>
-        </Title>
         <Button 
           type="text" 
           onClick={handleLogout}
           style={{ 
-            color: '#212121',
+            color: '#00695c',
             fontSize: '16px',
-            fontWeight: '500',
-            fontFamily: 'Comfortaa, sans-serif'
+            fontWeight: '500'
           }}
         >
           Выйти
@@ -532,7 +520,7 @@ const DashboardPage: React.FC = () => {
             width: '120px',
             height: '120px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #F7B98F, #A7D7C4)',
+            background: 'linear-gradient(135deg, #00695c 0%, #52c41a 100%)',
             margin: '0 auto 30px auto',
             display: 'flex',
             alignItems: 'center',
@@ -562,12 +550,11 @@ const DashboardPage: React.FC = () => {
           </div>
           
           <Title level={2} style={{ 
-            color: '#212121',
+            color: '#2C3E50',
             fontSize: '32px',
             fontWeight: '600',
             marginBottom: '10px',
-            margin: '0 0 10px 0',
-            fontFamily: 'Comfortaa, sans-serif'
+            margin: '0 0 10px 0'
           }}>
             Луми
           </Title>
@@ -1165,7 +1152,8 @@ const DashboardPage: React.FC = () => {
                 height: '40px',
                 backgroundColor: '#00695c',
                 borderColor: '#00695c',
-                fontWeight: '500'
+                fontWeight: '500',
+                color: 'white'
               }}
             >
               Сохранить
@@ -1180,11 +1168,13 @@ const DashboardPage: React.FC = () => {
             }
           }}
         >
-          <Space direction="vertical" style={{ width: '100%', marginTop: '20px' }}>
+          <div style={{ marginTop: '20px' }}>
             <Text style={{ 
               color: '#7B8794',
               fontSize: '14px',
-              lineHeight: '1.5'
+              lineHeight: '1.5',
+              display: 'block',
+              marginBottom: '15px'
             }}>
               Введите результат теста (например: "46 баллов по Беку, выраженная депрессия")
             </Text>
@@ -1197,10 +1187,11 @@ const DashboardPage: React.FC = () => {
               showCount
               style={{
                 borderRadius: '12px',
-                resize: 'none'
+                resize: 'none',
+                marginBottom: '20px'
               }}
             />
-          </Space>
+          </div>
         </Modal>
       </div>
     </div>
