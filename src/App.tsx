@@ -58,7 +58,7 @@ function App() {
   return (
     <ConfigProvider theme={customTheme} locale={ruRU}>
       <Router>
-        <div style={{ minHeight: '100vh', backgroundColor: '#fafafa' }}>
+        <div style={{ minHeight: '100vh' }}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/test" element={<TestPage />} />

@@ -62,7 +62,7 @@ const HomePage = () => {
         {/* Заголовок */}
         <div style={{ marginBottom: '60px' }}>
           <Title level={1} style={{ 
-            color: '#000', 
+            color: '#fafafa', 
             marginBottom: '16px',
             fontSize: '48px',
             fontFamily: 'Comfortaa, sans-serif',
@@ -73,7 +73,7 @@ const HomePage = () => {
             Если<br />у тебя ПРЛ
           </Title>
           <div style={{ 
-            color: 'rgba(0, 0, 0, 0.5)', 
+            color: 'rgba(0, 0, 0, 0.8)', 
             fontFamily: 'Inter, sans-serif',
             fontSize: '16px',
             fontWeight: 'normal',
