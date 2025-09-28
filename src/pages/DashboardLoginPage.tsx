@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Input, Button, Form, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import SilkBackground from '../components/SilkBackground';
 import { apiRequest } from '../config/api';
 
 const { Text, Title } = Typography;
@@ -104,7 +105,13 @@ const DashboardLoginPage: React.FC = () => {
       padding: '20px',
       position: 'relative'
     }}>
-      <div className="silk-background" />
+      <SilkBackground
+        speed={3.3}
+        scale={0.5}
+        noiseIntensity={0.7}
+        rotation={0}
+        color="rgb(0, 105, 92)"
+      />
       <Card style={{ 
         width: '100%', 
         maxWidth: '400px', 
