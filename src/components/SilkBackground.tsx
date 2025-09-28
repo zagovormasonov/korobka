@@ -42,56 +42,79 @@ const SilkBackground: React.FC<SilkBackgroundProps> = ({
       
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Создаем градиент
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      
-      // Преобразуем rgb в rgba с прозрачностью
-      const rgbaColor = color.replace('rgb(', 'rgba(').replace(')', ', 0.5)');
-      
-      gradient.addColorStop(0, color);
-      gradient.addColorStop(0.5, rgbaColor); // 50% прозрачности
-      gradient.addColorStop(1, color);
-      
-      ctx.fillStyle = gradient;
+      // Создаем базовый цветной фон
+      ctx.fillStyle = color;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Создаем шелковый эффект с помощью волн
-      ctx.globalCompositeOperation = 'overlay';
+      // Создаем шелковый эффект с помощью множественных волн
+      ctx.globalCompositeOperation = 'multiply';
       
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 8; i++) {
         ctx.beginPath();
         
-        const amplitude = 50 * scale * noiseIntensity;
-        const frequency = 0.01 * scale;
-        const phase = time + i * 0.5;
+        const amplitude = 80 * scale * noiseIntensity;
+        const frequency = 0.005 * scale * (1 + i * 0.1);
+        const phase = time * (1 + i * 0.2) + i * Math.PI * 0.3;
         
-        for (let x = 0; x <= canvas.width; x += 2) {
-          const y1 = canvas.height * 0.3 + Math.sin(x * frequency + phase) * amplitude;
-          const y2 = canvas.height * 0.7 + Math.cos(x * frequency * 1.5 + phase) * amplitude * 0.7;
+        // Создаем сложные волны
+        for (let x = 0; x <= canvas.width; x += 1) {
+          const y = canvas.height * 0.5 + 
+                   Math.sin(x * frequency + phase) * amplitude +
+                   Math.sin(x * frequency * 2 + phase * 1.5) * amplitude * 0.5 +
+                   Math.cos(x * frequency * 0.5 + phase * 0.8) * amplitude * 0.3;
           
           if (x === 0) {
-            ctx.moveTo(x, y1);
+            ctx.moveTo(x, y);
           } else {
-            ctx.lineTo(x, y1);
+            ctx.lineTo(x, y);
           }
         }
         
-        for (let x = canvas.width; x >= 0; x -= 2) {
-          const y2 = canvas.height * 0.7 + Math.cos(x * frequency * 1.5 + phase) * amplitude * 0.7;
-          ctx.lineTo(x, y2);
-        }
-        
+        // Замыкаем путь до краев экрана
+        ctx.lineTo(canvas.width, canvas.height);
+        ctx.lineTo(0, canvas.height);
         ctx.closePath();
         
+        // Создаем градиент для волны
         const waveGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        const waveColor1 = color.replace('rgb(', 'rgba(').replace(')', ', 0.1)'); // 10% прозрачности
-        const waveColor2 = color.replace('rgb(', 'rgba(').replace(')', ', 0.2)'); // 20% прозрачности
+        const lightColor = color.replace('rgb(', 'rgba(').replace(')', ', 0.8)');
+        const darkColor = color.replace('rgb(', 'rgba(').replace(')', ', 0.3)');
         
-        waveGradient.addColorStop(0, waveColor1);
-        waveGradient.addColorStop(0.5, waveColor2);
-        waveGradient.addColorStop(1, waveColor1);
+        waveGradient.addColorStop(0, lightColor);
+        waveGradient.addColorStop(0.5, color);
+        waveGradient.addColorStop(1, darkColor);
         
         ctx.fillStyle = waveGradient;
+        ctx.fill();
+      }
+      
+      // Добавляем дополнительный слой с другим режимом наложения
+      ctx.globalCompositeOperation = 'screen';
+      
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        
+        const amplitude = 40 * scale * noiseIntensity;
+        const frequency = 0.008 * scale;
+        const phase = time * 0.5 + i * Math.PI * 0.7;
+        
+        for (let x = 0; x <= canvas.width; x += 2) {
+          const y = canvas.height * (0.2 + i * 0.3) + 
+                   Math.sin(x * frequency + phase) * amplitude;
+          
+          if (x === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        
+        ctx.lineTo(canvas.width, canvas.height);
+        ctx.lineTo(0, canvas.height);
+        ctx.closePath();
+        
+        const highlightColor = color.replace('rgb(', 'rgba(').replace(')', ', 0.1)');
+        ctx.fillStyle = highlightColor;
         ctx.fill();
       }
       
