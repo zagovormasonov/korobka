@@ -1,14 +1,8 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { Typography, Button, Card, Row, Col, Space, List } from 'antd';
-import { 
-  FileTextOutlined, 
-  UserOutlined, 
-  CalendarOutlined, 
-  FilePdfOutlined, 
-  MessageOutlined 
-} from '@ant-design/icons';
+import { Typography, Button, Space } from 'antd';
+import { GradientText } from 'react-bits';
 
-const { Title, Paragraph } = Typography;
+const { Title } = Typography;
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -36,15 +30,20 @@ const HomePage = () => {
         marginBottom: '60px',
         paddingTop: '20px'
       }}>
-        <Title level={2} style={{ 
-          color: '#000', 
-          margin: '0',
-          fontSize: '32px',
-          fontFamily: 'Comfortaa, sans-serif',
-          fontWeight: 'normal'
-        }}>
+        <GradientText
+          colors={['rgb(0, 105, 92)', 'rgb(115, 239, 224)']}
+          animationSpeed={3}
+          showBorder={false}
+          className="gradient-text-logo"
+          style={{
+            fontSize: '32px',
+            fontFamily: 'Comfortaa, sans-serif',
+            fontWeight: 'normal',
+            margin: '0'
+          }}
+        >
           idenself
-        </Title>
+        </GradientText>
       </div>
 
       <div style={{ 
