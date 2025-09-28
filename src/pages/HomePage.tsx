@@ -1,6 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { Typography, Button, Space } from 'antd';
-import SilkBackground from '../components/SilkBackground';
 
 const { Title } = Typography;
 
@@ -23,13 +22,7 @@ const HomePage = () => {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <SilkBackground
-        speed={3.3}
-        scale={0.5}
-        noiseIntensity={0.7}
-        rotation={0}
-        color="rgb(0, 105, 92)"
-      />
+      <div className="silk-background" />
       {/* Логотип вверху */}
       <div style={{ 
         textAlign: 'center', 

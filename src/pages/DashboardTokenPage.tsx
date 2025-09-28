@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Spin } from 'antd';
-import SilkBackground from '../components/SilkBackground';
 import { apiRequest } from '../config/api';
 
 const { Text } = Typography;
@@ -55,13 +54,7 @@ const DashboardTokenPage: React.FC = () => {
         gap: '16px',
         position: 'relative'
       }}>
-        <SilkBackground
-          speed={3.3}
-          scale={0.5}
-          noiseIntensity={0.7}
-          rotation={0}
-          color="rgb(0, 105, 92)"
-        />
+        <div className="silk-background" />
         <Spin size="large" />
         <Text style={{ color: 'rgba(0, 0, 0, 0.7)', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>
           Загружаем ваш личный кабинет...
@@ -83,13 +76,7 @@ const DashboardTokenPage: React.FC = () => {
         padding: '20px',
         position: 'relative'
       }}>
-        <SilkBackground
-          speed={3.3}
-          scale={0.5}
-          noiseIntensity={0.7}
-          rotation={0}
-          color="rgb(0, 105, 92)"
-        />
+        <div className="silk-background" />
         <Text type="danger" style={{ fontSize: '18px', color: '#ff4d4f', fontFamily: 'Comfortaa, sans-serif' }}>
           {error}
         </Text>
