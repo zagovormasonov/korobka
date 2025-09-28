@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Spin } from 'antd';
-import Aurora from '../components/Aurora';
+import LightRays from '../components/LightRays';
 import { apiRequest } from '../config/api';
 
 const { Text } = Typography;
@@ -55,11 +55,18 @@ const DashboardTokenPage: React.FC = () => {
         gap: '16px',
         position: 'relative'
       }}>
-        <Aurora
-          colorStops={["#50958c", "#ffd5b7", "#50958c"]}
-          blend={0.5}
-          amplitude={1.0}
-          speed={0.5}
+        <LightRays
+          raysColor="#FFCDB8"
+          raysOrigin="top"
+          raysSpeed={1}
+          lightSpread={1.7}
+          rayLength={3}
+          fadeDistance={1}
+          saturation={1}
+          mouseInfluence={0.1}
+          noiseAmount={0}
+          distortion={0}
+          pulsating={false}
         />
         <Spin size="large" />
         <Text style={{ color: 'rgba(0, 0, 0, 0.7)', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>
@@ -82,11 +89,18 @@ const DashboardTokenPage: React.FC = () => {
         padding: '20px',
         position: 'relative'
       }}>
-        <Aurora
-          colorStops={["#50958c", "#ffd5b7", "#50958c"]}
-          blend={0.5}
-          amplitude={1.0}
-          speed={0.5}
+        <LightRays
+          raysColor="#FFCDB8"
+          raysOrigin="top"
+          raysSpeed={1}
+          lightSpread={1.7}
+          rayLength={3}
+          fadeDistance={1}
+          saturation={1}
+          mouseInfluence={0.1}
+          noiseAmount={0}
+          distortion={0}
+          pulsating={false}
         />
         <Text type="danger" style={{ fontSize: '18px', color: '#ff4d4f', fontFamily: 'Comfortaa, sans-serif' }}>
           {error}

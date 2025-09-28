@@ -1,6 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { Typography, Button, Space } from 'antd';
-import Aurora from '../components/Aurora';
+import LightRays from '../components/LightRays';
 
 const { Title } = Typography;
 
@@ -23,11 +23,18 @@ const HomePage = () => {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <Aurora
-        colorStops={["#50958c", "#ffd5b7", "#50958c"]}
-        blend={0.5}
-        amplitude={1.0}
-        speed={0.5}
+      <LightRays
+        raysColor="#FFCDB8"
+        raysOrigin="top"
+        raysSpeed={1}
+        lightSpread={1.7}
+        rayLength={3}
+        fadeDistance={1}
+        saturation={1}
+        mouseInfluence={0.1}
+        noiseAmount={0}
+        distortion={0}
+        pulsating={false}
       />
       {/* Логотип вверху */}
       <div style={{ 
