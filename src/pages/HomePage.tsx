@@ -1,6 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { Typography, Button, Space } from 'antd';
-import SilkBackground from '../components/SilkBackground';
+import Aurora from '../components/Aurora';
 
 const { Title } = Typography;
 
@@ -23,13 +23,11 @@ const HomePage = () => {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <SilkBackground
-        speed={1.0}
-        scale={0.5}
-        noiseIntensity={0.7}
-        rotation={0}
-        color="rgb(80, 149, 140)"
-        accentColor="rgb(255, 213, 183)"
+      <Aurora
+        colorStops={["#50958c", "#ffd5b7", "#50958c"]}
+        blend={0.5}
+        amplitude={1.0}
+        speed={0.5}
       />
       {/* Логотип вверху */}
       <div style={{ 

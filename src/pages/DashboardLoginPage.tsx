@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Input, Button, Form, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import SilkBackground from '../components/SilkBackground';
+import Aurora from '../components/Aurora';
 import { apiRequest } from '../config/api';
 
 const { Text, Title } = Typography;
@@ -105,13 +105,11 @@ const DashboardLoginPage: React.FC = () => {
       padding: '20px',
       position: 'relative'
     }}>
-      <SilkBackground
-        speed={1.0}
-        scale={0.5}
-        noiseIntensity={0.7}
-        rotation={0}
-        color="rgb(80, 149, 140)"
-        accentColor="rgb(255, 213, 183)"
+      <Aurora
+        colorStops={["#50958c", "#ffd5b7", "#50958c"]}
+        blend={0.5}
+        amplitude={1.0}
+        speed={0.5}
       />
       <Card style={{ 
         width: '100%', 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Spin } from 'antd';
-import SilkBackground from '../components/SilkBackground';
+import Aurora from '../components/Aurora';
 import { apiRequest } from '../config/api';
 
 const { Text } = Typography;
@@ -55,13 +55,11 @@ const DashboardTokenPage: React.FC = () => {
         gap: '16px',
         position: 'relative'
       }}>
-        <SilkBackground
-          speed={1.0}
-          scale={0.5}
-          noiseIntensity={0.7}
-          rotation={0}
-          color="rgb(80, 149, 140)"
-          accentColor="rgb(255, 213, 183)"
+        <Aurora
+          colorStops={["#50958c", "#ffd5b7", "#50958c"]}
+          blend={0.5}
+          amplitude={1.0}
+          speed={0.5}
         />
         <Spin size="large" />
         <Text style={{ color: 'rgba(0, 0, 0, 0.7)', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>
@@ -84,13 +82,11 @@ const DashboardTokenPage: React.FC = () => {
         padding: '20px',
         position: 'relative'
       }}>
-        <SilkBackground
-          speed={1.0}
-          scale={0.5}
-          noiseIntensity={0.7}
-          rotation={0}
-          color="rgb(80, 149, 140)"
-          accentColor="rgb(255, 213, 183)"
+        <Aurora
+          colorStops={["#50958c", "#ffd5b7", "#50958c"]}
+          blend={0.5}
+          amplitude={1.0}
+          speed={0.5}
         />
         <Text type="danger" style={{ fontSize: '18px', color: '#ff4d4f', fontFamily: 'Comfortaa, sans-serif' }}>
           {error}
