@@ -30,6 +30,71 @@ code {
   color: inherit;
 }
 
+/* CSS Properties для анимированного градиента */
+@property --8-x-position {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 88.3984375%;
+}
+
+@property --8-y-position {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 12.578124999999996%;
+}
+
+@property --23-x-position {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 19.453125000000004%;
+}
+
+@property --23-y-position {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 84.1015625%;
+}
+
+/* CSS переменные */
+:root {
+  --8-x-position: 88.3984375%;
+  --8-y-position: 12.578124999999996%;
+  --23-x-position: 19.453125000000004%;
+  --23-y-position: 84.1015625%;
+}
+
+/* Анимированный градиентный фон */
+.silk-background {
+  background: 
+    radial-gradient(100% 100% at var(--8-x-position) var(--8-y-position), #ffd5b7 0%, transparent),
+    radial-gradient(100% 100% at var(--23-x-position) var(--23-y-position), #50958c 7%, transparent),
+    #f0f8f5;
+  animation-name: silk-animation;
+  animation-iteration-count: infinite;
+  animation-duration: 10s;
+  animation-timing-function: ease-in-out;
+}
+
+/* Keyframes для анимации */
+@keyframes silk-animation {
+  25% {
+    --8-x-position: 85%;
+    --8-y-position: 80%;
+    --23-x-position: 100%;
+    --23-y-position: 100%;
+  }
+  
+  50% {
+    --8-x-position: 15%;
+    --8-y-position: 85%;
+  }
+  
+  55% {
+    --23-x-position: 20%;
+    --23-y-position: 20%;
+  }
+}
+
 /* Стили для кнопки "Завершить" */
 .finish-button {
   width: auto !important;
