@@ -151,7 +151,7 @@ const PaymentPage: React.FC = () => {
             display: 'block'
           }} 
         />
-        <Title level={1} style={{ color: '#00695C', marginBottom: '20px' }}>
+        <Title level={1} style={{ color: '#00695C', marginBottom: '20px', fontFamily: 'Comfortaa, sans-serif' }}>
           Тест пройден
         </Title>
       </div>
@@ -201,7 +201,7 @@ const PaymentPage: React.FC = () => {
       )}
 
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <Title level={3} style={{ color: '#00695C', marginBottom: '30px' }}>
+        <Title level={3} style={{ color: '#00695C', marginBottom: '30px', fontFamily: 'Comfortaa, sans-serif' }}>
           Получи:
         </Title>
       </div>
@@ -220,7 +220,7 @@ const PaymentPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Title level={4} style={{ margin: '0 0 8px 0', color: '#00695C', textAlign: 'left' }}>
+                  <Title level={4} style={{ margin: '0 0 8px 0', color: '#00695C', textAlign: 'left', fontFamily: 'Comfortaa, sans-serif' }}>
                     {benefit.title}
                   </Title>
                   <Paragraph style={{ margin: '0 0 16px 0', color: '#666', textAlign: 'left', fontSize: '16px' }}>

@@ -314,7 +314,7 @@ const BpdTestPage: React.FC = () => {
         </div>
 
         <Card style={{ marginBottom: '30px' }}>
-          <Title level={4} style={{ marginBottom: '30px', color: '#00695C' }}>
+          <Title level={4} style={{ marginBottom: '30px', color: '#00695C', fontFamily: 'Comfortaa, sans-serif' }}>
             {question.text}
           </Title>
 

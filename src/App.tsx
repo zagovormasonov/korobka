@@ -23,10 +23,15 @@ const customTheme = {
     colorInfo: '#00695C',
     borderRadius: 6,
     wireframe: false,
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
   },
   components: {
+    Typography: {
+      titleFontFamily: 'Comfortaa, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+    },
     Button: {
       borderRadius: 6,
+      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
       // Кастомный размер для кнопок "Да" и "Нет"
       paddingInlineLG: 55,
       paddingBlockLG: 30,
@@ -36,9 +41,11 @@ const customTheme = {
     },
     Input: {
       borderRadius: 6,
+      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
     },
     Select: {
       borderRadius: 6,
+      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
     },
     Slider: {
       trackBg: '#00695C',

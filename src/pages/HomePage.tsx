@@ -24,12 +24,29 @@ const HomePage = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(180deg, #FFE4B5 0%, #FFB6C1 100%)',
+      background: 'linear-gradient(180deg, #FFFAC0 0%, #FFA4B3 100%)',
       padding: '40px 20px',
       position: 'relative',
       display: 'flex',
       flexDirection: 'column'
     }}>
+      {/* Логотип вверху */}
+      <div style={{ 
+        textAlign: 'center', 
+        marginBottom: '60px',
+        paddingTop: '20px'
+      }}>
+        <Title level={2} style={{ 
+          color: '#000', 
+          margin: '0',
+          fontSize: '32px',
+          fontFamily: 'Comfortaa, sans-serif',
+          fontWeight: 'normal'
+        }}>
+          idenself
+        </Title>
+      </div>
+
       <div style={{ 
         maxWidth: '600px', 
         margin: '0 auto', 
@@ -37,7 +54,7 @@ const HomePage = () => {
         display: 'flex', 
         flexDirection: 'column', 
         justifyContent: 'center',
-        textAlign: 'center'
+        textAlign: 'left'
       }}>
         {/* Заголовок */}
         <div style={{ marginBottom: '60px' }}>
@@ -45,37 +62,45 @@ const HomePage = () => {
             color: '#000', 
             marginBottom: '16px',
             fontSize: '48px',
-            fontWeight: 'bold'
+            fontFamily: 'Comfortaa, sans-serif',
+            fontWeight: 'normal',
+            textAlign: 'left',
+            lineHeight: '1.2'
           }}>
-            Если у тебя ПРЛ
+            Если<br />у тебя ПРЛ
           </Title>
-          <Title level={3} style={{ 
-            color: '#333', 
-            fontWeight: 'normal', 
-            marginBottom: '0',
-            fontSize: '20px'
+          <div style={{ 
+            color: 'rgba(0, 0, 0, 0.5)', 
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '16px',
+            fontWeight: 'normal',
+            textAlign: 'left',
+            lineHeight: '1.4'
           }}>
-            Пройди тест или войди в личный кабинет
-          </Title>
+            Пройди тест или войди<br />в личный кабинет
+          </div>
         </div>
 
         {/* Кнопки */}
         <div style={{ marginBottom: '40px' }}>
-          <Space direction="vertical" size="large">
+          <Space direction="vertical" size="large" style={{ width: '100%' }}>
             <Button 
               type="primary" 
               size="large"
               onClick={handleStart}
               style={{ 
-                height: '70px', 
+                height: '60px', 
                 fontSize: '20px', 
-                fontWeight: 'bold',
-                padding: '0 60px',
-                minWidth: '350px',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '500',
+                padding: '0 40px',
+                width: '100%',
+                maxWidth: '300px',
                 background: '#00695C',
                 borderColor: '#00695C',
-                borderRadius: '35px',
-                boxShadow: '0 6px 20px rgba(0,105,92,0.3)'
+                borderRadius: '30px',
+                boxShadow: 'none',
+                border: 'none'
               }}
             >
               Пройти тест
@@ -86,19 +111,22 @@ const HomePage = () => {
               size="large"
               onClick={handleLogin}
               style={{ 
-                height: '70px', 
+                height: '60px', 
                 fontSize: '20px', 
-                fontWeight: 'bold',
-                padding: '0 60px',
-                minWidth: '350px',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '500',
+                padding: '0 40px',
+                width: '100%',
+                maxWidth: '300px',
                 background: 'white',
-                borderColor: '#00695C',
+                borderColor: 'transparent',
                 color: '#00695C',
-                borderRadius: '35px',
-                boxShadow: '0 6px 20px rgba(0,105,92,0.15)'
+                borderRadius: '30px',
+                boxShadow: 'none',
+                border: 'none'
               }}
             >
-              Войти в личный кабинет
+              Войти в ЛК
             </Button>
           </Space>
         </div>
@@ -108,15 +136,15 @@ const HomePage = () => {
       <div style={{ 
         textAlign: 'center', 
         paddingTop: '20px',
-        borderTop: '1px solid rgba(0,0,0,0.1)',
         marginTop: 'auto'
       }}>
         <Space size="large" wrap>
           <Link 
             to="/offer" 
             style={{ 
-              color: '#666', 
+              color: 'rgba(0, 0, 0, 0.5)', 
               fontSize: '14px',
+              fontFamily: 'Inter, sans-serif',
               textDecoration: 'none'
             }}
           >
@@ -125,8 +153,9 @@ const HomePage = () => {
           <Link 
             to="/privacy-policy" 
             style={{ 
-              color: '#666', 
+              color: 'rgba(0, 0, 0, 0.5)', 
               fontSize: '14px',
+              fontFamily: 'Inter, sans-serif',
               textDecoration: 'none'
             }}
           >
@@ -135,8 +164,9 @@ const HomePage = () => {
           <Link 
             to="/consent" 
             style={{ 
-              color: '#666', 
+              color: 'rgba(0, 0, 0, 0.5)', 
               fontSize: '14px',
+              fontFamily: 'Inter, sans-serif',
               textDecoration: 'none'
             }}
           >
