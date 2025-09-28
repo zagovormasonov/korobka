@@ -2,9 +2,14 @@ html {
   /* Поддержка новых viewport единиц для Safari */
   height: 100vh; /* Fallback */
   height: 100dvh; /* Dynamic Viewport Height */
+  height: 100svh; /* Small Viewport Height */
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100svh;
   min-height: -webkit-fill-available;
+  /* Увеличиваем высоту для компенсации Safari полос */
+  min-height: calc(100vh + 100px);
+  min-height: calc(100dvh + 100px);
 }
 
 body {
@@ -19,12 +24,20 @@ body {
   /* Полноэкранное отображение для Safari */
   height: 100vh;
   height: 100dvh;
+  height: 100svh;
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100svh;
   min-height: -webkit-fill-available;
+  /* Увеличиваем высоту для компенсации Safari полос */
+  min-height: calc(100vh + 100px);
+  min-height: calc(100dvh + 100px);
   /* Убираем отступы Safari */
   -webkit-overflow-scrolling: touch;
   overflow-x: hidden;
+  /* Дополнительные исправления для Safari */
+  position: relative;
+  width: 100%;
 }
 
 code {
@@ -41,15 +54,27 @@ code {
   /* Полноэкранное отображение для Safari */
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100svh;
   min-height: -webkit-fill-available;
+  /* Увеличиваем высоту для компенсации Safari полос */
+  min-height: calc(100vh + 100px);
+  min-height: calc(100dvh + 100px);
   height: 100%;
+  width: 100%;
+  position: relative;
 }
 
 .App {
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100svh;
   min-height: -webkit-fill-available;
+  /* Увеличиваем высоту для компенсации Safari полос */
+  min-height: calc(100vh + 100px);
+  min-height: calc(100dvh + 100px);
   background: transparent !important;
+  width: 100%;
+  position: relative;
 }
 
 .ant-typography {
@@ -102,9 +127,20 @@ code {
   /* Полноэкранное отображение для Safari */
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100svh;
   min-height: -webkit-fill-available;
+  /* Увеличиваем высоту для компенсации Safari полос */
+  min-height: calc(100vh + 150px);
+  min-height: calc(100dvh + 150px);
   height: 100vh;
   height: 100dvh;
+  height: 100svh;
+  /* Дополнительные исправления */
+  width: 100vw;
+  position: fixed;
+  top: -50px; /* Сдвигаем вверх для покрытия верхней полосы */
+  left: 0;
+  z-index: -1;
 }
 
 /* Keyframes для анимации */
