@@ -55,30 +55,52 @@ const HomePage = () => {
             marginBottom: '0',
             fontSize: '20px'
           }}>
-            Войди в личный кабинет
+            Пройди тест или войди в личный кабинет
           </Title>
         </div>
 
-        {/* Кнопка входа в ЛК */}
+        {/* Кнопки */}
         <div style={{ marginBottom: '40px' }}>
-          <Button 
-            type="primary" 
-            size="large"
-            onClick={handleLogin}
-            style={{ 
-              height: '70px', 
-              fontSize: '20px', 
-              fontWeight: 'bold',
-              padding: '0 60px',
-              minWidth: '350px',
-              background: '#00695C',
-              borderColor: '#00695C',
-              borderRadius: '35px',
-              boxShadow: '0 6px 20px rgba(0,105,92,0.3)'
-            }}
-          >
-            Войти в личный кабинет
-          </Button>
+          <Space direction="vertical" size="large">
+            <Button 
+              type="primary" 
+              size="large"
+              onClick={handleStart}
+              style={{ 
+                height: '70px', 
+                fontSize: '20px', 
+                fontWeight: 'bold',
+                padding: '0 60px',
+                minWidth: '350px',
+                background: '#00695C',
+                borderColor: '#00695C',
+                borderRadius: '35px',
+                boxShadow: '0 6px 20px rgba(0,105,92,0.3)'
+              }}
+            >
+              Пройти тест
+            </Button>
+            
+            <Button 
+              type="default" 
+              size="large"
+              onClick={handleLogin}
+              style={{ 
+                height: '70px', 
+                fontSize: '20px', 
+                fontWeight: 'bold',
+                padding: '0 60px',
+                minWidth: '350px',
+                background: 'white',
+                borderColor: '#00695C',
+                color: '#00695C',
+                borderRadius: '35px',
+                boxShadow: '0 6px 20px rgba(0,105,92,0.15)'
+              }}
+            >
+              Войти в личный кабинет
+            </Button>
+          </Space>
         </div>
       </div>
 
