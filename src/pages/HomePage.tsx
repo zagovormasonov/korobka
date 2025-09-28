@@ -1,6 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { Typography, Button, Space } from 'antd';
-import LightRays from '../components/LightRays';
+import Silk from '../components/Silk';
 
 const { Title } = Typography;
 
@@ -23,18 +23,12 @@ const HomePage = () => {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <LightRays
-        raysColor="#FFCDB8"
-        raysOrigin="top"
-        raysSpeed={1}
-        lightSpread={1.7}
-        rayLength={3}
-        fadeDistance={1}
-        saturation={1}
-        mouseInfluence={0.1}
-        noiseAmount={0}
-        distortion={0}
-        pulsating={false}
+      <Silk
+        speed={1.9}
+        scale={0.5}
+        noiseIntensity={0.4}
+        rotation={0}
+        color="#00695c"
       />
       {/* Логотип вверху */}
       <div style={{ 
