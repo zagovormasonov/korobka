@@ -82,7 +82,7 @@ const TestInfoPage: React.FC = () => {
               }}
             >
               <div style={{ 
-                marginBottom: '16px',
+                marginBottom: '0px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -101,7 +101,7 @@ const TestInfoPage: React.FC = () => {
               }}>
                 {benefit.title}
               </Title>
-              <Paragraph style={{ color: '#666', marginBottom: '12px' }}>
+              <Paragraph style={{ color: 'black', marginBottom: '12px' }}>
                 {benefit.subtitle}
               </Paragraph>
               {benefit.items.length > 0 && (
