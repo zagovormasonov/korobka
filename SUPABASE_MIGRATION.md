@@ -66,8 +66,8 @@ POSTGRESQL_DBNAME=postgres
 
 # Остальные переменные (как обычно)
 GEMINI_API_KEY=your_gemini_api_key
-TINKOFF_TERMINAL_KEY=your_terminal_key
-TINKOFF_PASSWORD=your_password
+TINKOFF_TERMINAL_KEY=1758050657542DEMO
+TINKOFF_PASSWORD=djg$4uums6S_*UbV
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
 EMAILJS_PUBLIC_KEY=your_emailjs_public_key
