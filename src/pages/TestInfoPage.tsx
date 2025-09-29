@@ -17,7 +17,7 @@ const benefits = [
   {
     title: 'Персональный план, что делать именно в твоём случае',
     subtitle: 'Индивидуальный подход к твоей ситуации',
-    icon: <img src="/plan.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
+    icon: <img src="/lplan.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Конкретные действия',
       'Какие тесты ещё пройти в твоём случае',
@@ -34,7 +34,7 @@ const benefits = [
   {
     title: 'Подготовим к сеансу',
     subtitle: 'Поможем максимально эффективно использовать время с психологом',
-    icon: <img src="/plan.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
+    icon: <img src="/cale.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Что сказать специалисту в твоём случае',
       'Как на первом сеансе определить, что он, скорее всего, тебе подходит'
