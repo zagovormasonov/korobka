@@ -17,7 +17,7 @@ const benefits = [
   {
     title: 'Персональный план, что делать именно в твоём случае',
     subtitle: 'Индивидуальный подход к твоей ситуации',
-    icon: <FileTextOutlined style={{ color: iconColor, fontSize: '32px' }} />,
+    icon: <FileTextOutlined style={{ color: iconColor, fontSize: '100px' }} />,
     items: [
       'Конкретные действия',
       'Какие тесты ещё пройти в твоём случае',
@@ -28,13 +28,13 @@ const benefits = [
   {
     title: 'Подберём психолога под твой случай',
     subtitle: 'Найдём специалиста, который понимает твои особенности',
-    icon: <UserOutlined style={{ color: iconColor, fontSize: '32px' }} />,
+    icon: <UserOutlined style={{ color: iconColor, fontSize: '100px' }} />,
     items: []
   },
   {
     title: 'Подготовим к сеансу',
     subtitle: 'Поможем максимально эффективно использовать время с психологом',
-    icon: <CalendarOutlined style={{ color: iconColor, fontSize: '32px' }} />,
+    icon: <CalendarOutlined style={{ color: iconColor, fontSize: '100px' }} />,
     items: [
       'Что сказать специалисту в твоём случае',
       'Как на первом сеансе определить, что он, скорее всего, тебе подходит'
@@ -43,7 +43,7 @@ const benefits = [
   {
     title: 'Подготовим PDF для психолога',
     subtitle: 'Документ, который поможет специалисту лучше понять тебя',
-    icon: <FilePdfOutlined style={{ color: iconColor, fontSize: '32px' }} />,
+    icon: <FilePdfOutlined style={{ color: iconColor, fontSize: '100px' }} />,
     items: [
       'Даёшь его психологу, и он понимает, что делать в твоём случае'
     ]
@@ -51,7 +51,7 @@ const benefits = [
   {
     title: 'Ты сможешь поделиться с нами, что было на сеансе у психолога, и мы дадим обратную связь',
     subtitle: 'Поддержим тебя на каждом этапе',
-    icon: <img src="/chat.png" alt="Chat" style={{ width: '32px', height: '32px' }} />,
+    icon: <img src="/chat.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: []
   }
 ];
@@ -81,15 +81,12 @@ const TestInfoPage: React.FC = () => {
               }}
             >
               <div style={{ 
-                marginBottom: '0px',
-                display: 'inline-flex',
+                marginBottom: '20px',
+                display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '72px',
-                height: '72px',
-                borderRadius: '50%',
-                border: `2px solid ${iconColor}`,
-                padding: '20px'
+                width: '100px',
+                height: '100px'
               }}>
                 {benefit.icon}
               </div>
