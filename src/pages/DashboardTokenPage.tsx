@@ -50,9 +50,6 @@ const DashboardTokenPage: React.FC = () => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        minHeight: '100vh',
-        minHeight: '100dvh',
-        minHeight: '-webkit-fill-available',
         minHeight: 'calc(100vh + 100px)',
         flexDirection: 'column',
         gap: '16px',
@@ -64,10 +61,7 @@ const DashboardTokenPage: React.FC = () => {
           top: -50,
           left: 0,
           width: '100%',
-          height: 'calc(100% + 100px)',
-          minHeight: '100vh',
-          minHeight: '100dvh',
-          minHeight: '-webkit-fill-available',
+          height: 'calc(100vh + 150px)',
           zIndex: -1
         }}>
           <Silk
@@ -92,9 +86,6 @@ const DashboardTokenPage: React.FC = () => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        minHeight: '100vh',
-        minHeight: '100dvh',
-        minHeight: '-webkit-fill-available',
         minHeight: 'calc(100vh + 100px)',
         flexDirection: 'column',
         gap: '16px',
@@ -107,10 +98,7 @@ const DashboardTokenPage: React.FC = () => {
           top: -50,
           left: 0,
           width: '100%',
-          height: 'calc(100% + 100px)',
-          minHeight: '100vh',
-          minHeight: '100dvh',
-          minHeight: '-webkit-fill-available',
+          height: 'calc(100vh + 150px)',
           zIndex: -1
         }}>
           <Silk

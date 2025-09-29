@@ -17,9 +17,6 @@ const HomePage = () => {
 
   return (
     <div style={{
-      minHeight: '100vh',
-      minHeight: '100dvh',
-      minHeight: '-webkit-fill-available',
       minHeight: 'calc(100vh + 100px)',
       padding: '40px 20px 140px 20px',
       position: 'relative',
@@ -31,10 +28,7 @@ const HomePage = () => {
         top: -50,
         left: 0,
         width: '100%',
-        height: 'calc(100% + 100px)',
-        minHeight: '100vh',
-        minHeight: '100dvh',
-        minHeight: '-webkit-fill-available',
+        height: 'calc(100vh + 150px)',
         zIndex: -1
       }}>
         <Silk
@@ -159,7 +153,7 @@ const HomePage = () => {
           <Link 
             to="/offer" 
             style={{ 
-              color: 'rgba(0, 0, 0, 0.5)', 
+              color: 'rgba(255, 255, 255, 0.5)', 
               fontSize: '14px',
               fontFamily: 'Inter, sans-serif',
               textDecoration: 'none'
@@ -170,7 +164,7 @@ const HomePage = () => {
           <Link 
             to="/privacy-policy" 
             style={{ 
-              color: 'rgba(0, 0, 0, 0.5)', 
+              color: 'rgba(255, 255, 255, 0.5)', 
               fontSize: '14px',
               fontFamily: 'Inter, sans-serif',
               textDecoration: 'none'
@@ -181,7 +175,7 @@ const HomePage = () => {
           <Link 
             to="/consent" 
             style={{ 
-              color: 'rgba(0, 0, 0, 0.5)', 
+              color: 'rgba(255, 255, 255, 0.5)', 
               fontSize: '14px',
               fontFamily: 'Inter, sans-serif',
               textDecoration: 'none'
