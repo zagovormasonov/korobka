@@ -27,6 +27,8 @@ router.post('/create', async (req, res) => {
 
     console.log('🔑 Terminal Key:', terminalKey ? 'установлен' : 'НЕ УСТАНОВЛЕН');
     console.log('🔑 Password:', password ? 'установлен' : 'НЕ УСТАНОВЛЕН');
+    console.log('🔑 Terminal Key значение:', terminalKey);
+    console.log('🔑 Это DEMO ключ?', terminalKey?.includes('DEMO'));
 
     const orderId = `${sessionId.slice(0, 8)}_${Date.now()}`;
     
@@ -82,10 +84,16 @@ router.post('/create', async (req, res) => {
 
     console.log('📤 Отправляем запрос в Тинькофф API...');
     console.log('📋 Данные платежа:', JSON.stringify(paymentData, null, 2));
+    console.log('🔐 Token для подписи:', token);
+    console.log('🔑 TerminalKey:', terminalKey);
+    console.log('💰 Amount:', amount);
+    console.log('🆔 OrderId:', orderId);
 
     const response = await axios.post('https://securepay.tinkoff.ru/v2/Init', paymentData);
     
     console.log('📥 Ответ от Тинькофф:', response.data);
+    console.log('📥 Статус ответа:', response.status);
+    console.log('📥 Заголовки ответа:', response.headers);
     
     if (response.data.Success) {
       console.log('✅ Платеж успешно создан в Тинькофф');
@@ -112,10 +120,15 @@ router.post('/create', async (req, res) => {
         paymentId: orderId
       });
     } else {
-      console.error('❌ Ошибка создания платежа в Тинькофф:', response.data.Message);
+      console.error('❌ Ошибка создания платежа в Тинькофф:', response.data);
+      console.error('❌ Код ошибки:', response.data.ErrorCode);
+      console.error('❌ Сообщение ошибки:', response.data.Message);
+      console.error('❌ Детали ошибки:', response.data.Details);
       res.status(400).json({
         success: false,
-        error: response.data.Message || 'Payment creation failed'
+        error: response.data.Message || 'Payment creation failed',
+        errorCode: response.data.ErrorCode,
+        details: response.data.Details
       });
     }
   } catch (error) {
