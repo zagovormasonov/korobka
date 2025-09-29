@@ -71,6 +71,7 @@ const DashboardPage: React.FC = () => {
   const [allTestsCompleted, setAllTestsCompleted] = useState(false);
   const [testResults, setTestResults] = useState<{[key: number]: string}>({});
   const [savingResults, setSavingResults] = useState<{[key: number]: boolean}>({});
+  const [userNickname, setUserNickname] = useState('');
   
   // Состояния загрузки для AI операций
   const [loadingMascotMessage, setLoadingMascotMessage] = useState(false);
@@ -168,7 +169,14 @@ const DashboardPage: React.FC = () => {
       }
       
       const userEmail = primaryData.data?.email;
+      const nickname = primaryData.data?.nickname;
       console.log('📧 Email пользователя для загрузки результатов:', userEmail || 'не указан');
+      console.log('👤 Никнейм пользователя:', nickname || 'не указан');
+      
+      // Устанавливаем никнейм
+      if (nickname) {
+        setUserNickname(nickname);
+      }
       
       // Загружаем результаты дополнительных тестов по sessionId
       const response = await apiRequest(`api/tests/additional/results/${sessionId}`);
@@ -486,21 +494,34 @@ const DashboardPage: React.FC = () => {
       background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
       padding: '20px'
     }}>
-      {/* Header with Exit button */}
+      {/* Header with Nickname and Exit button */}
       <div style={{ 
         display: 'flex', 
-        justifyContent: 'flex-end', 
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: '20px',
         maxWidth: '800px',
         margin: '0 auto 20px auto'
       }}>
+        <Text style={{ 
+          fontSize: '18px',
+          fontWeight: '500',
+          color: '#333',
+          fontFamily: 'Inter, sans-serif'
+        }}>
+          {userNickname && `👤 ${userNickname}`}
+        </Text>
         <Button 
-          type="text" 
+          type="primary"
           onClick={handleLogout}
           style={{ 
-            color: '#00695c',
+            backgroundColor: 'rgb(243, 186, 111)',
+            borderColor: 'rgb(243, 186, 111)',
+            color: '#ffffff',
             fontSize: '16px',
-            fontWeight: '500'
+            fontWeight: '500',
+            height: '40px',
+            borderRadius: '20px'
           }}
         >
           Выйти
@@ -647,8 +668,9 @@ const DashboardPage: React.FC = () => {
                     padding: '0 30px',
                     marginTop: '20px',
                     borderRadius: '25px',
-                    backgroundColor: '#00695c',
-                    borderColor: '#00695c'
+                    backgroundColor: 'rgb(243, 186, 111)',
+                    borderColor: 'rgb(243, 186, 111)',
+                    color: '#ffffff'
                   }}
                 >
                   Перейти к персональному плану
@@ -791,8 +813,9 @@ const DashboardPage: React.FC = () => {
                             flex: 1,
                             height: '40px',
                             borderRadius: '20px',
-                            backgroundColor: '#00695c',
-                            borderColor: '#00695c',
+                            backgroundColor: 'rgb(243, 186, 111)',
+                            borderColor: 'rgb(243, 186, 111)',
+                            color: '#ffffff',
                             fontWeight: '500'
                           }}
                         >
@@ -820,7 +843,7 @@ const DashboardPage: React.FC = () => {
                 type="text" 
               onClick={() => setPersonalPlanMode(false)}
               style={{ 
-                color: '#00695c',
+                color: 'rgb(243, 186, 111)',
                 fontSize: '16px',
                 fontWeight: '500'
               }}
@@ -880,8 +903,9 @@ const DashboardPage: React.FC = () => {
                     width: '100%',
                     height: '45px',
                     borderRadius: '22px',
-                    backgroundColor: '#00695c',
-                    borderColor: '#00695c',
+                    backgroundColor: 'rgb(243, 186, 111)',
+                    borderColor: 'rgb(243, 186, 111)',
+                    color: '#ffffff',
                     fontSize: '16px',
                     fontWeight: '500'
                   }}
@@ -986,8 +1010,9 @@ const DashboardPage: React.FC = () => {
                       width: '100%',
                       height: '45px',
                       borderRadius: '22px',
-                      backgroundColor: '#00695c',
-                      borderColor: '#00695c',
+                      backgroundColor: 'rgb(243, 186, 111)',
+                      borderColor: 'rgb(243, 186, 111)',
+                      color: '#ffffff',
                       fontSize: '16px',
                       fontWeight: '500'
                     }}
@@ -1042,8 +1067,9 @@ const DashboardPage: React.FC = () => {
                     width: '100%',
                     height: '45px',
                     borderRadius: '22px',
-                    backgroundColor: '#00695c',
-                    borderColor: '#00695c',
+                    backgroundColor: 'rgb(243, 186, 111)',
+                    borderColor: 'rgb(243, 186, 111)',
+                    color: '#ffffff',
                     fontSize: '16px',
                     fontWeight: '500'
                   }}
@@ -1101,8 +1127,9 @@ const DashboardPage: React.FC = () => {
                       width: '100%',
                       height: '45px',
                       borderRadius: '22px',
-                      backgroundColor: '#00695c',
-                      borderColor: '#00695c',
+                      backgroundColor: 'rgb(243, 186, 111)',
+                      borderColor: 'rgb(243, 186, 111)',
+                      color: '#ffffff',
                       fontSize: '16px',
                       fontWeight: '500'
                     }}
@@ -1150,10 +1177,10 @@ const DashboardPage: React.FC = () => {
               style={{
                 borderRadius: '20px',
                 height: '40px',
-                backgroundColor: '#00695c',
-                borderColor: '#00695c',
-                fontWeight: '500',
-                color: 'white'
+                backgroundColor: 'rgb(243, 186, 111)',
+                borderColor: 'rgb(243, 186, 111)',
+                color: '#ffffff',
+                fontWeight: '500'
               }}
             >
               Сохранить
