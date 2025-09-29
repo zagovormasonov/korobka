@@ -17,7 +17,7 @@ import ConsentPage from './pages/ConsentPage';
 const customTheme = {
   algorithm: theme.defaultAlgorithm,
   token: {
-    colorPrimary: '#00695C',
+    colorPrimary: 'rgb(243, 186, 111)',
     colorSuccess: '#52c41a',
     colorWarning: '#faad14',
     colorError: '#ff4d4f',
@@ -31,7 +31,7 @@ const customTheme = {
       titleFontFamily: 'Comfortaa, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
     },
     Button: {
-      borderRadius: 6,
+      borderRadius: 24,
       fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
       // Кастомный размер для кнопок "Да" и "Нет"
       paddingInlineLG: 55,

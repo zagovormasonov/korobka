@@ -63,10 +63,10 @@ const TestInfoPage: React.FC = () => {
     <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <Title level={1} style={{ color: 'black', marginBottom: '20px', fontFamily: 'Comfortaa, sans-serif' }}>
-          Что ты получишь
+          Если у тебя ПРЛ
         </Title>
-        <Paragraph style={{ fontSize: '18px', color: '#666', maxWidth: '600px', margin: '0 auto' }}>
-          После прохождения теста ты получишь персональный план действий
+        <Paragraph style={{ fontSize: '18px', color: 'black', maxWidth: '600px', margin: '0 auto' }}>
+          Пройди тест и получи:
         </Paragraph>
       </div>
 

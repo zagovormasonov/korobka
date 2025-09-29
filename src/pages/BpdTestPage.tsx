@@ -299,12 +299,12 @@ const BpdTestPage: React.FC = () => {
     const question = questions[currentQuestionIndex];
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
-    return (
+  return (
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <Progress 
             percent={Math.round(progress)} 
-            strokeColor="#00695C"
+            strokeColor="rgb(243, 186, 111)"
             showInfo={false}
             style={{ marginBottom: '20px' }}
           />
@@ -313,8 +313,8 @@ const BpdTestPage: React.FC = () => {
           </Text>
         </div>
 
-        <Card style={{ marginBottom: '30px' }}>
-          <Title level={4} style={{ marginBottom: '30px', color: '#00695C', fontFamily: 'Comfortaa, sans-serif' }}>
+        <Card style={{ marginBottom: '30px', borderRadius: '16px' }}>
+          <Title level={4} style={{ marginBottom: '30px', color: 'black', fontFamily: 'Comfortaa, sans-serif' }}>
             {question.text}
           </Title>
 
@@ -431,7 +431,7 @@ const BpdTestPage: React.FC = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                     <Text style={{ color: '#666', fontSize: '14px' }}>{question.scale?.labels?.min || 'Редко'}</Text>
                     <Text style={{ color: '#666', fontSize: '14px' }}>{question.scale?.labels?.max || 'Очень часто'}</Text>
-                  </div>
+                    </div>
                   <Slider
                     min={1}
                     max={10}
@@ -441,9 +441,9 @@ const BpdTestPage: React.FC = () => {
                     tooltip={{ formatter: null }}
                   />
                   <div style={{ textAlign: 'center' }}>
-                    <Text style={{ fontSize: '32px', fontWeight: 'bold', color: '#00695C' }}>
-                      {sliderValue}
-                    </Text>
+                  <Text style={{ fontSize: '32px', fontWeight: 'bold', color: 'rgb(243, 186, 111)' }}>
+                    {sliderValue}
+                  </Text>
                   </div>
                 </div>
               )}
@@ -477,9 +477,9 @@ const BpdTestPage: React.FC = () => {
                   value={additionalText}
                   onChange={(e) => setAdditionalText(e.target.value)}
                   autoSize={{ minRows: 4, maxRows: 16 }}
-                  style={{ marginTop: '16px' }}
-                />
-              )}
+                        style={{ marginTop: '16px' }}
+                      />
+                    )}
             </Space>
           )}
 
@@ -507,11 +507,11 @@ const BpdTestPage: React.FC = () => {
                 tooltip={{ formatter: null }}
               />
               <div style={{ textAlign: 'center' }}>
-                <Text style={{ fontSize: '32px', fontWeight: 'bold', color: '#00695C' }}>
-                  {sliderValue}
-                </Text>
+                  <Text style={{ fontSize: '32px', fontWeight: 'bold', color: 'rgb(243, 186, 111)' }}>
+                    {sliderValue}
+                  </Text>
               </div>
-            </div>
+                  </div>
           )}
 
           {question.type === 'multi_select' && question.options && (
@@ -558,31 +558,43 @@ const BpdTestPage: React.FC = () => {
                   {option.label}
                 </Button>
               ))}
-            </Space>
+                </Space>
           )}
-        </Card>
+              </Card>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Button 
+            <Button 
             icon={<ArrowLeftOutlined />} 
             onClick={handlePrevious}
             disabled={currentQuestionIndex === 0}
-            size="large"
+              size="large"
+              style={{ 
+              borderRadius: '24px',
+              padding: '0 24px',
+              height: '48px'
+            }}
           >
             Назад
-          </Button>
-          
-          <Button 
+            </Button>
+            
+            <Button 
             type="primary" 
             icon={<ArrowRightOutlined />} 
             onClick={handleNext}
             disabled={!currentAnswer}
             loading={loading}
-            size="large"
+              size="large"
             className={currentQuestionIndex === questions.length - 1 ? 'finish-button' : ''}
+              style={{ 
+              borderRadius: '24px',
+              padding: '0 24px',
+              height: '48px',
+              backgroundColor: 'rgb(243, 186, 111)',
+              borderColor: 'rgb(243, 186, 111)'
+            }}
           >
             {currentQuestionIndex === questions.length - 1 ? 'Завершить' : 'Далее'}
-          </Button>
+            </Button>
         </div>
       </div>
     );
@@ -592,8 +604,8 @@ const BpdTestPage: React.FC = () => {
     return (
       <div style={{ textAlign: 'center', padding: '100px 20px' }}>
         <Text>Загрузка вопросов...</Text>
-      </div>
-    );
+    </div>
+  );
   }
 
   return renderQuestion();
