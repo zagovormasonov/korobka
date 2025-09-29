@@ -35,7 +35,7 @@ const HomePage = () => {
           speed={5}
           scale={0.5}
           color="#ffe59e"
-          darkColor="#fdcc98"
+          darkColor="#fd953f"
           noiseIntensity={1.5}
           rotation={0}
         />
