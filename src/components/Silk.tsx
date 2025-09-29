@@ -23,6 +23,7 @@ interface SilkUniforms {
   uScale: UniformValue<number>;
   uNoiseIntensity: UniformValue<number>;
   uColor: UniformValue<Color>;
+  uDarkColor: UniformValue<Color>;
   uRotation: UniformValue<number>;
   uTime: UniformValue<number>;
   [uniform: string]: IUniform;
@@ -45,6 +46,7 @@ varying vec3 vPosition;
 
 uniform float uTime;
 uniform vec3  uColor;
+uniform vec3  uDarkColor;
 uniform float uSpeed;
 uniform float uScale;
 uniform float uRotation;
@@ -79,9 +81,16 @@ void main() {
                                    0.02 * tOffset) +
                            sin(20.0 * (tex.x + tex.y - 0.1 * tOffset)));
 
-  vec4 col = vec4(uColor, 1.0) * vec4(pattern) - rnd / 15.0 * uNoiseIntensity;
-  col.a = 1.0;
-  gl_FragColor = col;
+  // Normalize pattern to 0-1 range for color mixing
+  float normalizedPattern = (pattern + 1.0) * 0.5;
+  
+  // Mix between light and dark colors based on pattern
+  vec3 finalColor = mix(uDarkColor, uColor, normalizedPattern);
+  
+  // Apply noise
+  finalColor = finalColor - rnd / 15.0 * uNoiseIntensity;
+  
+  gl_FragColor = vec4(finalColor, 1.0);
 }
 `;
 
@@ -122,11 +131,12 @@ export interface SilkProps {
   speed?: number;
   scale?: number;
   color?: string;
+  darkColor?: string;
   noiseIntensity?: number;
   rotation?: number;
 }
 
-const Silk: React.FC<SilkProps> = ({ speed = 5, scale = 1, color = '#7B7481', noiseIntensity = 1.5, rotation = 0 }) => {
+const Silk: React.FC<SilkProps> = ({ speed = 5, scale = 1, color = '#7B7481', darkColor = '#FDCC98', noiseIntensity = 1.5, rotation = 0 }) => {
   const meshRef = useRef<Mesh>(null);
 
   const uniforms = useMemo<SilkUniforms>(
@@ -135,10 +145,11 @@ const Silk: React.FC<SilkProps> = ({ speed = 5, scale = 1, color = '#7B7481', no
       uScale: { value: scale },
       uNoiseIntensity: { value: noiseIntensity },
       uColor: { value: new Color(...hexToNormalizedRGB(color)) },
+      uDarkColor: { value: new Color(...hexToNormalizedRGB(darkColor)) },
       uRotation: { value: rotation },
       uTime: { value: 0 }
     }),
-    [speed, scale, noiseIntensity, color, rotation]
+    [speed, scale, noiseIntensity, color, darkColor, rotation]
   );
 
   return (

@@ -117,6 +117,7 @@ const DashboardLoginPage: React.FC = () => {
           speed={5}
           scale={0.5}
           color="#00695c"
+          darkColor="#fdcc98"
           noiseIntensity={1.5}
           rotation={0}
         />
