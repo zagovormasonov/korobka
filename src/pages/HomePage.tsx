@@ -1,28 +1,60 @@
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Typography, Button, Space } from 'antd';
+import { Typography, Button, Form, Input, Card, message } from 'antd';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import Silk from '../components/Silk';
+import { apiRequest } from '../config/api';
 
 const { Title } = Typography;
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const [verifying, setVerifying] = useState(false);
+  const [form] = Form.useForm();
 
-  const handleStart = () => {
-    navigate('/bpd_test');
-  };
+  const verifyCredentialsAndEnter = async (values: { nickname: string; password: string }) => {
+    setVerifying(true);
+    
+    try {
+      console.log('🔐 [LOGIN] Проверяем учетные данные:', { nickname: values.nickname });
+      
+      const response = await apiRequest('api/tests/verify-nickname-credentials', {
+        method: 'POST',
+        body: JSON.stringify({
+          nickname: values.nickname,
+          password: values.password
+        }),
+      });
 
-  const handleLogin = () => {
-    navigate('/lk/login');
+      const data = await response.json();
+
+      if (data.success) {
+        console.log('✅ [LOGIN] Учетные данные подтверждены');
+        message.success('Добро пожаловать в личный кабинет!');
+        navigate(`/lk/${data.dashboardToken}`);
+      } else {
+        console.log('❌ [LOGIN] Неверные учетные данные');
+        message.error(data.error || 'Неверный никнейм или пароль');
+      }
+    } catch (error) {
+      console.error('❌ [LOGIN] Ошибка при проверке учетных данных:', error);
+      message.error('Произошла ошибка при входе в систему');
+    } finally {
+      setVerifying(false);
+    }
   };
 
   return (
-    <div style={{
+    <div style={{ 
       minHeight: 'calc(100vh + 100px)',
       padding: '40px 20px 140px 20px',
-      position: 'relative',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative'
     }}>
+      {/* Silk фон */}
       <div style={{
         position: 'fixed',
         top: -50,
@@ -40,150 +72,176 @@ const HomePage = () => {
           rotation={0}
         />
       </div>
+
       {/* Логотип вверху */}
       <div style={{ 
         textAlign: 'center', 
-        marginBottom: '60px',
-        paddingTop: '20px'
+        marginBottom: '40px'
       }}>
-        <div 
-          className="gradient-text-logo"
-          style={{
-            fontSize: '32px',
-            fontFamily: 'Comfortaa, sans-serif',
-            fontWeight: 'normal',
-            margin: '0'
-          }}
-        >
+        <div style={{ 
+          fontSize: '32px', 
+          fontFamily: 'Comfortaa, sans-serif',
+          fontWeight: '600',
+          color: 'black'
+        }}>
           idenself
         </div>
       </div>
 
-      <div style={{ 
-        maxWidth: '600px', 
-        margin: '0 auto', 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'center',
-        textAlign: 'left'
+      {/* Форма входа */}
+      <Card style={{ 
+        width: '100%', 
+        maxWidth: '400px', 
+        borderRadius: '24px',
+        boxShadow: 'none',
+        backgroundColor: '#f1f1f1',
+        padding: '40px 24px'
       }}>
-        {/* Заголовок */}
-        <div style={{ marginBottom: '30px' }}>
-          <Title level={1} style={{ 
-            color: 'black', 
-            marginBottom: '16px',
-            fontSize: '48px',
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <Title level={2} style={{ 
+            marginBottom: '0px', 
+            color: '#333',
             fontFamily: 'Comfortaa, sans-serif',
-            fontWeight: 'normal',
-            textAlign: 'left',
-            lineHeight: '1.2'
+            fontSize: '24px',
+            fontWeight: '600'
           }}>
-            Если<br />у тебя ПРЛ
+            Вход в личный кабинет
           </Title>
-          <div style={{ 
-            color: 'rgba(0, 0, 0, 0.8)', 
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '16px',
-            fontWeight: 'normal',
-            textAlign: 'left',
-            lineHeight: '1.4'
-          }}>
-            Пройди тест или войди<br />в личный кабинет
-          </div>
         </div>
 
-        {/* Кнопки */}
-        <div style={{ marginBottom: '40px' }}>
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Form
+          form={form}
+          onFinish={verifyCredentialsAndEnter}
+          layout="vertical"
+          size="large"
+          requiredMark={false}
+        >
+          <Form.Item
+            name="nickname"
+            label={<span style={{ color: '#333', fontSize: '14px' }}>Никнейм</span>}
+            rules={[
+              { required: true, message: 'Пожалуйста, введите никнейм!' }
+            ]}
+          >
+            <Input
+              prefix={<UserOutlined style={{ color: 'whitesmoke' }} />}
+              placeholder="Введите никнейм"
+              autoComplete="username"
+              style={{ 
+                borderRadius: '12px',
+                border: 'none',
+                backgroundColor: 'white',
+                height: '48px',
+                fontSize: '16px'
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            label={<span style={{ color: '#333', fontSize: '14px' }}>Пароль</span>}
+            rules={[
+              { required: true, message: 'Пожалуйста, введите пароль!' }
+            ]}
+            style={{ marginBottom: '32px' }}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: 'whitesmoke' }} />}
+              placeholder="Введите пароль"
+              autoComplete="current-password"
+              style={{ 
+                borderRadius: '12px',
+                border: 'none',
+                backgroundColor: 'white',
+                height: '48px',
+                fontSize: '16px'
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: '0px' }}>
             <Button 
               type="primary" 
-              size="large"
-              onClick={handleStart}
+              htmlType="submit" 
+              loading={verifying}
               style={{ 
-                height: '60px', 
-                fontSize: '20px', 
-                fontFamily: 'Inter, sans-serif',
+                width: '100%', 
+                height: '56px',
+                borderRadius: '28px',
+                fontSize: '16px',
                 fontWeight: '500',
-                padding: '0 40px',
-                width: '100%',
-                maxWidth: '300px',
-                background: 'white',
-                color: 'black',
-                borderRadius: '30px',
-                boxShadow: 'none',
-                border: 'none'
+                backgroundColor: '#f3ba6f',
+                borderColor: '#f3ba6f',
+                border: 'none',
+                boxShadow: 'none'
               }}
             >
-              Пройти тест
+              {verifying ? 'Проверяем данные...' : 'Войти в личный кабинет'}
             </Button>
-            
-            <Button 
-              type="default" 
-              size="large"
-              onClick={handleLogin}
-              style={{ 
-                height: '60px', 
-                fontSize: '20px', 
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: '500',
-                padding: '0 40px',
-                width: '100%',
-                maxWidth: '300px',
-                background: 'transparent',
-                color: 'white',
-                borderRadius: '30px',
-                boxShadow: 'none',
-                border: 'none'
-              }}
-            >
-              Войти в ЛК
-            </Button>
-          </Space>
+          </Form.Item>
+        </Form>
+
+        <div style={{ 
+          textAlign: 'center', 
+          marginTop: '24px'
+        }}>
+          <Link 
+            to="/test-info" 
+            style={{ 
+              color: '#333',
+              fontSize: '16px',
+              fontFamily: 'Inter, sans-serif',
+              textDecoration: 'none',
+              fontWeight: '500'
+            }}
+          >
+            Пройти тест
+          </Link>
         </div>
-      </div>
+      </Card>
 
       {/* Ссылки внизу */}
       <div style={{ 
         textAlign: 'center', 
-        paddingTop: '20px',
-        marginTop: 'auto'
+        marginTop: '40px',
+        display: 'flex',
+        gap: '20px',
+        flexWrap: 'wrap',
+        justifyContent: 'center'
       }}>
-        <Space size="large" wrap>
-          <Link 
-            to="/offer" 
-            style={{ 
-              color: 'rgb(0, 0, 0)', 
-              fontSize: '14px',
-              fontFamily: 'Inter, sans-serif',
-              textDecoration: 'none'
-            }}
-          >
-            Публичная оферта
-          </Link>
-          <Link 
-            to="/privacy-policy" 
-            style={{ 
-              color: 'rgb(0, 0, 0)', 
-              fontSize: '14px',
-              fontFamily: 'Inter, sans-serif',
-              textDecoration: 'none'
-            }}
-          >
-            Политика конфиденциальности
-          </Link>
-          <Link 
-            to="/consent" 
-            style={{ 
-              color: 'rgb(0, 0, 0)', 
-              fontSize: '14px',
-              fontFamily: 'Inter, sans-serif',
-              textDecoration: 'none'
-            }}
-          >
-            Согласие на обработку персональных данных
-          </Link>
-        </Space>
+        <Link 
+          to="/offer" 
+          style={{ 
+            color: 'rgb(0, 0, 0)', 
+            fontSize: '14px',
+            fontFamily: 'Inter, sans-serif',
+            textDecoration: 'none'
+          }}
+        >
+          Публичная оферта
+        </Link>
+        <Link 
+          to="/privacy-policy" 
+          style={{ 
+            color: 'rgb(0, 0, 0)', 
+            fontSize: '14px',
+            fontFamily: 'Inter, sans-serif',
+            textDecoration: 'none'
+          }}
+        >
+          Политика конфиденциальности
+        </Link>
+        <Link 
+          to="/consent" 
+          style={{ 
+            color: 'rgb(0, 0, 0)', 
+            fontSize: '14px',
+            fontFamily: 'Inter, sans-serif',
+            textDecoration: 'none'
+          }}
+        >
+          Согласие на обработку персональных данных
+        </Link>
       </div>
     </div>
   );
