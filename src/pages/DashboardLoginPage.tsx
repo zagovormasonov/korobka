@@ -147,16 +147,17 @@ const DashboardLoginPage: React.FC = () => {
           onFinish={verifyCredentialsAndEnter}
           layout="vertical"
           size="large"
+          requiredMark={false}
         >
           <Form.Item
             name="nickname"
-            label={<span style={{ color: '#333', fontSize: '14px' }}>* Никнейм</span>}
+            label={<span style={{ color: '#333', fontSize: '14px' }}>Никнейм</span>}
             rules={[
               { required: true, message: 'Пожалуйста, введите никнейм!' }
             ]}
           >
             <Input
-              prefix={<UserOutlined style={{ color: '#666' }} />}
+              prefix={<UserOutlined style={{ color: 'whitesmoke' }} />}
               placeholder="Введите никнейм"
               autoComplete="username"
               style={{ 
@@ -171,14 +172,14 @@ const DashboardLoginPage: React.FC = () => {
 
           <Form.Item
             name="password"
-            label={<span style={{ color: '#333', fontSize: '14px' }}>* Пароль</span>}
+            label={<span style={{ color: '#333', fontSize: '14px' }}>Пароль</span>}
             rules={[
               { required: true, message: 'Пожалуйста, введите пароль!' }
             ]}
             style={{ marginBottom: '32px' }}
           >
             <Input.Password
-              prefix={<LockOutlined style={{ color: '#666' }} />}
+              prefix={<LockOutlined style={{ color: 'whitesmoke' }} />}
               placeholder="Введите пароль"
               autoComplete="current-password"
               style={{ 
