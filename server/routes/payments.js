@@ -278,24 +278,25 @@ router.get('/session/:sessionId', async (req, res) => {
 });
 
 // Функция для создания токена подписи согласно документации Тинькофф
+// Алгоритм: SHA-256 от конкатенации ЗНАЧЕНИЙ полей, отсортированных по алфавиту КЛЮЧЕЙ
 function createToken(data) {
-  // Исключаем Token и Receipt из подписи
-  const filteredData = Object.keys(data)
-    .filter(key => key !== 'Token' && key !== 'Receipt')
-    .sort()
-    .reduce((obj, key) => {
-      obj[key] = data[key];
-      return obj;
-    }, {});
+  // Исключаем Token, Receipt, и любые объекты из подписи
+  const filteredData = {};
+  for (const key in data) {
+    if (key !== 'Token' && key !== 'Receipt' && typeof data[key] !== 'object') {
+      filteredData[key] = data[key];
+    }
+  }
   
   console.log('🔐 Данные для токена:', filteredData);
   
-  // Создаем строку для подписи: key1value1key2value2...
-  const tokenString = Object.keys(filteredData)
-    .sort()
-    .map(key => `${key}${filteredData[key]}`)
-    .join('');
+  // Сортируем ключи по алфавиту и берем только ЗНАЧЕНИЯ
+  const sortedKeys = Object.keys(filteredData).sort();
+  const values = sortedKeys.map(key => filteredData[key]);
+  const tokenString = values.join('');
   
+  console.log('🔐 Отсортированные ключи:', sortedKeys);
+  console.log('🔐 Значения для подписи:', values);
   console.log('🔐 Строка для подписи:', tokenString);
   
   const token = crypto.createHash('sha256').update(tokenString).digest('hex');
