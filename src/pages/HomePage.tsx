@@ -18,23 +18,29 @@ const HomePage = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      padding: '40px 20px',
+      minHeight: '100dvh',
+      minHeight: '-webkit-fill-available',
+      minHeight: 'calc(100vh + 100px)',
+      padding: '40px 20px 140px 20px',
       position: 'relative',
       display: 'flex',
       flexDirection: 'column'
     }}>
       <div style={{
         position: 'fixed',
-        top: 0,
+        top: -50,
         left: 0,
         width: '100%',
-        height: '100%',
+        height: 'calc(100% + 100px)',
+        minHeight: '100vh',
+        minHeight: '100dvh',
+        minHeight: '-webkit-fill-available',
         zIndex: -1
       }}>
         <Silk
           speed={5}
-          scale={1}
-          color="#7B7481"
+          scale={0.5}
+          color="#00695c"
           noiseIntensity={1.5}
           rotation={0}
         />

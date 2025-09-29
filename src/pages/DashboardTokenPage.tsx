@@ -51,22 +51,29 @@ const DashboardTokenPage: React.FC = () => {
         justifyContent: 'center', 
         alignItems: 'center', 
         minHeight: '100vh',
+        minHeight: '100dvh',
+        minHeight: '-webkit-fill-available',
+        minHeight: 'calc(100vh + 100px)',
         flexDirection: 'column',
         gap: '16px',
-        position: 'relative'
+        position: 'relative',
+        paddingBottom: '100px'
       }}>
         <div style={{
           position: 'fixed',
-          top: 0,
+          top: -50,
           left: 0,
           width: '100%',
-          height: '100%',
+          height: 'calc(100% + 100px)',
+          minHeight: '100vh',
+          minHeight: '100dvh',
+          minHeight: '-webkit-fill-available',
           zIndex: -1
         }}>
           <Silk
             speed={5}
-            scale={1}
-            color="#7B7481"
+            scale={0.5}
+            color="#00695c"
             noiseIntensity={1.5}
             rotation={0}
           />
@@ -86,24 +93,30 @@ const DashboardTokenPage: React.FC = () => {
         justifyContent: 'center', 
         alignItems: 'center', 
         minHeight: '100vh',
+        minHeight: '100dvh',
+        minHeight: '-webkit-fill-available',
+        minHeight: 'calc(100vh + 100px)',
         flexDirection: 'column',
         gap: '16px',
         textAlign: 'center',
-        padding: '20px',
+        padding: '20px 20px 120px 20px',
         position: 'relative'
       }}>
         <div style={{
           position: 'fixed',
-          top: 0,
+          top: -50,
           left: 0,
           width: '100%',
-          height: '100%',
+          height: 'calc(100% + 100px)',
+          minHeight: '100vh',
+          minHeight: '100dvh',
+          minHeight: '-webkit-fill-available',
           zIndex: -1
         }}>
           <Silk
             speed={5}
-            scale={1}
-            color="#7B7481"
+            scale={0.5}
+            color="#00695c"
             noiseIntensity={1.5}
             rotation={0}
           />
