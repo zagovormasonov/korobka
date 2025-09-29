@@ -67,7 +67,7 @@ const DashboardTokenPage: React.FC = () => {
           <Silk
             speed={5}
             scale={0.5}
-            color="#00695c"
+            color="#ffe59e"
             darkColor="#fdcc98"
             noiseIntensity={1.5}
             rotation={0}
@@ -105,7 +105,7 @@ const DashboardTokenPage: React.FC = () => {
           <Silk
             speed={5}
             scale={0.5}
-            color="#00695c"
+            color="#ffe59e"
             darkColor="#fdcc98"
             noiseIntensity={1.5}
             rotation={0}
