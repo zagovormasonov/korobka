@@ -18,10 +18,12 @@ const customTheme = {
   algorithm: theme.defaultAlgorithm,
   token: {
     colorPrimary: 'rgb(243, 186, 111)',
+    colorPrimaryHover: 'rgb(253, 196, 131)',
+    colorPrimaryActive: 'rgb(233, 176, 101)',
     colorSuccess: '#52c41a',
     colorWarning: '#faad14',
     colorError: '#ff4d4f',
-    colorInfo: '#00695C',
+    colorInfo: 'rgb(243, 186, 111)',
     borderRadius: 6,
     wireframe: false,
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
@@ -36,6 +38,10 @@ const customTheme = {
       // Кастомный размер для кнопок "Да" и "Нет"
       paddingInlineLG: 55,
       paddingBlockLG: 30,
+      primaryColor: 'rgb(243, 186, 111)',
+      colorPrimary: 'rgb(243, 186, 111)',
+      colorPrimaryHover: 'rgb(253, 196, 131)',
+      colorPrimaryActive: 'rgb(233, 176, 101)',
     },
     Card: {
       borderRadius: 8,
@@ -49,8 +55,11 @@ const customTheme = {
       fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
     },
     Slider: {
-      trackBg: '#00695C',
-      handleColor: '#00695C',
+      trackBg: 'rgb(243, 186, 111)',
+      trackHoverBg: 'rgb(243, 186, 111)',
+      handleColor: 'rgb(243, 186, 111)',
+      handleActiveColor: 'rgb(243, 186, 111)',
+      colorPrimaryBorderHover: 'rgb(243, 186, 111)',
     },
   },
 };
