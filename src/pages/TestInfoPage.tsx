@@ -17,7 +17,7 @@ const benefits = [
   {
     title: 'Персональный план, что делать именно в твоём случае',
     subtitle: 'Индивидуальный подход к твоей ситуации',
-    icon: <img src="/lplan.png" alt="Chat" style={{ width: '80px', height: '110px' }} />,
+    icon: <img src="/plan.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Конкретные действия',
       'Какие тесты ещё пройти в твоём случае',
@@ -28,13 +28,13 @@ const benefits = [
   {
     title: 'Подберём психолога под твой случай',
     subtitle: 'Найдём специалиста, который понимает твои особенности',
-    icon: <img src="/lpers.png" alt="Chat" style={{ width: '80px', height: '110px' }} />,
+    icon: <img src="/podbor.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: []
   },
   {
     title: 'Подготовим к сеансу',
     subtitle: 'Поможем максимально эффективно использовать время с психологом',
-    icon: <img src="/cale.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
+    icon: <img src="/podgot.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Что сказать специалисту в твоём случае',
       'Как на первом сеансе определить, что он, скорее всего, тебе подходит'
@@ -43,7 +43,7 @@ const benefits = [
   {
     title: 'Подготовим PDF для психолога',
     subtitle: 'Документ, который поможет специалисту лучше понять тебя',
-    icon: <img src="/doc.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
+    icon: <img src="/file.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Даёшь его психологу, и он понимает, что делать в твоём случае'
     ]
