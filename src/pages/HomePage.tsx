@@ -125,6 +125,7 @@ const HomePage: React.FC = () => {
           type="primary" 
           size="large"
           onClick={() => navigate('/test-info')}
+          className="home-test-button"
           style={{ 
             height: '60px', 
             fontSize: '20px', 
@@ -181,7 +182,7 @@ const HomePage: React.FC = () => {
             ]}
           >
             <Input
-              prefix={<UserOutlined style={{ color: 'whitesmoke' }} />}
+              prefix={<UserOutlined style={{ color: 'black' }} />}
               placeholder="Введите никнейм"
               autoComplete="username"
               style={{ 
@@ -203,7 +204,7 @@ const HomePage: React.FC = () => {
             style={{ marginBottom: '32px' }}
           >
             <Input.Password
-              prefix={<LockOutlined style={{ color: 'whitesmoke' }} />}
+              prefix={<LockOutlined style={{ color: 'black' }} />}
               placeholder="Введите пароль"
               autoComplete="current-password"
               style={{ 

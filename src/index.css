@@ -209,3 +209,14 @@ code {
 .ant-btn-primary:active {
   color: #ffffff !important;
 }
+
+/* Черный текст только для кнопки "Пройти тест" на главной странице */
+.home-test-button {
+  color: #000000 !important;
+}
+
+.home-test-button:hover,
+.home-test-button:focus,
+.home-test-button:active {
+  color: #000000 !important;
+}
