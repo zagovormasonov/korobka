@@ -55,13 +55,22 @@ const DashboardTokenPage: React.FC = () => {
         gap: '16px',
         position: 'relative'
       }}>
-        <Silk
-          speed={1.9}
-          scale={0.5}
-          noiseIntensity={0.4}
-          rotation={0}
-          color="#00695c"
-        />
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: -1
+        }}>
+          <Silk
+            speed={5}
+            scale={1}
+            color="#7B7481"
+            noiseIntensity={1.5}
+            rotation={0}
+          />
+        </div>
         <Spin size="large" />
         <Text style={{ color: 'rgba(0, 0, 0, 0.7)', fontSize: '16px', fontFamily: 'Inter, sans-serif' }}>
           Загружаем ваш личный кабинет...
@@ -83,13 +92,22 @@ const DashboardTokenPage: React.FC = () => {
         padding: '20px',
         position: 'relative'
       }}>
-        <Silk
-          speed={1.9}
-          scale={0.5}
-          noiseIntensity={0.4}
-          rotation={0}
-          color="#00695c"
-        />
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: -1
+        }}>
+          <Silk
+            speed={5}
+            scale={1}
+            color="#7B7481"
+            noiseIntensity={1.5}
+            rotation={0}
+          />
+        </div>
         <Text type="danger" style={{ fontSize: '18px', color: '#ff4d4f', fontFamily: 'Comfortaa, sans-serif' }}>
           {error}
         </Text>

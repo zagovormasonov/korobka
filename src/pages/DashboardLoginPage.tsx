@@ -105,13 +105,22 @@ const DashboardLoginPage: React.FC = () => {
       padding: '20px',
       position: 'relative'
     }}>
-      <Silk
-        speed={1.9}
-        scale={0.5}
-        noiseIntensity={0.4}
-        rotation={0}
-        color="#00695c"
-      />
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: -1
+      }}>
+        <Silk
+          speed={5}
+          scale={1}
+          color="#7B7481"
+          noiseIntensity={1.5}
+          rotation={0}
+        />
+      </div>
       <Card style={{ 
         width: '100%', 
         maxWidth: '400px', 
