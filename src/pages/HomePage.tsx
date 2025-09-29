@@ -69,7 +69,7 @@ const HomePage = () => {
         textAlign: 'left'
       }}>
         {/* Заголовок */}
-        <div style={{ marginBottom: '60px' }}>
+        <div style={{ marginBottom: '30px' }}>
           <Title level={1} style={{ 
             color: 'black', 
             marginBottom: '16px',
