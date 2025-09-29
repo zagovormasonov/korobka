@@ -71,7 +71,7 @@ const HomePage = () => {
         {/* Заголовок */}
         <div style={{ marginBottom: '60px' }}>
           <Title level={1} style={{ 
-            color: '#fafafa', 
+            color: 'black', 
             marginBottom: '16px',
             fontSize: '48px',
             fontFamily: 'Comfortaa, sans-serif',
@@ -82,7 +82,7 @@ const HomePage = () => {
             Если<br />у тебя ПРЛ
           </Title>
           <div style={{ 
-            color: 'rgba(255, 255, 255, 0.8)', 
+            color: 'rgba(0, 0, 0, 0.8)', 
             fontFamily: 'Inter, sans-serif',
             fontSize: '16px',
             fontWeight: 'normal',
@@ -108,8 +108,8 @@ const HomePage = () => {
                 padding: '0 40px',
                 width: '100%',
                 maxWidth: '300px',
-                background: '#00695C',
-                borderColor: '#00695C',
+                background: 'white',
+                color: 'black',
                 borderRadius: '30px',
                 boxShadow: 'none',
                 border: 'none'
@@ -130,9 +130,8 @@ const HomePage = () => {
                 padding: '0 40px',
                 width: '100%',
                 maxWidth: '300px',
-                background: 'white',
-                borderColor: 'transparent',
-                color: '#00695C',
+                background: 'transparent',
+                color: 'white',
                 borderRadius: '30px',
                 boxShadow: 'none',
                 border: 'none'
@@ -154,7 +153,7 @@ const HomePage = () => {
           <Link 
             to="/offer" 
             style={{ 
-              color: 'rgba(255, 255, 255, 0.5)', 
+              color: 'rgb(0, 0, 0)', 
               fontSize: '14px',
               fontFamily: 'Inter, sans-serif',
               textDecoration: 'none'
@@ -165,7 +164,7 @@ const HomePage = () => {
           <Link 
             to="/privacy-policy" 
             style={{ 
-              color: 'rgba(255, 255, 255, 0.5)', 
+              color: 'rgb(0, 0, 0)', 
               fontSize: '14px',
               fontFamily: 'Inter, sans-serif',
               textDecoration: 'none'
@@ -176,7 +175,7 @@ const HomePage = () => {
           <Link 
             to="/consent" 
             style={{ 
-              color: 'rgba(255, 255, 255, 0.5)', 
+              color: 'rgb(0, 0, 0)', 
               fontSize: '14px',
               fontFamily: 'Inter, sans-serif',
               textDecoration: 'none'
