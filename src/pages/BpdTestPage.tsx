@@ -324,7 +324,7 @@ const BpdTestPage: React.FC = () => {
                 type={currentAnswer === 'yes' ? 'primary' : 'default'}
                 onClick={() => handleAnswer('yes')}
                 size="large"
-                style={{ flex: 1, marginRight: '8px' }}
+                style={{ flex: 1, marginRight: '8px', borderRadius: '24px' }}
               >
                 Да
               </Button>
@@ -332,7 +332,7 @@ const BpdTestPage: React.FC = () => {
                 type={currentAnswer === 'no' ? 'primary' : 'default'}
                 onClick={() => handleAnswer('no')}
                 size="large"
-                style={{ flex: 1, marginLeft: '8px' }}
+                style={{ flex: 1, marginLeft: '8px', borderRadius: '24px' }}
               >
                 Нет
               </Button>
@@ -346,7 +346,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'yes' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('yes')}
                   size="large"
-                  style={{ flex: 1, marginRight: '8px' }}
+                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px' }}
                 >
                   Да
                 </Button>
@@ -354,7 +354,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'no' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('no')}
                   size="large"
-                  style={{ flex: 1, marginLeft: '8px' }}
+                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px' }}
                 >
                   Нет
                 </Button>
@@ -379,7 +379,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'yes' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('yes')}
                   size="large"
-                  style={{ flex: 1, marginRight: '8px' }}
+                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px' }}
                 >
                   Да
                 </Button>
@@ -387,7 +387,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'no' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('no')}
                   size="large"
-                  style={{ flex: 1, marginLeft: '8px' }}
+                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px' }}
                 >
                   Нет
                 </Button>
@@ -409,10 +409,10 @@ const BpdTestPage: React.FC = () => {
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               <Space size="large" style={{ width: '100%', justifyContent: 'space-between' }}>
                 <Button 
-                  type={currentAnswer === 'no' || currentAnswer === '' ? 'default' : 'primary'}
+                  type={currentAnswer === 'yes' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('yes')}
                   size="large"
-                  style={{ flex: 1, marginRight: '8px' }}
+                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px' }}
                 >
                   Да
                 </Button>
@@ -420,7 +420,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'no' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('no')}
                   size="large"
-                  style={{ flex: 1, marginLeft: '8px' }}
+                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px' }}
                 >
                   Нет
                 </Button>
@@ -457,7 +457,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'yes' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('yes')}
                   size="large"
-                  style={{ flex: 1, marginRight: '8px' }}
+                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px' }}
                 >
                   Да
                 </Button>
@@ -465,7 +465,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'no' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('no')}
                   size="large"
-                  style={{ flex: 1, marginLeft: '8px' }}
+                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px' }}
                 >
                   Нет
                 </Button>
@@ -553,12 +553,12 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === option.value ? 'primary' : 'default'}
                   onClick={() => handleAnswer(option.value)}
                   size="large"
-                  style={{ width: '100%' }}
+                  style={{ width: '100%', borderRadius: '24px' }}
                 >
                   {option.label}
                 </Button>
               ))}
-                </Space>
+            </Space>
           )}
               </Card>
 

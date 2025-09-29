@@ -42,6 +42,10 @@ const customTheme = {
       colorPrimary: 'rgb(243, 186, 111)',
       colorPrimaryHover: 'rgb(253, 196, 131)',
       colorPrimaryActive: 'rgb(233, 176, 101)',
+      colorTextLightSolid: '#ffffff',
+      colorPrimaryText: '#ffffff',
+      colorPrimaryTextHover: '#ffffff',
+      colorPrimaryTextActive: '#ffffff',
     },
     Card: {
       borderRadius: 8,
