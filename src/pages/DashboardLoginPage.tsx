@@ -157,7 +157,7 @@ const DashboardLoginPage: React.FC = () => {
             ]}
           >
             <Input
-              prefix={<UserOutlined style={{ color: 'whitesmoke' }} />}
+              prefix={<UserOutlined style={{ color: 'black' }} />}
               placeholder="Введите никнейм"
               autoComplete="username"
               style={{ 
@@ -179,7 +179,7 @@ const DashboardLoginPage: React.FC = () => {
             style={{ marginBottom: '32px' }}
           >
             <Input.Password
-              prefix={<LockOutlined style={{ color: 'whitesmoke' }} />}
+              prefix={<LockOutlined style={{ color: 'black' }} />}
               placeholder="Введите пароль"
               autoComplete="current-password"
               style={{ 
