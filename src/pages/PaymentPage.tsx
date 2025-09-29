@@ -1,24 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Typography, Button, Card, Row, Col, Space, message, List, Checkbox } from 'antd';
+import { Typography, Button, Card, Row, Col, Space, message, Checkbox, Spin } from 'antd';
 import { apiRequest } from '../config/api';
 import { 
-  FileTextOutlined, 
-  UserOutlined, 
-  CalendarOutlined, 
-  FilePdfOutlined, 
-  MessageOutlined,
   CheckCircleOutlined
 } from '@ant-design/icons';
-import { apiRequest } from '../config/api';
 
 const { Title, Paragraph } = Typography;
+
+const iconColor = 'rgb(243, 186, 111)';
 
 const benefits = [
   {
     title: 'Персональный план, что делать именно в твоём случае',
     subtitle: 'Индивидуальный подход к твоей ситуации',
-    icon: <FileTextOutlined style={{ color: '#00695C', fontSize: '32px' }} />,
+    icon: <img src="/plan.png" alt="Plan" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Конкретные действия',
       'Какие тесты ещё пройти в твоём случае',
@@ -29,13 +25,13 @@ const benefits = [
   {
     title: 'Подберём психолога под твой случай',
     subtitle: 'Найдём специалиста, который понимает твои особенности',
-    icon: <UserOutlined style={{ color: '#00695C', fontSize: '32px' }} />,
+    icon: <img src="/podbor.png" alt="Selection" style={{ width: '100px', height: '100px' }} />,
     items: []
   },
   {
     title: 'Подготовим к сеансу',
     subtitle: 'Поможем максимально эффективно использовать время с психологом',
-    icon: <CalendarOutlined style={{ color: '#00695C', fontSize: '32px' }} />,
+    icon: <img src="/podgot.png" alt="Preparation" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Что сказать специалисту в твоём случае',
       'Как на первом сеансе определить, что он, скорее всего, тебе подходит'
@@ -44,7 +40,7 @@ const benefits = [
   {
     title: 'Подготовим PDF для психолога',
     subtitle: 'Документ, который поможет специалисту лучше понять тебя',
-    icon: <FilePdfOutlined style={{ color: '#00695C', fontSize: '32px' }} />,
+    icon: <img src="/file.png" alt="PDF" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Даёшь его психологу, и он понимает, что делать в твоём случае'
     ]
@@ -52,7 +48,7 @@ const benefits = [
   {
     title: 'Ты сможешь поделиться с нами, что было на сеансе у психолога, и мы дадим обратную связь',
     subtitle: 'Поддержим тебя на каждом этапе',
-    icon: <MessageOutlined style={{ color: '#00695C', fontSize: '32px' }} />,
+    icon: <img src="/chat.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: []
   }
 ];
@@ -61,6 +57,7 @@ const PaymentPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [sessionId] = useState(() => searchParams.get('sessionId') || '');
   const [mascotMessage, setMascotMessage] = useState('');
+  const [loadingMascotMessage, setLoadingMascotMessage] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [agreementAccepted, setAgreementAccepted] = useState(false);
 
@@ -79,6 +76,7 @@ const PaymentPage: React.FC = () => {
   }, [sessionId]);
 
   const generateMascotMessage = async () => {
+    setLoadingMascotMessage(true);
     try {
       const response = await apiRequest('api/ai/mascot-message/payment', {
         method: 'POST',
@@ -95,6 +93,8 @@ const PaymentPage: React.FC = () => {
     } catch (error) {
       console.error('Error generating mascot message:', error);
       setMascotMessage('Отлично! Ты прошел тест и теперь можешь получить персональный план!');
+    } finally {
+      setLoadingMascotMessage(false);
     }
   };
 
@@ -146,101 +146,99 @@ const PaymentPage: React.FC = () => {
         <CheckCircleOutlined 
           style={{ 
             fontSize: '80px', 
-            color: '#00695C', 
+            color: '#52c41a', 
             marginBottom: '20px',
             display: 'block'
           }} 
         />
-        <Title level={1} style={{ color: '#00695C', marginBottom: '20px', fontFamily: 'Comfortaa, sans-serif' }}>
+        <Title level={1} style={{ color: 'black', marginBottom: '20px', fontFamily: 'Comfortaa, sans-serif' }}>
           Тест пройден
         </Title>
       </div>
 
-      {mascotMessage && (
-        <Card 
-          style={{ 
-            marginBottom: '40px', 
-            backgroundColor: '#f6ffed',
-            border: '1px solid #b7eb8f'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-            <div style={{ position: 'relative', width: '60px', height: '60px', flexShrink: 0 }}>
-              <img 
-                src="/mascot.png"  
-                alt="Луми" 
-                style={{ 
-                  width: '60px', 
-                  height: '60px', 
-                  objectFit: 'contain',
-                  animation: paymentLoading ? 'spin 2s linear infinite' : 'none'
-                }}
-              />
-              {paymentLoading && (
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '70px',
-                  height: '70px',
-                  border: '3px solid #b7eb8f',
-                  borderTop: '3px solid #00695C',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
-              )}
-            </div>
-            <div style={{ flex: 1 }}>
-              <Paragraph style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
-                {paymentLoading ? 'Луми обрабатывает ваш запрос...' : mascotMessage}
-              </Paragraph>
-            </div>
+      <Card 
+        style={{ 
+          marginBottom: '40px', 
+          backgroundColor: 'rgb(255, 246, 234)',
+          border: 'none',
+          maxWidth: '800px',
+          margin: '0 auto 40px auto'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+          <div style={{ position: 'relative', width: '60px', height: '60px', flexShrink: 0 }}>
+            <img 
+              src="/mascot.png"  
+              alt="Луми" 
+              style={{ 
+                width: '60px', 
+                height: '60px', 
+                objectFit: 'contain'
+              }}
+            />
           </div>
-        </Card>
-      )}
+          <div style={{ flex: 1 }}>
+            {loadingMascotMessage ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Spin size="small" />
+                <Paragraph style={{ margin: 0, fontSize: '16px', lineHeight: '1.6', color: '#333' }}>
+                  Луми анализирует данные вашего теста...
+                </Paragraph>
+              </div>
+            ) : (
+              <Paragraph style={{ margin: 0, fontSize: '16px', lineHeight: '1.6', color: '#333' }}>
+                {mascotMessage || 'Отлично! Ты прошел тест и теперь можешь получить персональный план!'}
+              </Paragraph>
+            )}
+          </div>
+        </div>
+      </Card>
 
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <Title level={3} style={{ color: '#00695C', marginBottom: '30px', fontFamily: 'Comfortaa, sans-serif' }}>
-          Получи:
-        </Title>
+        <Paragraph style={{ fontSize: '18px', color: 'black', maxWidth: '600px', margin: '0 auto' }}>
+          Пройди тест и получи:
+        </Paragraph>
       </div>
 
       <Row gutter={[24, 24]} style={{ marginBottom: '60px' }}>
         {benefits.map((benefit, index) => (
-          <Col xs={24} md={12} lg={8} key={index}>
+          <Col xs={24} md={12} key={index}>
             <Card 
-              hoverable
-              style={{ height: '100%' }}
-              bodyStyle={{ padding: '24px' }}
+              style={{ 
+                height: '100%',
+                border: '1px solid #e0e0e0',
+                borderRadius: '12px'
+              }}
             >
-              <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                <div style={{ textAlign: 'left' }}>
-                  {benefit.icon}
-                </div>
-                
-                <div>
-                  <Title level={4} style={{ margin: '0 0 8px 0', color: '#00695C', textAlign: 'left', fontFamily: 'Comfortaa, sans-serif' }}>
-                    {benefit.title}
-                  </Title>
-                  <Paragraph style={{ margin: '0 0 16px 0', color: '#666', textAlign: 'left', fontSize: '16px' }}>
-                    {benefit.subtitle}
-                  </Paragraph>
-                  
-                  {benefit.items.length > 0 && (
-                    <List
-                      size="small"
-                      dataSource={benefit.items}
-                      renderItem={(item) => (
-                        <List.Item style={{ padding: '4px 0', border: 'none' }}>
-                          <span style={{ color: '#333', fontSize: '14px' }}>• {item}</span>
-                        </List.Item>
-                      )}
-                      style={{ marginTop: '16px' }}
-                    />
-                  )}
-                </div>
-              </Space>
+              <div style={{ 
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100px',
+                height: '100px'
+              }}>
+                {benefit.icon}
+              </div>
+              <Title level={4} style={{ 
+                marginBottom: '8px', 
+                color: 'black',
+                fontFamily: 'Comfortaa, sans-serif'
+              }}>
+                {benefit.title}
+              </Title>
+              <Paragraph style={{ color: 'black', marginBottom: '12px' }}>
+                {benefit.subtitle}
+              </Paragraph>
+              {benefit.items.length > 0 && (
+                <ul style={{ paddingLeft: '20px', marginBottom: 0 }}>
+                  {benefit.items.map((item, idx) => (
+                    <li key={idx} style={{ marginBottom: '8px', color: '#666' }}>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </Card>
           </Col>
         ))}
@@ -261,15 +259,15 @@ const PaymentPage: React.FC = () => {
               flex: 1
             }}>
               Я согласен(на) с условиями{' '}
-              <Link to="/offer" style={{ color: '#00695C' }}>
+              <Link to="/offer" style={{ color: 'rgb(243, 186, 111)' }}>
                 Публичной оферты
               </Link>
               ,{' '}
-              <Link to="/privacy-policy" style={{ color: '#00695C' }}>
+              <Link to="/privacy-policy" style={{ color: 'rgb(243, 186, 111)' }}>
                 Политики конфиденциальности
               </Link>
               {' '}и даю{' '}
-              <Link to="/consent" style={{ color: '#00695C' }}>
+              <Link to="/consent" style={{ color: 'rgb(243, 186, 111)' }}>
                 Согласие на обработку персональных данных
               </Link>
             </span>
@@ -283,14 +281,20 @@ const PaymentPage: React.FC = () => {
           loading={paymentLoading}
           disabled={!agreementAccepted}
           style={{ 
-            height: '60px', 
-            fontSize: '18px', 
-            fontWeight: 'bold',
-            padding: '0 40px',
+            width: '100%',
+            maxWidth: '600px',
+            height: '56px',
+            fontSize: '18px',
+            fontWeight: '600',
+            backgroundColor: 'rgb(243, 186, 111)',
+            borderColor: 'rgb(243, 186, 111)',
+            border: 'none',
+            borderRadius: '28px',
+            boxShadow: 'none',
             opacity: agreementAccepted ? 1 : 0.6
           }}
         >
-          Оплатить 1₽
+          Оплатить 10₽
         </Button>
       </div>
     </div>
