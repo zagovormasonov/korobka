@@ -71,11 +71,9 @@ router.post('/create', async (req, res) => {
       }
     };
 
-    // Создаем токен для подписи
+    // Создаем токен для подписи - добавляем Password к данным платежа
     const tokenData = {
-      TerminalKey: terminalKey,
-      Amount: amount,
-      OrderId: orderId,
+      ...paymentData,
       Password: password
     };
     
@@ -279,15 +277,31 @@ router.get('/session/:sessionId', async (req, res) => {
   }
 });
 
-// Функция для создания токена подписи
+// Функция для создания токена подписи согласно документации Тинькофф
 function createToken(data) {
-  const values = Object.keys(data)
-    .filter(key => key !== 'Token')
+  // Исключаем Token и Receipt из подписи
+  const filteredData = Object.keys(data)
+    .filter(key => key !== 'Token' && key !== 'Receipt')
     .sort()
-    .map(key => data[key])
+    .reduce((obj, key) => {
+      obj[key] = data[key];
+      return obj;
+    }, {});
+  
+  console.log('🔐 Данные для токена:', filteredData);
+  
+  // Создаем строку для подписи: key1value1key2value2...
+  const tokenString = Object.keys(filteredData)
+    .sort()
+    .map(key => `${key}${filteredData[key]}`)
     .join('');
   
-  return crypto.createHash('sha256').update(values).digest('hex');
+  console.log('🔐 Строка для подписи:', tokenString);
+  
+  const token = crypto.createHash('sha256').update(tokenString).digest('hex');
+  console.log('🔐 Сгенерированный токен:', token);
+  
+  return token;
 }
 
 export default router;
