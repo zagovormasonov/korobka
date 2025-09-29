@@ -65,10 +65,10 @@ const DashboardTokenPage: React.FC = () => {
           zIndex: -1
         }}>
           <Silk
-            speed={5}
+            speed={8.7}
             scale={0.5}
             color="#ffe59e"
-            darkColor="#fd953f"
+            darkColor="#e8722a"
             noiseIntensity={1.5}
             rotation={0}
           />
@@ -103,10 +103,10 @@ const DashboardTokenPage: React.FC = () => {
           zIndex: -1
         }}>
           <Silk
-            speed={5}
+            speed={8.7}
             scale={0.5}
             color="#ffe59e"
-            darkColor="#fd953f"
+            darkColor="#e8722a"
             noiseIntensity={1.5}
             rotation={0}
           />
