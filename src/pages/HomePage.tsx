@@ -51,7 +51,6 @@ const HomePage: React.FC = () => {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
       position: 'relative'
     }}>
       {/* Silk фон */}
@@ -76,7 +75,8 @@ const HomePage: React.FC = () => {
       {/* Логотип вверху */}
       <div style={{ 
         textAlign: 'center', 
-        marginBottom: '40px'
+        marginBottom: '60px',
+        paddingTop: '20px'
       }}>
         <div style={{ 
           fontSize: '32px', 
@@ -86,6 +86,60 @@ const HomePage: React.FC = () => {
         }}>
           idenself
         </div>
+      </div>
+
+      {/* Заголовок, подзаголовок и кнопка */}
+      <div style={{ 
+        width: '100%',
+        maxWidth: '600px',
+        marginBottom: '40px'
+      }}>
+        <div style={{ marginBottom: '30px' }}>
+          <Title level={1} style={{ 
+            color: 'black', 
+            marginBottom: '16px',
+            fontSize: '48px',
+            fontFamily: 'Comfortaa, sans-serif',
+            fontWeight: 'normal',
+            textAlign: 'left',
+            lineHeight: '1.2'
+          }}>
+            Если<br />у тебя ПРЛ
+          </Title>
+          <div style={{ 
+            color: 'rgba(0, 0, 0, 0.8)', 
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '16px',
+            fontWeight: 'normal',
+            textAlign: 'left',
+            lineHeight: '1.4'
+          }}>
+            Пройди тест или войди<br />в личный кабинет
+          </div>
+        </div>
+
+        <Button 
+          type="primary" 
+          size="large"
+          onClick={() => navigate('/test-info')}
+          style={{ 
+            height: '60px', 
+            fontSize: '20px', 
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: '500',
+            padding: '0 40px',
+            width: '100%',
+            maxWidth: '300px',
+            background: 'white',
+            color: 'black',
+            borderRadius: '30px',
+            boxShadow: 'none',
+            border: 'none',
+            marginBottom: '40px'
+          }}
+        >
+          Пройти тест
+        </Button>
       </div>
 
       {/* Форма входа */}
@@ -180,24 +234,6 @@ const HomePage: React.FC = () => {
             </Button>
           </Form.Item>
         </Form>
-
-        <div style={{ 
-          textAlign: 'center', 
-          marginTop: '24px'
-        }}>
-          <Link 
-            to="/test-info" 
-            style={{ 
-              color: '#333',
-              fontSize: '16px',
-              fontFamily: 'Inter, sans-serif',
-              textDecoration: 'none',
-              fontWeight: '500'
-            }}
-          >
-            Пройти тест
-          </Link>
-        </div>
       </Card>
 
       {/* Ссылки внизу */}
