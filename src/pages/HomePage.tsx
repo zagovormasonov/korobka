@@ -92,29 +92,32 @@ const HomePage: React.FC = () => {
       <div style={{ 
         width: '100%',
         maxWidth: '600px',
-        marginBottom: '40px'
+        marginBottom: '40px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
       }}>
-        <div style={{ marginBottom: '30px' }}>
+        <div style={{ marginBottom: '30px', textAlign: 'center' }}>
           <Title level={1} style={{ 
             color: 'black', 
             marginBottom: '16px',
             fontSize: '48px',
             fontFamily: 'Comfortaa, sans-serif',
             fontWeight: 'normal',
-            textAlign: 'left',
+            textAlign: 'center',
             lineHeight: '1.2'
           }}>
-            Если<br />у тебя ПРЛ
+            Если у тебя ПРЛ
           </Title>
           <div style={{ 
             color: 'rgba(0, 0, 0, 0.8)', 
             fontFamily: 'Inter, sans-serif',
             fontSize: '16px',
             fontWeight: 'normal',
-            textAlign: 'left',
+            textAlign: 'center',
             lineHeight: '1.4'
           }}>
-            Пройди тест или войди<br />в личный кабинет
+            Пройди тест и получи персональный план действий
           </div>
         </div>
 
