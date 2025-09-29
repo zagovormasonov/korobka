@@ -107,7 +107,7 @@ const HomePage: React.FC = () => {
             textAlign: 'center',
             lineHeight: '1.2'
           }}>
-            Если у тебя ПРЛ
+            Если <br></br> у тебя ПРЛ
           </Title>
           <div style={{ 
             color: 'rgba(0, 0, 0, 0.8)', 
