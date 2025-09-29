@@ -125,16 +125,21 @@ const DashboardLoginPage: React.FC = () => {
       <Card style={{ 
         width: '100%', 
         maxWidth: '400px', 
-        borderRadius: '12px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+        borderRadius: '24px',
+        boxShadow: 'none',
+        backgroundColor: '#f1f1f1',
+        padding: '40px 24px'
       }}>
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <Title level={2} style={{ color: '#00695c', marginBottom: '8px', fontFamily: 'Comfortaa, sans-serif' }}>
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <Title level={2} style={{ 
+            marginBottom: '0px', 
+            color: '#333',
+            fontFamily: 'Comfortaa, sans-serif',
+            fontSize: '24px',
+            fontWeight: '600'
+          }}>
             Вход в личный кабинет
           </Title>
-          <Text type="secondary">
-            Введите ваш никнейм и пароль
-          </Text>
         </div>
 
         <Form
@@ -145,42 +150,62 @@ const DashboardLoginPage: React.FC = () => {
         >
           <Form.Item
             name="nickname"
-            label="Ваш никнейм"
+            label={<span style={{ color: '#333', fontSize: '14px' }}>* Никнейм</span>}
             rules={[
-              { required: true, message: 'Пожалуйста, введите ваш никнейм' }
+              { required: true, message: 'Пожалуйста, введите никнейм!' }
             ]}
           >
             <Input
-              prefix={<UserOutlined />}
-              placeholder="Введите ваш никнейм"
+              prefix={<UserOutlined style={{ color: '#666' }} />}
+              placeholder="Введите никнейм"
               autoComplete="username"
+              style={{ 
+                borderRadius: '12px',
+                border: 'none',
+                backgroundColor: 'white',
+                height: '48px',
+                fontSize: '16px'
+              }}
             />
           </Form.Item>
 
           <Form.Item
             name="password"
-            label="Ваш пароль"
+            label={<span style={{ color: '#333', fontSize: '14px' }}>* Пароль</span>}
             rules={[
-              { required: true, message: 'Пожалуйста, введите ваш пароль' }
+              { required: true, message: 'Пожалуйста, введите пароль!' }
             ]}
+            style={{ marginBottom: '32px' }}
           >
             <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Введите ваш пароль"
+              prefix={<LockOutlined style={{ color: '#666' }} />}
+              placeholder="Введите пароль"
               autoComplete="current-password"
+              style={{ 
+                borderRadius: '12px',
+                border: 'none',
+                backgroundColor: 'white',
+                height: '48px',
+                fontSize: '16px'
+              }}
             />
           </Form.Item>
 
-          <Form.Item>
+          <Form.Item style={{ marginBottom: '0px' }}>
             <Button 
               type="primary" 
               htmlType="submit" 
               loading={verifying}
               style={{ 
-                width: '100%',
-                padding: '25px',
+                width: '100%', 
+                height: '56px',
+                borderRadius: '28px',
                 fontSize: '16px',
-                fontWeight: 'bold'
+                fontWeight: '500',
+                backgroundColor: '#f3ba6f',
+                borderColor: '#f3ba6f',
+                border: 'none',
+                boxShadow: 'none'
               }}
             >
               {verifying ? 'Проверяем данные...' : 'Войти в личный кабинет'}
@@ -188,18 +213,6 @@ const DashboardLoginPage: React.FC = () => {
           </Form.Item>
         </Form>
 
-        <div style={{ 
-          textAlign: 'center', 
-          marginTop: '20px',
-          padding: '16px',
-          background: '#f6ffed',
-          border: '1px solid #b7eb8f',
-          borderRadius: '8px'
-        }}>
-          <Text style={{ color: '#389e0d', fontSize: '12px' }}>
-            💡 Если вы забыли данные для входа, обратитесь в службу поддержки
-          </Text>
-        </div>
       </Card>
     </div>
   );
