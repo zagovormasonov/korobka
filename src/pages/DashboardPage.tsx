@@ -353,8 +353,8 @@ const DashboardPage: React.FC = () => {
                 margin: 40px auto;
               }
               h1 {
-                color: #00695c;
-                border-bottom: 2px solid #00695c;
+                color: rgb(243, 186, 111);
+                border-bottom: 2px solid rgb(243, 186, 111);
                 padding-bottom: 10px;
               }
               h2 {
@@ -370,7 +370,7 @@ const DashboardPage: React.FC = () => {
                 margin: 0 auto;
               }
               .print-button {
-                background: #00695c;
+                background: rgb(243, 186, 111);
                 color: white;
                 border: none;
                 padding: 10px 20px;
@@ -503,14 +503,37 @@ const DashboardPage: React.FC = () => {
         maxWidth: '800px',
         margin: '0 auto 20px auto'
       }}>
-        <Text style={{ 
-          fontSize: '18px',
-          fontWeight: '500',
-          color: '#333',
-          fontFamily: 'Inter, sans-serif'
-        }}>
-          {userNickname && `👤 ${userNickname}`}
-        </Text>
+        {userNickname && (
+          <div style={{ 
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              backgroundColor: 'rgb(243, 186, 111)',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              fontWeight: '600',
+              fontFamily: 'Inter, sans-serif'
+            }}>
+              {userNickname.charAt(0).toUpperCase()}
+            </div>
+            <Text style={{ 
+              fontSize: '18px',
+              fontWeight: '500',
+              color: '#333',
+              fontFamily: 'Inter, sans-serif'
+            }}>
+              {userNickname}
+            </Text>
+          </div>
+        )}
         <Button 
           type="primary"
           onClick={handleLogout}
@@ -541,12 +564,12 @@ const DashboardPage: React.FC = () => {
             width: '120px',
             height: '120px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #00695c 0%, #52c41a 100%)',
+            background: 'linear-gradient(135deg, rgb(243, 186, 111) 0%, rgb(253, 196, 131) 100%)',
             margin: '0 auto 30px auto',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 8px 32px rgba(0, 105, 92, 0.3)'
+            boxShadow: '0 8px 32px rgba(243, 186, 111, 0.3)'
           }}>
             <div style={{
               width: '80px',
@@ -732,7 +755,7 @@ const DashboardPage: React.FC = () => {
                             width: '20px',
                             height: '20px',
                             borderRadius: '50%',
-                            backgroundColor: testResults[test.id] ? '#00695c' : '#E8E8E8',
+                            backgroundColor: testResults[test.id] ? 'rgb(243, 186, 111)' : '#E8E8E8',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',

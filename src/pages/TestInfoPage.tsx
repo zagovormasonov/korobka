@@ -51,7 +51,7 @@ const benefits = [
   {
     title: 'Ты сможешь поделиться с нами, что было на сеансе у психолога, и мы дадим обратную связь',
     subtitle: 'Поддержим тебя на каждом этапе',
-    icon: <MessageOutlined style={{ color: iconColor, fontSize: '32px' }} />,
+    icon: <img src="/chat.png" alt="Chat" style={{ width: '32px', height: '32px' }} />,
     items: []
   }
 ];
@@ -74,7 +74,6 @@ const TestInfoPage: React.FC = () => {
         {benefits.map((benefit, index) => (
           <Col xs={24} md={12} key={index}>
             <Card 
-              hoverable 
               style={{ 
                 height: '100%',
                 border: '1px solid #e0e0e0',
