@@ -324,7 +324,7 @@ const BpdTestPage: React.FC = () => {
                 type={currentAnswer === 'yes' ? 'primary' : 'default'}
                 onClick={() => handleAnswer('yes')}
                 size="large"
-                style={{ flex: 1, marginRight: '8px', borderRadius: '24px' }}
+                style={{ flex: 1, marginRight: '8px', borderRadius: '24px', ...(currentAnswer === 'yes' && { color: '#ffffff' }) }}
               >
                 Да
               </Button>
@@ -332,7 +332,7 @@ const BpdTestPage: React.FC = () => {
                 type={currentAnswer === 'no' ? 'primary' : 'default'}
                 onClick={() => handleAnswer('no')}
                 size="large"
-                style={{ flex: 1, marginLeft: '8px', borderRadius: '24px' }}
+                style={{ flex: 1, marginLeft: '8px', borderRadius: '24px', ...(currentAnswer === 'no' && { color: '#ffffff' }) }}
               >
                 Нет
               </Button>
@@ -346,7 +346,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'yes' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('yes')}
                   size="large"
-                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px' }}
+                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px', ...(currentAnswer === 'yes' && { color: '#ffffff' }) }}
                 >
                   Да
                 </Button>
@@ -354,7 +354,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'no' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('no')}
                   size="large"
-                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px' }}
+                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px', ...(currentAnswer === 'no' && { color: '#ffffff' }) }}
                 >
                   Нет
                 </Button>
@@ -379,7 +379,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'yes' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('yes')}
                   size="large"
-                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px' }}
+                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px', ...(currentAnswer === 'yes' && { color: '#ffffff' }) }}
                 >
                   Да
                 </Button>
@@ -387,7 +387,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'no' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('no')}
                   size="large"
-                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px' }}
+                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px', ...(currentAnswer === 'no' && { color: '#ffffff' }) }}
                 >
                   Нет
                 </Button>
@@ -412,7 +412,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'yes' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('yes')}
                   size="large"
-                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px' }}
+                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px', ...(currentAnswer === 'yes' && { color: '#ffffff' }) }}
                 >
                   Да
                 </Button>
@@ -420,7 +420,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'no' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('no')}
                   size="large"
-                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px' }}
+                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px', ...(currentAnswer === 'no' && { color: '#ffffff' }) }}
                 >
                   Нет
                 </Button>
@@ -457,7 +457,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'yes' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('yes')}
                   size="large"
-                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px' }}
+                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px', ...(currentAnswer === 'yes' && { color: '#ffffff' }) }}
                 >
                   Да
                 </Button>
@@ -465,7 +465,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === 'no' ? 'primary' : 'default'}
                   onClick={() => handleAnswer('no')}
                   size="large"
-                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px' }}
+                  style={{ flex: 1, marginLeft: '8px', borderRadius: '24px', ...(currentAnswer === 'no' && { color: '#ffffff' }) }}
                 >
                   Нет
                 </Button>
@@ -553,7 +553,7 @@ const BpdTestPage: React.FC = () => {
                   type={currentAnswer === option.value ? 'primary' : 'default'}
                   onClick={() => handleAnswer(option.value)}
                   size="large"
-                  style={{ width: '100%', borderRadius: '24px' }}
+                  style={{ width: '100%', borderRadius: '24px', ...(currentAnswer === option.value && { color: '#ffffff' }) }}
                 >
                   {option.label}
                 </Button>
@@ -578,7 +578,7 @@ const BpdTestPage: React.FC = () => {
             </Button>
             
             <Button 
-            type="primary" 
+            type={currentAnswer ? "primary" : "default"}
             icon={<ArrowRightOutlined />} 
             onClick={handleNext}
             disabled={!currentAnswer}
@@ -589,8 +589,11 @@ const BpdTestPage: React.FC = () => {
               borderRadius: '24px',
               padding: '0 24px',
               height: '48px',
-              backgroundColor: 'rgb(243, 186, 111)',
-              borderColor: 'rgb(243, 186, 111)'
+              ...(currentAnswer && {
+                backgroundColor: 'rgb(243, 186, 111)',
+                borderColor: 'rgb(243, 186, 111)',
+                color: '#ffffff'
+              })
             }}
           >
             {currentQuestionIndex === questions.length - 1 ? 'Завершить' : 'Далее'}

@@ -198,3 +198,14 @@ code {
     background-position: 0% 50%;
   }
 }
+
+/* Белый текст в золотых кнопках */
+.ant-btn-primary {
+  color: #ffffff !important;
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus,
+.ant-btn-primary:active {
+  color: #ffffff !important;
+}
