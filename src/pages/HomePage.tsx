@@ -31,7 +31,9 @@ const HomePage: React.FC = () => {
       if (data.success) {
         console.log('✅ [LOGIN] Учетные данные подтверждены');
         message.success('Добро пожаловать в личный кабинет!');
-        navigate(`/lk/${data.dashboardToken}`);
+        // Сохраняем токен в sessionStorage
+        sessionStorage.setItem('dashboardToken', data.dashboardToken);
+        navigate(`/dashboard`);
       } else {
         console.log('❌ [LOGIN] Неверные учетные данные');
         message.error(data.error || 'Неверный никнейм или пароль');

@@ -62,9 +62,9 @@ const recommendedTests = [
 ];
 
 const DashboardPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [sessionId] = useState(() => searchParams.get('sessionId') || '');
+  const [sessionId, setSessionId] = useState<string>('');
+  const [isVerifying, setIsVerifying] = useState(true);
   const [mascotMessage, setMascotMessage] = useState('');
   const [psychologistForm] = Form.useForm();
   const [feedbackText, setFeedbackText] = useState('');
@@ -87,23 +87,57 @@ const DashboardPage: React.FC = () => {
   // Состояние режима персонального плана
   const [personalPlanMode, setPersonalPlanMode] = useState(false);
 
+  // Проверка токена при загрузке страницы
   useEffect(() => {
-    if (sessionId) {
+    const verifyAccessToken = async () => {
+      console.log('🔐 [DASHBOARD] Проверяем токен доступа');
+      
+      const token = sessionStorage.getItem('dashboardToken');
+      
+      if (!token) {
+        console.log('❌ [DASHBOARD] Токен не найден, перенаправляем на страницу входа');
+        message.error('Необходимо войти в личный кабинет');
+        navigate('/lk/login', { replace: true });
+        return;
+      }
+
+      try {
+        const response = await apiRequest('api/tests/verify-dashboard-token', {
+          method: 'POST',
+          body: JSON.stringify({ dashboardToken: token }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          console.log('✅ [DASHBOARD] Токен валиден, sessionId:', data.sessionId);
+          setSessionId(data.sessionId);
+          setUserNickname(data.nickname || '');
+          setIsVerifying(false);
+        } else {
+          console.log('❌ [DASHBOARD] Токен недействителен');
+          sessionStorage.removeItem('dashboardToken');
+          message.error('Сессия истекла. Пожалуйста, войдите снова.');
+          navigate('/lk/login', { replace: true });
+        }
+      } catch (error) {
+        console.error('❌ [DASHBOARD] Ошибка при проверке токена:', error);
+        sessionStorage.removeItem('dashboardToken');
+        message.error('Ошибка проверки доступа');
+        navigate('/lk/login', { replace: true });
+      }
+    };
+
+    verifyAccessToken();
+  }, [navigate]);
+
+  // Загрузка данных после успешной верификации
+  useEffect(() => {
+    if (sessionId && !isVerifying) {
       generateMascotMessage();
       fetchAdditionalTestResults();
-      
-      // Проверяем, пришел ли пользователь после успешной оплаты
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('payment') === 'success') {
-        message.success('🎉 Оплата прошла успешно! Добро пожаловать в личный кабинет!');
-        // Убираем параметр из URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    } else {
-      // Если sessionId отсутствует, показываем предупреждение
-      message.warning('⚠️ Для доступа к личному кабинету необходимо пройти тест. Перейдите на главную страницу.');
     }
-  }, [sessionId]);
+  }, [sessionId, isVerifying]);
 
   const generateMascotMessage = async () => {
     try {
@@ -144,6 +178,8 @@ const DashboardPage: React.FC = () => {
 
   const handleLogout = () => {
     console.log('🚪 [LOGOUT] Выход из ЛК');
+    // Удаляем токен из sessionStorage
+    sessionStorage.removeItem('dashboardToken');
     message.success('Вы вышли из личного кабинета');
     navigate('/', { replace: true });
   };
@@ -487,6 +523,26 @@ const DashboardPage: React.FC = () => {
       setLoadingSessionPreparation(false);
     }
   };
+
+  // Показываем загрузку во время проверки токена
+  if (isVerifying) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <Spin size="large" />
+          <Text style={{ display: 'block', marginTop: '20px', fontSize: '16px', color: '#666' }}>
+            Проверяем доступ...
+          </Text>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 

@@ -28,9 +28,11 @@ const DashboardTokenPage: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        console.log('✅ [TOKEN PAGE] Токен валиден, перенаправляем в ЛК');
-        // Сразу перенаправляем в ЛК без дополнительных проверок
-        navigate(`/dashboard?sessionId=${data.data.session_id}`, { replace: true });
+        console.log('✅ [TOKEN PAGE] Токен валиден, сохраняем в sessionStorage');
+        // Сохраняем токен в sessionStorage для безопасного доступа
+        sessionStorage.setItem('dashboardToken', dashboardToken);
+        // Перенаправляем в ЛК
+        navigate(`/dashboard`, { replace: true });
       } else {
         console.log('❌ [TOKEN PAGE] Токен не найден');
         setError('Личный кабинет не найден или ссылка устарела');

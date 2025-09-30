@@ -398,6 +398,54 @@ router.get('/dashboard/:token', async (req, res) => {
   }
 });
 
+// Проверить валидность токена ЛК
+router.post('/verify-dashboard-token', async (req, res) => {
+  try {
+    const { dashboardToken } = req.body;
+    
+    console.log('🔐 [VERIFY TOKEN] Проверяем dashboard token');
+    
+    if (!dashboardToken) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Токен обязателен' 
+      });
+    }
+    
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .select('session_id, nickname, dashboard_token')
+      .eq('dashboard_token', dashboardToken)
+      .maybeSingle();
+
+    if (error) {
+      console.error('❌ [VERIFY TOKEN] Ошибка запроса:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Ошибка при проверке токена' 
+      });
+    }
+
+    if (!data) {
+      console.log('❌ [VERIFY TOKEN] Токен не найден');
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Недействительный токен доступа' 
+      });
+    }
+
+    console.log('✅ [VERIFY TOKEN] Токен валиден');
+    res.json({ 
+      success: true,
+      sessionId: data.session_id,
+      nickname: data.nickname
+    });
+  } catch (error) {
+    console.error('❌ [VERIFY TOKEN] Ошибка:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Проверить nickname и пароль для доступа к ЛК
 router.post('/verify-nickname-credentials', async (req, res) => {
   try {

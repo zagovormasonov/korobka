@@ -5,7 +5,7 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import Silk from '../components/Silk';
 import { apiRequest } from '../config/api';
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 const DashboardLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -75,8 +75,9 @@ const DashboardLoginPage: React.FC = () => {
         console.log('✅ [LOGIN] Учетные данные подтверждены, перенаправляем в ЛК');
         message.success('Добро пожаловать в личный кабинет!');
         
-        // Перенаправляем в ЛК с токеном
-        navigate(`/lk/${data.dashboardToken}`);
+        // Сохраняем токен в sessionStorage
+        sessionStorage.setItem('dashboardToken', data.dashboardToken);
+        navigate(`/dashboard`);
       } else {
         console.log('❌ [LOGIN] Неверные учетные данные');
         message.error(data.error || 'Неверный никнейм или пароль');
@@ -86,7 +87,7 @@ const DashboardLoginPage: React.FC = () => {
       
       if (error instanceof SyntaxError && error.message.includes('JSON')) {
         message.error('Сервер вернул некорректный ответ. Возможно, сервер перегружен.');
-      } else if (error.message.includes('fetch')) {
+      } else if (error instanceof Error && error.message.includes('fetch')) {
         message.error('Не удается подключиться к серверу. Проверьте интернет-соединение.');
       } else {
         message.error('Произошла ошибка при входе в систему');
