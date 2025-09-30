@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Typography, Spin, Button, Card, Space, message, Input, Form, Checkbox } from 'antd';
+import { Typography, Spin, Button, Card, message, Input, Form, Checkbox } from 'antd';
 import { CheckCircleOutlined, CopyOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
 import { apiRequest } from '../config/api';
+import Silk from '../components/Silk';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -108,10 +109,28 @@ const PaymentSuccessPage: React.FC = () => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        minHeight: 'calc(100vh + 100px)',
+        padding: '40px 20px 140px 20px',
+        position: 'relative'
       }}>
-        <Card style={{ textAlign: 'center', padding: '40px' }}>
+        <div style={{
+          position: 'fixed',
+          top: -50,
+          left: 0,
+          width: '100%',
+          height: 'calc(100vh + 150px)',
+          zIndex: -1
+        }}>
+          <Silk 
+            speed={8.7}
+            scale={0.5}
+            color="#ffe59e"
+            darkColor="#e8722a"
+            noiseIntensity={1.5}
+            rotation={0}
+          />
+        </div>
+        <Card style={{ textAlign: 'center', padding: '40px', borderRadius: '24px', boxShadow: 'none', backgroundColor: '#f1f1f1' }}>
           <Spin size="large" />
           <Paragraph style={{ marginTop: '20px' }}>Загрузка...</Paragraph>
         </Card>
@@ -125,13 +144,40 @@ const PaymentSuccessPage: React.FC = () => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        minHeight: 'calc(100vh + 100px)',
+        padding: '40px 20px 140px 20px',
+        position: 'relative'
       }}>
-        <Card style={{ textAlign: 'center', padding: '40px' }}>
+        <div style={{
+          position: 'fixed',
+          top: -50,
+          left: 0,
+          width: '100%',
+          height: 'calc(100vh + 150px)',
+          zIndex: -1
+        }}>
+          <Silk 
+            speed={8.7}
+            scale={0.5}
+            color="#ffe59e"
+            darkColor="#e8722a"
+            noiseIntensity={1.5}
+            rotation={0}
+          />
+        </div>
+        <Card style={{ textAlign: 'center', padding: '40px', borderRadius: '24px', boxShadow: 'none', backgroundColor: '#f1f1f1' }}>
           <Title level={2} type="danger">Ошибка</Title>
           <Paragraph>{error}</Paragraph>
-          <Button type="primary" onClick={() => navigate('/')}>
+          <Button 
+            type="primary" 
+            onClick={() => navigate('/')}
+            style={{
+              backgroundColor: '#f3ba6f',
+              borderColor: '#f3ba6f',
+              borderRadius: '28px',
+              height: '48px'
+            }}
+          >
             На главную
           </Button>
         </Card>
@@ -144,16 +190,34 @@ const PaymentSuccessPage: React.FC = () => {
       display: 'flex', 
       justifyContent: 'center', 
       alignItems: 'center', 
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '20px'
+      minHeight: 'calc(100vh + 100px)',
+      padding: '40px 20px 140px 20px',
+      position: 'relative'
     }}>
+      <div style={{
+        position: 'fixed',
+        top: -50,
+        left: 0,
+        width: '100%',
+        height: 'calc(100vh + 150px)',
+        zIndex: -1
+      }}>
+        <Silk 
+          speed={8.7}
+          scale={0.5}
+          color="#ffe59e"
+          darkColor="#e8722a"
+          noiseIntensity={1.5}
+          rotation={0}
+        />
+      </div>
       <Card style={{ 
         width: '100%', 
         maxWidth: '500px', 
-        padding: '20px',
-        borderRadius: '12px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+        padding: '40px 24px',
+        borderRadius: '24px',
+        boxShadow: 'none',
+        backgroundColor: '#f1f1f1'
       }}>
         {step === 1 ? (
           <>
@@ -165,61 +229,73 @@ const PaymentSuccessPage: React.FC = () => {
                   marginBottom: '16px' 
                 }} 
               />
-              <Title level={2} style={{ color: '#00695c', marginBottom: '8px' }}>
+              <Title level={2} style={{ color: '#333', marginBottom: '8px', fontFamily: 'Comfortaa, sans-serif', fontSize: '24px' }}>
                 Оплата прошла успешно!
               </Title>
             </div>
 
             <div style={{ 
-              background: '#f6ffed', 
-              border: '1px solid #b7eb8f', 
-              borderRadius: '8px', 
+              background: 'rgb(255, 246, 234)', 
+              border: 'none', 
+              borderRadius: '12px', 
               padding: '16px', 
               marginBottom: '30px',
               textAlign: 'center'
             }}>
-              <Text style={{ color: '#389e0d', fontSize: '14px' }}>
+              <Text style={{ color: '#333', fontSize: '14px' }}>
                 В целях вашей анонимности мы не сохраняем ваше имя и контактные данные
               </Text>
             </div>
 
-            <Form layout="vertical">
+            <Form layout="vertical" requiredMark={false}>
               <Form.Item 
                 label="Придумайте ник"
-                required
               >
                 <Input
-                  prefix={<UserOutlined />}
-                  placeholder="Введите ваш ник"
+                  prefix={<UserOutlined style={{ color: 'whitesmoke' }} />}
+                  placeholder="Введите никнейм"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   size="large"
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: '12px',
+                    height: '48px'
+                  }}
                 />
               </Form.Item>
 
               <Form.Item 
                 label="Пароль"
-                required
               >
                 <Input.Password
-                  prefix={<LockOutlined />}
+                  prefix={<LockOutlined style={{ color: 'whitesmoke' }} />}
                   placeholder="Введите пароль"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   size="large"
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: '12px',
+                    height: '48px'
+                  }}
                 />
               </Form.Item>
 
               <Form.Item 
                 label="Подтверждение пароля"
-                required
               >
                 <Input.Password
-                  prefix={<LockOutlined />}
+                  prefix={<LockOutlined style={{ color: 'whitesmoke' }} />}
                   placeholder="Повторите пароль"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   size="large"
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: '12px',
+                    height: '48px'
+                  }}
                 />
               </Form.Item>
 
@@ -230,9 +306,13 @@ const PaymentSuccessPage: React.FC = () => {
                 style={{ 
                   width: '100%', 
                   marginTop: '20px',
-                  padding: '25px',
+                  height: '56px',
                   fontSize: '16px',
-                  fontWeight: 'bold'
+                  fontWeight: '500',
+                  backgroundColor: '#f3ba6f',
+                  borderColor: '#f3ba6f',
+                  borderRadius: '28px',
+                  boxShadow: 'none'
                 }}
               >
                 Далее
@@ -249,19 +329,19 @@ const PaymentSuccessPage: React.FC = () => {
                   marginBottom: '16px' 
                 }} 
               />
-              <Title level={3} style={{ color: '#00695c', marginBottom: '8px' }}>
+              <Title level={3} style={{ color: '#333', marginBottom: '8px', fontFamily: 'Comfortaa, sans-serif', fontSize: '20px' }}>
                 Сохраните данные для входа
               </Title>
             </div>
 
             <div style={{ 
-              background: '#fff2e8', 
-              border: '1px solid #ffbb96', 
-              borderRadius: '8px', 
+              background: 'rgb(255, 246, 234)', 
+              border: 'none', 
+              borderRadius: '12px', 
               padding: '16px', 
               marginBottom: '20px'
             }}>
-              <Text style={{ color: '#d46b08', fontSize: '14px' }}>
+              <Text style={{ color: '#333', fontSize: '14px' }}>
                 Сохраните данные для входа в заметки или менеджер паролей, чтобы не забыть, 
                 иначе данные могут быть утеряны
               </Text>
@@ -323,9 +403,14 @@ const PaymentSuccessPage: React.FC = () => {
               disabled={!dataSaved}
               style={{ 
                 width: '100%',
-                padding: '25px',
+                height: '56px',
                 fontSize: '16px',
-                fontWeight: 'bold'
+                fontWeight: '500',
+                backgroundColor: '#f3ba6f',
+                borderColor: '#f3ba6f',
+                borderRadius: '28px',
+                boxShadow: 'none',
+                opacity: dataSaved ? 1 : 0.6
               }}
             >
               {saving ? 'Сохраняем...' : 'Далее'}

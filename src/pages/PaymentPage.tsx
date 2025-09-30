@@ -196,7 +196,7 @@ const PaymentPage: React.FC = () => {
 
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <Paragraph style={{ fontSize: '18px', color: 'black', maxWidth: '600px', margin: '0 auto' }}>
-          Пройди тест и получи:
+          Получи доступ к персональному плану:
         </Paragraph>
       </div>
 
