@@ -234,11 +234,11 @@ const HomePage: React.FC = () => {
                 height: '56px',
                 borderRadius: '28px',
                 fontSize: '16px',
-                fontWeight: '500',
-                backgroundColor: '#f3ba6f',
-                borderColor: '#f3ba6f',
-                border: 'none',
-                boxShadow: 'none'
+                fontWeight: '600',
+                backgroundColor: '#e8a049',
+                borderColor: 'rgba(255, 255, 255, 0.4)',
+                border: '2px solid rgba(255, 255, 255, 0.4)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
               }}
             >
               {verifying ? 'Проверяем данные...' : 'Войти в личный кабинет'}
