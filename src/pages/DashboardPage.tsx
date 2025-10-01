@@ -146,7 +146,7 @@ const DashboardPage: React.FC = () => {
   const [testResults, setTestResults] = useState<{[key: number]: string}>({});
   const [savingResults, setSavingResults] = useState<{[key: number]: boolean}>({});
   const [userNickname, setUserNickname] = useState('');
-  const [personalPlanUnlocked, setPersonalPlanUnlocked] = useState(false);
+  const [personalPlanUnlocked, setPersonalPlanUnlocked] = useState<boolean | undefined>(undefined);
   const completionButtonRef = useRef<HTMLDivElement>(null);
   const [psychologistForm] = Form.useForm();
   const [feedbackText, setFeedbackText] = useState('');
@@ -221,22 +221,25 @@ const DashboardPage: React.FC = () => {
       sessionId: !!sessionId,
       isVerifying,
       personalPlanUnlocked,
-      shouldLoadTests: sessionId && !isVerifying && !personalPlanUnlocked
+      shouldLoadTests: sessionId && !isVerifying && personalPlanUnlocked === false
     });
     
-    if (sessionId && !isVerifying && !personalPlanUnlocked) {
-      // Загружаем тесты только если персональный план не разблокирован
+    // Загружаем тесты только если:
+    // 1. sessionId есть
+    // 2. верификация завершена
+    // 3. personalPlanUnlocked ЯВНО равен false (не undefined)
+    if (sessionId && !isVerifying && personalPlanUnlocked === false) {
       console.log('📥 [DASHBOARD] Загружаем данные тестов');
       generateMascotMessage();
       // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
     } else {
-      console.log('⏭️ [DASHBOARD] Пропускаем загрузку тестов (персональный план разблокирован)');
+      console.log('⏭️ [DASHBOARD] Пропускаем загрузку тестов. personalPlanUnlocked:', personalPlanUnlocked);
     }
   }, [sessionId, isVerifying, personalPlanUnlocked]);
 
   // Загружаем результаты тестов после того, как загрузились рекомендованные тесты
   useEffect(() => {
-    if (recommendedTests.length > 0 && sessionId && !isVerifying && !personalPlanUnlocked) {
+    if (recommendedTests.length > 0 && sessionId && !isVerifying && personalPlanUnlocked === false) {
       console.log('📋 Рекомендованные тесты загружены, загружаем результаты...');
       fetchAdditionalTestResults();
     }
@@ -244,7 +247,7 @@ const DashboardPage: React.FC = () => {
 
   // Проверяем завершенность тестов когда загружены тесты или результаты
   useEffect(() => {
-    if (recommendedTests.length > 0 && !personalPlanUnlocked) {
+    if (recommendedTests.length > 0 && personalPlanUnlocked === false) {
       const completedCount = Object.keys(testResults).length;
       const isCompleted = completedCount >= recommendedTests.length;
       console.log(`📊 Прогресс тестов: ${completedCount}/${recommendedTests.length}, завершено: ${isCompleted}`);
@@ -254,7 +257,7 @@ const DashboardPage: React.FC = () => {
 
   // Автоматический скролл к кнопке завершения после прохождения всех тестов
   useEffect(() => {
-    if (allTestsCompleted && completionButtonRef.current && !personalPlanUnlocked) {
+    if (allTestsCompleted && completionButtonRef.current && personalPlanUnlocked === false) {
       // Показываем салют
       showConfetti();
       
