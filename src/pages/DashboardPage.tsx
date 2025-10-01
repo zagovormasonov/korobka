@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Typography, 
@@ -144,6 +144,7 @@ const DashboardPage: React.FC = () => {
   const [testResults, setTestResults] = useState<{[key: number]: string}>({});
   const [savingResults, setSavingResults] = useState<{[key: number]: boolean}>({});
   const [userNickname, setUserNickname] = useState('');
+  const completionButtonRef = useRef<HTMLDivElement>(null);
   
   // Состояния загрузки для AI операций
   const [loadingMascotMessage, setLoadingMascotMessage] = useState(false);
@@ -210,6 +211,18 @@ const DashboardPage: React.FC = () => {
       fetchAdditionalTestResults();
     }
   }, [sessionId, isVerifying]);
+
+  // Автоматический скролл к кнопке завершения после прохождения всех тестов
+  useEffect(() => {
+    if (allTestsCompleted && completionButtonRef.current) {
+      setTimeout(() => {
+        completionButtonRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 500);
+    }
+  }, [allTestsCompleted]);
 
   const generateMascotMessage = async () => {
     try {
@@ -791,14 +804,16 @@ const DashboardPage: React.FC = () => {
             </Title>
 
             {allTestsCompleted && (
-              <div style={{ 
-                textAlign: 'center', 
-                marginBottom: '40px', 
-                padding: '40px 30px',
-                backgroundColor: 'white',
-                borderRadius: '20px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
-              }}>
+              <div 
+                ref={completionButtonRef}
+                style={{ 
+                  textAlign: 'center', 
+                  marginBottom: '40px', 
+                  padding: '40px 30px',
+                  backgroundColor: 'white',
+                  borderRadius: '20px',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+                }}>
                 <CheckOutlined 
                   style={{ 
                     fontSize: '60px', 
