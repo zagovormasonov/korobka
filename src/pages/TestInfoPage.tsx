@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Typography, Button, Card, Row, Col } from 'antd';
+import { useThemeColor } from '../hooks/useThemeColor';
 import { 
   FileTextOutlined, 
   UserOutlined, 
@@ -58,6 +59,9 @@ const benefits = [
 
 const TestInfoPage: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Устанавливаем белый цвет статус-бара
+  useThemeColor('#ffffff');
 
   return (
     <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>

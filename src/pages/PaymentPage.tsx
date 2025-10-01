@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Typography, Button, Card, Row, Col, Space, message, Checkbox, Spin } from 'antd';
 import { apiRequest } from '../config/api';
+import { useThemeColor } from '../hooks/useThemeColor';
 import { 
   CheckCircleOutlined
 } from '@ant-design/icons';
@@ -60,6 +61,9 @@ const PaymentPage: React.FC = () => {
   const [loadingMascotMessage, setLoadingMascotMessage] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [agreementAccepted, setAgreementAccepted] = useState(false);
+  
+  // Устанавливаем белый цвет статус-бара
+  useThemeColor('#ffffff');
 
   useEffect(() => {
     if (sessionId) {

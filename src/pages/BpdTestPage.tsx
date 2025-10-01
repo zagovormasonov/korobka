@@ -4,6 +4,7 @@ import { apiRequest } from '../config/api';
 import { ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import { useThemeColor } from '../hooks/useThemeColor';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -42,6 +43,9 @@ const BpdTestPage: React.FC = () => {
   const [additionalText, setAdditionalText] = useState<string>('');
   const [sliderValue, setSliderValue] = useState<number>(5);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  
+  // Устанавливаем белый цвет статус-бара
+  useThemeColor('#ffffff');
 
   // Функции для работы с localStorage
   const saveToLocalStorage = () => {

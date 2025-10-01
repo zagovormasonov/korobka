@@ -18,6 +18,7 @@ import {
   MessageOutlined,
   CheckOutlined
 } from '@ant-design/icons';
+import { useThemeColor } from '../hooks/useThemeColor';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -145,6 +146,9 @@ const DashboardPage: React.FC = () => {
   const [savingResults, setSavingResults] = useState<{[key: number]: boolean}>({});
   const [userNickname, setUserNickname] = useState('');
   const completionButtonRef = useRef<HTMLDivElement>(null);
+  
+  // Устанавливаем цвет статус-бара для градиентного фона
+  useThemeColor('#c3cfe2');
   
   // Состояния загрузки для AI операций
   const [loadingMascotMessage, setLoadingMascotMessage] = useState(false);

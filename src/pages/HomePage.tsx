@@ -4,6 +4,7 @@ import { Typography, Button, Form, Input, Card, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import Silk from '../components/Silk';
 import { apiRequest } from '../config/api';
+import { useThemeColor } from '../hooks/useThemeColor';
 
 const { Title } = Typography;
 
@@ -11,6 +12,9 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [verifying, setVerifying] = useState(false);
   const [form] = Form.useForm();
+  
+  // Устанавливаем цвет статус-бара для градиентного фона
+  useThemeColor('#f5b878');
 
   const verifyCredentialsAndEnter = async (values: { nickname: string; password: string }) => {
     setVerifying(true);

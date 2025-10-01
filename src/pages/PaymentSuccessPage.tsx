@@ -4,6 +4,7 @@ import { Typography, Spin, Button, Card, message, Input, Form, Checkbox } from '
 import { CheckCircleOutlined, CopyOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
 import { apiRequest } from '../config/api';
 import Silk from '../components/Silk';
+import { useThemeColor } from '../hooks/useThemeColor';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -20,6 +21,9 @@ const PaymentSuccessPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const sessionId = searchParams.get('sessionId');
+  
+  // Устанавливаем цвет статус-бара для градиентного фона
+  useThemeColor('#f5b878');
 
   useEffect(() => {
     if (sessionId) {
