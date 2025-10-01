@@ -73,6 +73,36 @@ router.post('/create-credentials', async (req, res) => {
 
     console.log('✅ [DASHBOARD] Сессия найдена:', existingSession);
 
+    // Проверяем, не занят ли уже этот никнейм
+    console.log('🔍 [DASHBOARD] Проверяем уникальность никнейма:', nickname);
+    const { data: existingNickname, error: nicknameCheckError } = await supabase
+      .from('primary_test_results')
+      .select('id, nickname, session_id')
+      .eq('nickname', nickname)
+      .maybeSingle();
+
+    if (nicknameCheckError) {
+      // Если ошибка не связана с отсутствием поля, возвращаем ее
+      if (!nicknameCheckError.message.includes('nickname')) {
+        console.error('❌ [DASHBOARD] Ошибка при проверке никнейма:', nicknameCheckError);
+        return res.status(500).json({ 
+          success: false, 
+          error: `Ошибка при проверке никнейма: ${nicknameCheckError.message}` 
+        });
+      }
+      // Если поля nickname не существует, продолжаем без проверки
+      console.log('⚠️ [DASHBOARD] Поле nickname не существует в таблице, пропускаем проверку уникальности');
+    } else if (existingNickname && existingNickname.session_id !== sessionId) {
+      // Никнейм уже занят другим пользователем
+      console.log('❌ [DASHBOARD] Никнейм уже занят');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Этот никнейм уже занят. Пожалуйста, выберите другой' 
+      });
+    }
+
+    console.log('✅ [DASHBOARD] Никнейм свободен или принадлежит текущей сессии');
+
     // Генерируем уникальный токен для доступа к ЛК
     const dashboardToken = crypto.randomUUID();
     console.log('🔑 [DASHBOARD] Сгенерированный токен:', dashboardToken);

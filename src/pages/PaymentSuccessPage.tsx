@@ -72,12 +72,15 @@ const PaymentSuccessPage: React.FC = () => {
 
       if (data.success) {
         setDashboardToken(data.dashboardToken);
-        message.success('Данные успешно сохранены!');
+        message.success('Данные успешно сохранены! Переходим в личный кабинет...');
         
-        // Перенаправляем на страницу входа в ЛК через 2 секунды
+        // Сохраняем токен и автоматически логиним пользователя
+        sessionStorage.setItem('dashboardToken', data.dashboardToken);
+        
+        // Перенаправляем в личный кабинет через 1 секунду
         setTimeout(() => {
-          navigate('/lk/login');
-        }, 2000);
+          navigate('/dashboard');
+        }, 1000);
       } else {
         message.error(data.error || 'Ошибка при сохранении данных');
       }
@@ -434,7 +437,7 @@ const PaymentSuccessPage: React.FC = () => {
                 marginTop: '20px',
                 color: '#999999'
               }}>
-                <Text>Перенаправляем на страницу входа в личный кабинет...</Text>
+                <Text>Переходим в личный кабинет...</Text>
               </div>
             )}
           </>

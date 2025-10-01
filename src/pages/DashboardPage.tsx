@@ -26,38 +26,110 @@ const recommendedTests = [
   {
     id: 1,
     name: 'Тест на пограничное расстройство личности (ПРЛ)',
-    url: 'https://yasno.live/tests/pogranichnoye-rasstroystvo-lichnosti',
-    description: 'Скрининг симптомов ПРЛ на основе DSM-5'
+    url: 'https://testometrika.com/diagnosis-of-abnormalities/do-you-have-a-border-disorder-of-personality/',
+    description: 'Онлайн-скрининг симптомов ПРЛ по критериям DSM-5 (эмоциональная нестабильность, импульсивность и пр.)'
   },
   {
     id: 2,
     name: 'Тест на биполярное аффективное расстройство (БАР)',
-    url: 'https://iyaroslav.ru/test/test-na-gipomaniu-bipolarnoe-rasstroystvo/',
-    description: 'Опросник HCL-32 для выявления гипоманиакальных состояний'
+    url: 'https://psytests.org/diag/hcl32.html',
+    description: 'Опросник гипомании HCL-32 для выявления гипоманиакальных состояний и признаков биполярного расстройства'
   },
   {
     id: 3,
     name: 'Тест на синдром дефицита внимания и гиперактивности (СДВГ)',
-    url: 'https://yasno.live/tests/sdvg',
-    description: 'Шкала ASRS для взрослых'
+    url: 'https://psytests.org/diag/asrs.html',
+    description: 'Шкала ASRS v1.1 для взрослых, разработанная ВОЗ для оценки симптомов невнимательности и гиперактивности'
   },
   {
     id: 4,
     name: 'Тест на посттравматическое стрессовое расстройство (ПТСР)',
-    url: 'https://yasno.live/tests/ptsr',
-    description: 'PCL-5 для скрининга симптомов ПТСР'
+    url: 'https://psytests.org/trauma/pcl5.html',
+    description: 'Опросник PCL-5 (PTSD Checklist for DSM-5) для скрининга симптомов ПТСР (навязчивые воспоминания, избегание и др.)'
   },
   {
     id: 5,
-    name: 'Тест на депрессию',
-    url: 'https://psi-praktika.ru/testyi/test-beka-na-depressiyu.html',
-    description: 'Шкала Бека (BDI) для измерения тяжести депрессивных симптомов'
+    name: 'Тест на комплексное посттравматическое стрессовое расстройство (кПТСР)',
+    url: 'https://psytests.org/trauma/itq.html',
+    description: 'Международный опросник травмы (ITQ) для оценки симптомов комплексной травмы и диссоциации'
   },
   {
     id: 6,
+    name: 'Тест на депрессию',
+    url: 'https://psytests.org/depression/bdi.html',
+    description: 'Шкала депрессии Бека (BDI) для измерения тяжести депрессивных симптомов (21 вопрос)'
+  },
+  {
+    id: 7,
     name: 'Тест на генерализованное тревожное расстройство',
     url: 'https://psytests.org/anxiety/gad7.html',
-    description: 'GAD-7 для скрининга общей тревоги и беспокойства'
+    description: 'Опросник GAD-7 для скрининга уровня общей тревоги и беспокойства'
+  },
+  {
+    id: 8,
+    name: 'Тест на обсессивно-компульсивное расстройство (ОКР)',
+    url: 'https://psytests.org/psyclinical/ybocs.html',
+    description: 'Обсессивно-компульсивная шкала Йеля–Брауна (Y-BOCS) для оценки выраженности навязчивостей и компульсий'
+  },
+  {
+    id: 9,
+    name: 'Тест на расстройства пищевого поведения',
+    url: 'https://psytests.org/food/eat26.html',
+    description: 'Опросник пищевого отношения EAT-26 для выявления склонности к анорексии, булимии или перееданию'
+  },
+  {
+    id: 10,
+    name: 'Тест на зависимость от психоактивных веществ',
+    url: 'https://www.samopomo.ch/proversja/test-po-vyjavleniju-rasstroistv-svjazannykh-s-upotrebleniem-narkotikov-dudit',
+    description: 'Опросник DUDIT (Drug Use Disorders Identification Test) для выявления проблемного употребления наркотиков'
+  },
+  {
+    id: 11,
+    name: 'Тест на диссоциативное расстройство',
+    url: 'https://psytests.org/diag/des.html',
+    description: 'Шкала диссоциативного опыта DES для оценки степени выраженности диссоциации'
+  },
+  {
+    id: 12,
+    name: 'Тест на расстройство аутистического спектра (РАС)',
+    url: 'https://psytests.org/arc/aq.html',
+    description: 'Опросник AQ (Autism Spectrum Quotient) для выявления аутичных черт у взрослых'
+  },
+  {
+    id: 13,
+    name: 'Тест на социальное тревожное расстройство',
+    url: 'https://psytests.org/anxiety/lsas.html',
+    description: 'Шкала социальной тревожности Либовича (LSAS) для оценки уровня социофобии (страх и избегание в социальных ситуациях)'
+  },
+  {
+    id: 14,
+    name: 'Тест на паническое расстройство',
+    url: 'https://psytests.org/psyclinical/pdss.html',
+    description: 'Шкала тяжести панического расстройства PDSS для измерения выраженности панических атак и связанной тревоги'
+  },
+  {
+    id: 15,
+    name: 'Тест на дисморфофобию (телесное дисморфическое расстройство)',
+    url: 'https://psytests.org/beauty/bddq.html',
+    description: 'Опросник дисморфофобии BDDQ (Dermatology Version) для скрининга беспокойства о внешности'
+  },
+  {
+    id: 16,
+    name: 'Тест на суицидальные тенденции',
+    url: 'https://psytests.org/psyclinical/osr.html',
+    description: 'Опросник суицидального риска (ОСР) для выявления уровня суицидальных мыслей и намерений'
+  },
+  {
+    id: 17,
+    name: 'Тест на детскую травму',
+    url: 'https://psytests.org/trauma/ctq.html',
+    description: 'Опросник детских травм CTQ-SF (краткая форма) для выявления неблагоприятного опыта детства'
+  },
+  {
+    id: 18,
+    name: 'Тест на шизотипическое расстройство личности',
+    url: 'https://psytests.org/diag/spq.html',
+    description: 'Опросник шизотипических черт личности SPQ для диагностики признаков шизотипического расстройства'
   }
 ];
 
@@ -773,7 +845,7 @@ const DashboardPage: React.FC = () => {
                     fontWeight: '500',
                     lineHeight: '1.5'
                   }}>
-                    Перейди по ссылке каждого теста, пройди тест и впиши результаты в поле ввода результатов
+                    Перейди по ссылке каждого теста, пройди тест на сайте партнёра, вернись сюда в личный кабинет и впиши результаты теста в поле ввода результатов. Когда результаты всех тестов будут занесены, мы составим для тебя персональный план
                   </Text>
                 </div>
                 
