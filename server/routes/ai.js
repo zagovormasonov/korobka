@@ -249,12 +249,10 @@ router.post('/mascot-message/dashboard', async (req, res) => {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
     
-    console.log('🔑 Gemini API Key:', process.env.GEMINI_API_KEY ? 'установлен' : 'НЕ УСТАНОВЛЕН');
-    
     // Получаем результаты первичного теста
     const { data: primaryTest, error } = await supabase
       .from('primary_test_results')
-      .select('answers, email')
+      .select('answers, email, lumi_dashboard_message')
       .eq('session_id', sessionId)
       .single();
 
@@ -265,11 +263,28 @@ router.post('/mascot-message/dashboard', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Test results not found' });
     }
 
+    // Проверяем, есть ли уже сохраненное сообщение
+    if (primaryTest.lumi_dashboard_message) {
+      console.log('💾 Найдено сохраненное сообщение Луми, возвращаем его');
+      
+      // Всё равно генерируем список рекомендованных тестов
+      const answers = primaryTest.answers;
+      const recommendedTests = await analyzeAndRecommendTests(answers);
+      
+      return res.json({ 
+        success: true, 
+        message: primaryTest.lumi_dashboard_message,
+        recommendedTests,
+        cached: true 
+      });
+    }
+
     const answers = primaryTest.answers;
     const email = primaryTest.email;
     
     console.log('📊 Ответы теста:', answers);
     console.log('📧 Email из БД:', email);
+    console.log('🔑 Gemini API Key:', process.env.GEMINI_API_KEY ? 'установлен' : 'НЕ УСТАНОВЛЕН');
     
     // Анализируем ответы и определяем рекомендуемые тесты
     const recommendedTests = await analyzeAndRecommendTests(answers);
@@ -299,10 +314,25 @@ router.post('/mascot-message/dashboard', async (req, res) => {
 
 ФОРМАТ ОТВЕТА: Только текст сообщения, без дополнительных объяснений.`;
 
-    console.log('🚀 Отправляем запрос к Gemini AI...');
+    console.log('🚀 Отправляем запрос к Gemini AI для генерации нового сообщения...');
     
     const message = await callGeminiAI(prompt, 350);
-    res.json({ success: true, message, recommendedTests });
+    
+    // Сохраняем сгенерированное сообщение в БД
+    console.log('💾 Сохраняем сообщение Луми в БД...');
+    const { error: updateError } = await supabase
+      .from('primary_test_results')
+      .update({ lumi_dashboard_message: message })
+      .eq('session_id', sessionId);
+
+    if (updateError) {
+      console.error('⚠️ Ошибка при сохранении сообщения:', updateError);
+      // Не останавливаем выполнение, просто логируем
+    } else {
+      console.log('✅ Сообщение Луми успешно сохранено в БД');
+    }
+    
+    res.json({ success: true, message, recommendedTests, cached: false });
   } catch (error) {
     console.error('❌ Ошибка генерации сообщения для ЛК:', {
       message: error.message,
