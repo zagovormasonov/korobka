@@ -28,7 +28,7 @@ router.post('/verify-token', async (req, res) => {
     // Ищем пользователя по токену
     const { data: user, error } = await supabase
       .from('primary_test_results')
-      .select('session_id, nickname')
+      .select('session_id, nickname, personal_plan_unlocked')
       .eq('dashboard_token', token)
       .maybeSingle();
 
@@ -47,7 +47,8 @@ router.post('/verify-token', async (req, res) => {
     res.json({ 
       success: true, 
       sessionId: user.session_id,
-      nickname: user.nickname || ''
+      nickname: user.nickname || '',
+      personalPlanUnlocked: user.personal_plan_unlocked || false
     });
   } catch (error) {
     console.error('❌ [DASHBOARD] Ошибка при проверке токена:', error);
@@ -257,6 +258,37 @@ router.post('/create-credentials', async (req, res) => {
       success: false, 
       error: `Внутренняя ошибка сервера: ${error.message}` 
     });
+  }
+});
+
+// Разблокировать персональный план
+router.post('/unlock-personal-plan', async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+
+    if (!sessionId) {
+      return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
+
+    console.log('🔓 [DASHBOARD] Разблокируем персональный план для:', sessionId);
+
+    // Обновляем флаг в БД
+    const { error } = await supabase
+      .from('primary_test_results')
+      .update({ personal_plan_unlocked: true })
+      .eq('session_id', sessionId);
+
+    if (error) {
+      console.error('❌ [DASHBOARD] Ошибка при разблокировке:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    console.log('✅ [DASHBOARD] Персональный план разблокирован');
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ [DASHBOARD] Ошибка unlock-personal-plan:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

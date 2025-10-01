@@ -146,7 +146,10 @@ const DashboardPage: React.FC = () => {
   const [testResults, setTestResults] = useState<{[key: number]: string}>({});
   const [savingResults, setSavingResults] = useState<{[key: number]: boolean}>({});
   const [userNickname, setUserNickname] = useState('');
+  const [personalPlanUnlocked, setPersonalPlanUnlocked] = useState(false);
   const completionButtonRef = useRef<HTMLDivElement>(null);
+  const [psychologistForm] = Form.useForm();
+  const [feedbackText, setFeedbackText] = useState('');
   
   // Устанавливаем цвет статус-бара для градиентного фона
   useThemeColor('#c3cfe2');
@@ -189,6 +192,8 @@ const DashboardPage: React.FC = () => {
           console.log('✅ [DASHBOARD] Токен валиден, sessionId:', data.sessionId);
           setSessionId(data.sessionId);
           setUserNickname(data.nickname || '');
+          setPersonalPlanUnlocked(data.personalPlanUnlocked || false);
+          console.log('🔓 [DASHBOARD] Персональный план разблокирован:', data.personalPlanUnlocked || false);
           setIsVerifying(false);
         } else {
           console.log('❌ [DASHBOARD] Токен недействителен');
@@ -353,6 +358,63 @@ const DashboardPage: React.FC = () => {
     sessionStorage.removeItem('dashboardToken');
     message.success('Вы вышли из личного кабинета');
     navigate('/', { replace: true });
+  };
+
+  const handlePsychologistRequest = async (values: any) => {
+    try {
+      const response = await apiRequest('api/telegram/psychologist-request', {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionId,
+          ...values
+        }),
+      });
+
+      if (response.ok) {
+        message.success('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
+        psychologistForm.resetFields();
+      } else {
+        message.error('Ошибка при отправке заявки');
+      }
+    } catch (error) {
+      console.error('Error sending psychologist request:', error);
+      message.error('Произошла ошибка при отправке заявки');
+    }
+  };
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim()) {
+      message.warning('Пожалуйста, введите текст обратной связи');
+      return;
+    }
+
+    setLoadingFeedback(true);
+    try {
+      const response = await apiRequest('api/ai/session-feedback', {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionId,
+          feedbackText: feedbackText.trim()
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          message.success('Анализ готов! Проверьте результаты ниже.');
+          setFeedbackText('');
+        } else {
+          message.error('Ошибка при анализе обратной связи');
+        }
+      } else {
+        message.error('Ошибка при отправке обратной связи');
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      message.error('Произошла ошибка при отправке обратной связи');
+    } finally {
+      setLoadingFeedback(false);
+    }
   };
 
   const fetchAdditionalTestResults = async () => {
@@ -790,6 +852,311 @@ const DashboardPage: React.FC = () => {
         textAlign: 'center'
       }}>
         
+        {/* Персональный план (показывается после завершения всех тестов) */}
+        {personalPlanUnlocked ? (
+          <div>
+            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <Title level={1} style={{ 
+                color: '#2C3E50',
+                fontSize: '32px',
+                fontWeight: '600',
+                marginBottom: '10px',
+                fontFamily: 'Comfortaa, sans-serif'
+              }}>
+                Персональный план
+              </Title>
+            </div>
+            
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+              gap: '20px',
+              marginBottom: '40px'
+            }}>
+              {/* Personal Plan Card */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                padding: '30px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#E8F4FD',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px auto'
+                }}>
+                  <DownloadOutlined style={{ fontSize: '24px', color: '#1890FF' }} />
+                </div>
+                <Title level={4} style={{ 
+                  color: '#2C3E50', 
+                  marginBottom: '15px',
+                  fontSize: '18px',
+                  fontWeight: '600'
+                }}>
+                  Скачать персональный план
+                </Title>
+                <Text style={{ 
+                  color: '#7B8794', 
+                  fontSize: '14px',
+                  display: 'block',
+                  marginBottom: '25px',
+                  lineHeight: '1.5'
+                }}>
+                  Скачай персональный план, созданный на основе всех твоих тестов
+                </Text>
+                <Button 
+                  type="primary"
+                  onClick={downloadPersonalPlan}
+                  loading={loadingPersonalPlan}
+                  style={{
+                    width: '100%',
+                    height: '45px',
+                    borderRadius: '22px',
+                    backgroundColor: 'rgb(243, 186, 111)',
+                    borderColor: 'rgb(243, 186, 111)',
+                    color: '#ffffff',
+                    fontSize: '16px',
+                    fontWeight: '500'
+                  }}
+                >
+                  {loadingPersonalPlan ? 'Генерируем план...' : 'Скачать план'}
+                </Button>
+              </div>
+
+              {/* Psychologist Selection Card */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                padding: '30px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+              }}>
+                <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    backgroundColor: '#FFF2E8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 20px auto'
+                  }}>
+                    <UserOutlined style={{ fontSize: '24px', color: '#FA8C16' }} />
+                  </div>
+                  <Title level={4} style={{ 
+                    color: '#2C3E50', 
+                    marginBottom: '0',
+                    fontSize: '18px',
+                    fontWeight: '600'
+                  }}>
+                    Подбор психолога
+                  </Title>
+                </div>
+                
+                <Form
+                  form={psychologistForm}
+                  onFinish={handlePsychologistRequest}
+                  layout="vertical"
+                >
+                  <Form.Item
+                    name="name"
+                    label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Имя</span>}
+                    rules={[{ required: true, message: 'Введите ваше имя' }]}
+                  >
+                    <Input 
+                      placeholder="Ваше имя" 
+                      style={{ 
+                        borderRadius: '12px',
+                        height: '40px'
+                      }}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name="phone"
+                    label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Телефон</span>}
+                    rules={[{ required: true, message: 'Введите номер телефона' }]}
+                  >
+                    <Input 
+                      placeholder="+7 (999) 123-45-67" 
+                      style={{ 
+                        borderRadius: '12px',
+                        height: '40px'
+                      }}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name="email"
+                    label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Email</span>}
+                    rules={[
+                      { required: true, message: 'Введите email' },
+                      { type: 'email', message: 'Введите корректный email' }
+                    ]}
+                  >
+                    <Input 
+                      placeholder="example@email.com" 
+                      style={{ 
+                        borderRadius: '12px',
+                        height: '40px'
+                      }}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name="telegramUsername"
+                    label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Telegram (необязательно)</span>}
+                  >
+                    <Input 
+                      placeholder="username или @username" 
+                      style={{ 
+                        borderRadius: '12px',
+                        height: '40px'
+                      }}
+                    />
+                  </Form.Item>
+                  <Button 
+                    type="primary" 
+                    htmlType="submit"
+                    style={{
+                      width: '100%',
+                      height: '45px',
+                      borderRadius: '22px',
+                      backgroundColor: 'rgb(243, 186, 111)',
+                      borderColor: 'rgb(243, 186, 111)',
+                      color: '#ffffff',
+                      fontSize: '16px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Оставить заявку
+                  </Button>
+                </Form>
+              </div>
+
+              {/* Session Preparation Card */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                padding: '30px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#F6FFED',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px auto'
+                }}>
+                  <FileTextOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
+                </div>
+                <Title level={4} style={{ 
+                  color: '#2C3E50', 
+                  marginBottom: '15px',
+                  fontSize: '18px',
+                  fontWeight: '600'
+                }}>
+                  Подготовка к сеансу
+                </Title>
+                <Text style={{ 
+                  color: '#7B8794', 
+                  fontSize: '14px',
+                  display: 'block',
+                  marginBottom: '25px',
+                  lineHeight: '1.5'
+                }}>
+                  PDF с рекомендациями для психолога и психиатра
+                </Text>
+                <Button 
+                  type="primary"
+                  onClick={() => downloadSessionPreparation('psychologist')}
+                  loading={loadingSessionPreparation}
+                  style={{
+                    width: '100%',
+                    height: '45px',
+                    borderRadius: '22px',
+                    backgroundColor: 'rgb(243, 186, 111)',
+                    borderColor: 'rgb(243, 186, 111)',
+                    color: '#ffffff',
+                    fontSize: '16px',
+                    fontWeight: '500'
+                  }}
+                >
+                  {loadingSessionPreparation ? 'Генерируем...' : 'Скачать подготовку'}
+                </Button>
+              </div>
+
+              {/* Feedback Card */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                padding: '30px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+              }}>
+                <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    backgroundColor: '#FFF0F6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 20px auto'
+                  }}>
+                    <MessageOutlined style={{ fontSize: '24px', color: '#EB2F96' }} />
+                  </div>
+                  <Title level={4} style={{ 
+                    color: '#2C3E50', 
+                    marginBottom: '0',
+                    fontSize: '18px',
+                    fontWeight: '600'
+                  }}>
+                    Обратная связь
+                  </Title>
+                </div>
+                
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <TextArea
+                    placeholder="Расскажите о вашем опыте на сеансе у психолога..."
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    rows={4}
+                    style={{ 
+                      borderRadius: '12px',
+                      resize: 'none'
+                    }}
+                  />
+                  <Button 
+                    type="primary" 
+                    onClick={handleFeedbackSubmit}
+                    loading={loadingFeedback}
+                    style={{
+                      width: '100%',
+                      height: '45px',
+                      borderRadius: '22px',
+                      backgroundColor: 'rgb(243, 186, 111)',
+                      borderColor: 'rgb(243, 186, 111)',
+                      color: '#ffffff',
+                      fontSize: '16px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    {loadingFeedback ? 'Анализируем...' : 'Получить обратную связь'}
+                  </Button>
+                </Space>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div>
         {/* Header and subtitle */}
         <div style={{ marginBottom: '40px', textAlign: 'left' }}>
           <Title level={1} style={{ 
@@ -923,11 +1290,24 @@ const DashboardPage: React.FC = () => {
                 <Button 
                   type="primary" 
                   size="large"
-                  onClick={() => {
+                  onClick={async () => {
                     console.log('🔘 [DASHBOARD] Нажата кнопка "Перейти к персональному плану"');
-                    const token = sessionStorage.getItem('dashboardToken');
-                    console.log('🔑 [DASHBOARD] Токен в sessionStorage:', token ? token.substring(0, 20) + '...' : 'НЕТ ТОКЕНА');
-                    navigate('/personal-plan');
+                    try {
+                      const response = await apiRequest('api/dashboard/unlock-personal-plan', {
+                        method: 'POST',
+                        body: JSON.stringify({ sessionId }),
+                      });
+                      
+                      if (response.ok) {
+                        setPersonalPlanUnlocked(true);
+                        message.success('Добро пожаловать в персональный план!');
+                      } else {
+                        message.error('Ошибка при переходе к персональному плану');
+                      }
+                    } catch (error) {
+                      console.error('Ошибка при разблокировке персонального плана:', error);
+                      message.error('Произошла ошибка');
+                    }
                   }}
                   style={{
                     height: '50px',
@@ -1193,6 +1573,8 @@ const DashboardPage: React.FC = () => {
             />
           </div>
         </Modal>
+        </div>
+        )}
       </div>
     </div>
   );
