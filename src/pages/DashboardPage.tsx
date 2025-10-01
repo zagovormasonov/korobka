@@ -190,10 +190,13 @@ const DashboardPage: React.FC = () => {
 
         if (data.success) {
           console.log('✅ [DASHBOARD] Токен валиден, sessionId:', data.sessionId);
+          console.log('📊 [DASHBOARD] Данные от API:', JSON.stringify(data, null, 2));
           setSessionId(data.sessionId);
           setUserNickname(data.nickname || '');
-          setPersonalPlanUnlocked(data.personalPlanUnlocked || false);
-          console.log('🔓 [DASHBOARD] Персональный план разблокирован:', data.personalPlanUnlocked || false);
+          const isPlanUnlocked = data.personalPlanUnlocked || false;
+          setPersonalPlanUnlocked(isPlanUnlocked);
+          console.log('🔓 [DASHBOARD] Персональный план разблокирован:', isPlanUnlocked);
+          console.log('🔓 [DASHBOARD] Значение из API:', data.personalPlanUnlocked);
           setIsVerifying(false);
         } else {
           console.log('❌ [DASHBOARD] Токен недействителен');
@@ -214,10 +217,20 @@ const DashboardPage: React.FC = () => {
 
   // Загрузка данных после успешной верификации
   useEffect(() => {
+    console.log('🔄 [DASHBOARD] useEffect загрузки данных:', {
+      sessionId: !!sessionId,
+      isVerifying,
+      personalPlanUnlocked,
+      shouldLoadTests: sessionId && !isVerifying && !personalPlanUnlocked
+    });
+    
     if (sessionId && !isVerifying && !personalPlanUnlocked) {
       // Загружаем тесты только если персональный план не разблокирован
+      console.log('📥 [DASHBOARD] Загружаем данные тестов');
       generateMascotMessage();
       // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
+    } else {
+      console.log('⏭️ [DASHBOARD] Пропускаем загрузку тестов (персональный план разблокирован)');
     }
   }, [sessionId, isVerifying, personalPlanUnlocked]);
 
@@ -662,6 +675,16 @@ const DashboardPage: React.FC = () => {
       </div>
     );
   }
+
+  // Логирование перед рендером
+  console.log('🎨 [DASHBOARD] Рендер компонента:', {
+    personalPlanUnlocked,
+    sessionId: !!sessionId,
+    isVerifying,
+    showTests,
+    allTestsCompleted,
+    recommendedTestsCount: recommendedTests.length
+  });
 
   return (
     <div style={{ 
@@ -1173,20 +1196,29 @@ const DashboardPage: React.FC = () => {
                   size="large"
                   onClick={async () => {
                     console.log('🔘 [DASHBOARD] Нажата кнопка "Перейти к персональному плану"');
+                    console.log('🔘 [DASHBOARD] Текущий sessionId:', sessionId);
                     try {
                       const response = await apiRequest('api/dashboard/unlock-personal-plan', {
                         method: 'POST',
                         body: JSON.stringify({ sessionId }),
                       });
                       
+                      console.log('📥 [DASHBOARD] Ответ от unlock API:', response.status);
+                      
                       if (response.ok) {
+                        const data = await response.json();
+                        console.log('✅ [DASHBOARD] Персональный план разблокирован успешно');
+                        console.log('📊 [DASHBOARD] Данные ответа:', data);
                         setPersonalPlanUnlocked(true);
+                        console.log('🔓 [DASHBOARD] Установлен флаг personalPlanUnlocked = true');
                         message.success('Добро пожаловать в персональный план!');
                       } else {
+                        const errorText = await response.text();
+                        console.error('❌ [DASHBOARD] Ошибка при разблокировке:', errorText);
                         message.error('Ошибка при переходе к персональному плану');
                       }
                     } catch (error) {
-                      console.error('Ошибка при разблокировке персонального плана:', error);
+                      console.error('❌ [DASHBOARD] Исключение при разблокировке:', error);
                       message.error('Произошла ошибка');
                     }
                   }}

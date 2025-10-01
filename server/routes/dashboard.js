@@ -43,6 +43,8 @@ router.post('/verify-token', async (req, res) => {
     }
 
     console.log('✅ [DASHBOARD] Токен валиден, sessionId:', user.session_id);
+    console.log('🔓 [DASHBOARD] personal_plan_unlocked из БД:', user.personal_plan_unlocked);
+    console.log('📊 [DASHBOARD] Полные данные пользователя:', JSON.stringify(user, null, 2));
 
     res.json({ 
       success: true, 
@@ -273,10 +275,11 @@ router.post('/unlock-personal-plan', async (req, res) => {
     console.log('🔓 [DASHBOARD] Разблокируем персональный план для:', sessionId);
 
     // Обновляем флаг в БД
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('primary_test_results')
       .update({ personal_plan_unlocked: true })
-      .eq('session_id', sessionId);
+      .eq('session_id', sessionId)
+      .select();
 
     if (error) {
       console.error('❌ [DASHBOARD] Ошибка при разблокировке:', error);
@@ -284,6 +287,7 @@ router.post('/unlock-personal-plan', async (req, res) => {
     }
 
     console.log('✅ [DASHBOARD] Персональный план разблокирован');
+    console.log('📊 [DASHBOARD] Обновленные данные:', JSON.stringify(data, null, 2));
 
     res.json({ success: true });
   } catch (error) {
