@@ -52,7 +52,7 @@ router.post('/create', async (req, res) => {
       TerminalKey: terminalKey,
       Amount: amount,
       OrderId: orderId,
-      Description: 'Персональный план психического здоровья',
+      Description: 'Персональный план психологического благополучия',
       CustomerKey: sessionId,
       SuccessURL: `${baseUrl}/payment-success?sessionId=${sessionId}`,
       FailURL: `${baseUrl}/payment?sessionId=${sessionId}&payment=failed`,
@@ -61,7 +61,7 @@ router.post('/create', async (req, res) => {
         Taxation: 'usn_income',
         Items: [
           {
-            Name: 'Персональный план психического здоровья',
+            Name: 'Персональный план психологического благополучия',
             Price: amount,
             Quantity: 1,
             Amount: amount,

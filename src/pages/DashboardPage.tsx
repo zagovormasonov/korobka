@@ -394,7 +394,7 @@ const DashboardPage: React.FC = () => {
                 padding-bottom: 10px;
               }
               h2 {
-                color: #52c41a;
+                color: #4F958B;
                 margin-top: 30px;
               }
               .header {
@@ -723,7 +723,7 @@ const DashboardPage: React.FC = () => {
                 <CheckOutlined 
                   style={{ 
                     fontSize: '60px', 
-                    color: '#52C41A', 
+                    color: '#4F958B', 
                     marginBottom: '20px',
                     display: 'block'
                   }} 
@@ -1119,7 +1119,7 @@ const DashboardPage: React.FC = () => {
                   justifyContent: 'center',
                   margin: '0 auto 20px auto'
                 }}>
-                  <FileTextOutlined style={{ fontSize: '24px', color: '#52C41A' }} />
+                  <FileTextOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
                 </div>
                 <Title level={4} style={{ 
                   color: '#2C3E50', 

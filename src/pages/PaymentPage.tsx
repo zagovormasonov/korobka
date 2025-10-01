@@ -146,7 +146,7 @@ const PaymentPage: React.FC = () => {
         <CheckCircleOutlined 
           style={{ 
             fontSize: '80px', 
-            color: '#52c41a', 
+            color: '#4F958B', 
             marginBottom: '20px',
             display: 'block'
           }} 
@@ -279,7 +279,6 @@ const PaymentPage: React.FC = () => {
           size="large"
           onClick={handlePayment}
           loading={paymentLoading}
-          disabled={!agreementAccepted}
           style={{ 
             width: '100%',
             maxWidth: '600px',
@@ -290,8 +289,7 @@ const PaymentPage: React.FC = () => {
             borderColor: 'rgb(243, 186, 111)',
             border: 'none',
             borderRadius: '28px',
-            boxShadow: 'none',
-            opacity: agreementAccepted ? 1 : 0.6
+            boxShadow: 'none'
           }}
         >
           Оплатить 10₽

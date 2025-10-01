@@ -136,7 +136,7 @@ const TestInfoPage: React.FC = () => {
             boxShadow: 'none'
           }}
         >
-          Пройти тест
+          Начать
         </Button>
       </div>
     </div>

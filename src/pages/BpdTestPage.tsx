@@ -88,6 +88,7 @@ const BpdTestPage: React.FC = () => {
   };
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchQuestions();
   }, []);
 
@@ -409,10 +410,10 @@ const BpdTestPage: React.FC = () => {
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               <Space size="large" style={{ width: '100%', justifyContent: 'space-between' }}>
                 <Button 
-                  type={currentAnswer === 'yes' ? 'primary' : 'default'}
+                  type={(currentAnswer !== 'no' && currentAnswer !== '') ? 'primary' : 'default'}
                   onClick={() => handleAnswer('yes')}
                   size="large"
-                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px', ...(currentAnswer === 'yes' && { color: '#ffffff' }) }}
+                  style={{ flex: 1, marginRight: '8px', borderRadius: '24px', ...((currentAnswer !== 'no' && currentAnswer !== '') && { color: '#ffffff' }) }}
                 >
                   Да
                 </Button>

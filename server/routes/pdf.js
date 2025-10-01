@@ -332,7 +332,7 @@ router.post('/personal-plan', async (req, res) => {
       <body>
         <div class="content">
           <div class="header">
-            <h1>Персональный план психического здоровья</h1>
+            <h1>Персональный план психологического благополучия</h1>
             <p>Создан на основе результатов тестирования</p>
             <button class="print-button" onclick="window.print()">Печать</button>
           </div>

@@ -165,7 +165,16 @@ const PaymentSuccessPage: React.FC = () => {
             rotation={0}
           />
         </div>
-        <Card style={{ textAlign: 'center', padding: '40px', borderRadius: '24px', boxShadow: 'none', backgroundColor: '#f1f1f1' }}>
+        <Card style={{ 
+          textAlign: 'center', 
+          padding: '40px', 
+          borderRadius: '24px', 
+          boxShadow: 'none', 
+          backgroundColor: 'rgba(255, 255, 255, 0.25)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.6)'
+        }}>
           <Title level={2} type="danger">Ошибка</Title>
           <Paragraph>{error}</Paragraph>
           <Button 
@@ -217,7 +226,10 @@ const PaymentSuccessPage: React.FC = () => {
         padding: '40px 24px',
         borderRadius: '24px',
         boxShadow: 'none',
-        backgroundColor: '#f1f1f1'
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255, 255, 255, 0.6)'
       }}>
         {step === 1 ? (
           <>
@@ -225,7 +237,7 @@ const PaymentSuccessPage: React.FC = () => {
               <CheckCircleOutlined 
                 style={{ 
                   fontSize: '48px', 
-                  color: '#52c41a', 
+                  color: '#4F958B', 
                   marginBottom: '16px' 
                 }} 
               />
@@ -325,7 +337,7 @@ const PaymentSuccessPage: React.FC = () => {
               <CheckCircleOutlined 
                 style={{ 
                   fontSize: '48px', 
-                  color: '#52c41a', 
+                  color: '#4F958B', 
                   marginBottom: '16px' 
                 }} 
               />
@@ -420,7 +432,7 @@ const PaymentSuccessPage: React.FC = () => {
               <div style={{ 
                 textAlign: 'center', 
                 marginTop: '20px',
-                color: '#52c41a'
+                color: '#999999'
               }}>
                 <Text>Перенаправляем на страницу входа в личный кабинет...</Text>
               </div>
