@@ -904,7 +904,12 @@ const DashboardPage: React.FC = () => {
                 <Button 
                   type="primary" 
                   size="large"
-                  onClick={() => navigate('/personal-plan')}
+                  onClick={() => {
+                    console.log('🔘 [DASHBOARD] Нажата кнопка "Перейти к персональному плану"');
+                    const token = sessionStorage.getItem('dashboardToken');
+                    console.log('🔑 [DASHBOARD] Токен в sessionStorage:', token ? token.substring(0, 20) + '...' : 'НЕТ ТОКЕНА');
+                    navigate('/personal-plan');
+                  }}
                   style={{
                     height: '50px',
                     fontSize: '16px',
