@@ -214,33 +214,34 @@ const DashboardPage: React.FC = () => {
 
   // Загрузка данных после успешной верификации
   useEffect(() => {
-    if (sessionId && !isVerifying) {
+    if (sessionId && !isVerifying && !personalPlanUnlocked) {
+      // Загружаем тесты только если персональный план не разблокирован
       generateMascotMessage();
       // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
     }
-  }, [sessionId, isVerifying]);
+  }, [sessionId, isVerifying, personalPlanUnlocked]);
 
   // Загружаем результаты тестов после того, как загрузились рекомендованные тесты
   useEffect(() => {
-    if (recommendedTests.length > 0 && sessionId && !isVerifying) {
+    if (recommendedTests.length > 0 && sessionId && !isVerifying && !personalPlanUnlocked) {
       console.log('📋 Рекомендованные тесты загружены, загружаем результаты...');
       fetchAdditionalTestResults();
     }
-  }, [recommendedTests.length, sessionId, isVerifying]);
+  }, [recommendedTests.length, sessionId, isVerifying, personalPlanUnlocked]);
 
   // Проверяем завершенность тестов когда загружены тесты или результаты
   useEffect(() => {
-    if (recommendedTests.length > 0) {
+    if (recommendedTests.length > 0 && !personalPlanUnlocked) {
       const completedCount = Object.keys(testResults).length;
       const isCompleted = completedCount >= recommendedTests.length;
       console.log(`📊 Прогресс тестов: ${completedCount}/${recommendedTests.length}, завершено: ${isCompleted}`);
       setAllTestsCompleted(isCompleted);
     }
-  }, [recommendedTests, testResults]);
+  }, [recommendedTests, testResults, personalPlanUnlocked]);
 
   // Автоматический скролл к кнопке завершения после прохождения всех тестов
   useEffect(() => {
-    if (allTestsCompleted && completionButtonRef.current) {
+    if (allTestsCompleted && completionButtonRef.current && !personalPlanUnlocked) {
       // Показываем салют
       showConfetti();
       
@@ -252,7 +253,7 @@ const DashboardPage: React.FC = () => {
         });
       }, 500);
     }
-  }, [allTestsCompleted]);
+  }, [allTestsCompleted, personalPlanUnlocked]);
 
   const showConfetti = () => {
     // Создаем эмодзи конфетти
