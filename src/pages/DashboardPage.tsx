@@ -156,6 +156,7 @@ const DashboardPage: React.FC = () => {
   const [loadingPersonalPlan, setLoadingPersonalPlan] = useState(false);
   const [loadingSessionPreparation, setLoadingSessionPreparation] = useState(false);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [loadingTestResults, setLoadingTestResults] = useState(true); // Загрузка результатов тестов
   
   // Состояния для модального окна
   const [modalVisible, setModalVisible] = useState(false);
@@ -210,9 +211,17 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     if (sessionId && !isVerifying) {
       generateMascotMessage();
-      fetchAdditionalTestResults();
+      // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
     }
   }, [sessionId, isVerifying]);
+
+  // Загружаем результаты тестов после того, как загрузились рекомендованные тесты
+  useEffect(() => {
+    if (recommendedTests.length > 0 && sessionId && !isVerifying) {
+      console.log('📋 Рекомендованные тесты загружены, загружаем результаты...');
+      fetchAdditionalTestResults();
+    }
+  }, [recommendedTests.length, sessionId, isVerifying]);
 
   // Проверяем завершенность тестов когда загружены тесты или результаты
   useEffect(() => {
@@ -351,9 +360,12 @@ const DashboardPage: React.FC = () => {
       console.log('🔄 [FETCH RESULTS] Начинаем загрузку результатов дополнительных тестов');
       console.log('🔄 [FETCH RESULTS] Текущее состояние testResults:', testResults);
       
+      setLoadingTestResults(true);
+      
       // Проверяем, что sessionId существует
       if (!sessionId || sessionId.trim() === '') {
         console.log('❌ SessionId пустой, пропускаем загрузку результатов');
+        setLoadingTestResults(false);
         return;
       }
 
@@ -363,6 +375,7 @@ const DashboardPage: React.FC = () => {
       
       if (!primaryData.success) {
         console.error('❌ Не удалось получить данные пользователя');
+        setLoadingTestResults(false);
         return;
       }
       
@@ -383,6 +396,7 @@ const DashboardPage: React.FC = () => {
         console.error('❌ Ошибка HTTP:', response.status, response.statusText);
         const errorText = await response.text();
         console.error('❌ Ответ сервера:', errorText);
+        setLoadingTestResults(false);
         return;
       }
       
@@ -406,6 +420,8 @@ const DashboardPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching additional test results:', error);
+    } finally {
+      setLoadingTestResults(false);
     }
   };
 
@@ -477,13 +493,9 @@ const DashboardPage: React.FC = () => {
 
       if (response.ok) {
         message.success('Результат теста сохранен!');
-        // Сначала обновляем локальное состояние немедленно
+        // Обновляем локальное состояние немедленно
         setTestResults(prev => ({ ...prev, [testId]: result.trim() }));
-        
-        // Затем через небольшую задержку загружаем данные с сервера для синхронизации
-        setTimeout(() => {
-        fetchAdditionalTestResults();
-        }, 1000);
+        // Больше не нужно перезагружать с сервера, так как мы уже обновили состояние
       } else {
         message.error('Ошибка при сохранении результата');
       }
@@ -934,8 +946,26 @@ const DashboardPage: React.FC = () => {
               </div>
             )}
             
+            {/* Индикатор загрузки результатов тестов */}
+            {showTests && loadingTestResults && (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '40px',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                borderRadius: '15px',
+                marginBottom: '30px'
+              }}>
+                <Spin size="large" />
+                <div style={{ marginTop: '20px' }}>
+                  <Text style={{ color: '#7B8794', fontSize: '16px' }}>
+                    Загружаем результаты тестов...
+                  </Text>
+                </div>
+              </div>
+            )}
+
             {/* Tests grid */}
-            {!allTestsCompleted && showTests && (
+            {!allTestsCompleted && showTests && !loadingTestResults && (
               <>
                 <div style={{ 
                   marginBottom: '30px', 
