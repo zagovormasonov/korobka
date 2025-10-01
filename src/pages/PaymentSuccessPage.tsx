@@ -35,7 +35,7 @@ const PaymentSuccessPage: React.FC = () => {
     }
   }, [sessionId]);
 
-  const handleFirstStep = () => {
+  const handleFirstStep = async () => {
     if (!nickname || !password || !confirmPassword) {
       message.error('Пожалуйста, заполните все поля');
       return;
@@ -51,7 +51,25 @@ const PaymentSuccessPage: React.FC = () => {
       return;
     }
 
-    setStep(2);
+    // Проверяем уникальность никнейма
+    try {
+      const response = await apiRequest('api/dashboard/check-nickname', {
+        method: 'POST',
+        body: JSON.stringify({ nickname }),
+      });
+
+      const data = await response.json();
+
+      if (!data.available) {
+        message.error('Этот никнейм уже занят. Пожалуйста, выберите другой');
+        return;
+      }
+
+      setStep(2);
+    } catch (error) {
+      console.error('Error checking nickname:', error);
+      message.error('Ошибка при проверке никнейма. Попробуйте еще раз');
+    }
   };
 
   const saveCredentials = async () => {
@@ -326,12 +344,13 @@ const PaymentSuccessPage: React.FC = () => {
                   width: '100%', 
                   marginTop: '20px',
                   height: '56px',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  backgroundColor: '#f3ba6f',
-                  borderColor: '#f3ba6f',
                   borderRadius: '28px',
-                  boxShadow: 'none'
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  backgroundColor: '#e8a049',
+                  borderColor: 'rgba(255, 255, 255, 0.4)',
+                  border: '2px solid rgba(255, 255, 255, 0.4)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                 }}
               >
                 Далее
@@ -423,12 +442,13 @@ const PaymentSuccessPage: React.FC = () => {
               style={{ 
                 width: '100%',
                 height: '56px',
-                fontSize: '16px',
-                fontWeight: '500',
-                backgroundColor: '#f3ba6f',
-                borderColor: '#f3ba6f',
                 borderRadius: '28px',
-                boxShadow: 'none',
+                fontSize: '16px',
+                fontWeight: '600',
+                backgroundColor: '#e8a049',
+                borderColor: 'rgba(255, 255, 255, 0.4)',
+                border: '2px solid rgba(255, 255, 255, 0.4)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                 opacity: dataSaved ? 1 : 0.6
               }}
             >

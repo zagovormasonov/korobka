@@ -225,7 +225,7 @@ code {
 .ant-slider-handle {
   width: 28px !important;
   height: 28px !important;
-  margin-top: -12px !important;
+  margin-top: -10px !important;
 }
 
 .ant-slider-handle::after {
@@ -256,4 +256,20 @@ code {
     opacity: 0;
     transform: rotate(720deg);
   }
+}
+
+/* Полупрозрачные поля ввода для страниц с градиентом */
+.ant-input,
+.ant-input-password input {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+}
+
+.ant-input:focus,
+.ant-input-password input:focus,
+.ant-input-focused,
+.ant-input-password-focused input {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(232, 160, 73, 0.6) !important;
+  box-shadow: 0 0 0 2px rgba(232, 160, 73, 0.1) !important;
 }

@@ -44,6 +44,11 @@ const BpdTestPage: React.FC = () => {
   const [sliderValue, setSliderValue] = useState<number>(5);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   
+  // Сброс слайдера на 5 при смене вопроса
+  useEffect(() => {
+    setSliderValue(5);
+  }, [currentQuestionIndex]);
+  
   // Устанавливаем белый цвет статус-бара
   useThemeColor('#ffffff');
 

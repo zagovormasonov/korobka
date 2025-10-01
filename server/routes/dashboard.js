@@ -14,6 +14,38 @@ router.get('/test-route', (req, res) => {
   });
 });
 
+// Проверить доступность никнейма
+router.post('/check-nickname', async (req, res) => {
+  try {
+    const { nickname } = req.body;
+
+    if (!nickname) {
+      return res.status(400).json({ success: false, error: 'Nickname is required' });
+    }
+
+    console.log('🔍 [DASHBOARD] Проверяем доступность никнейма:', nickname);
+
+    const { data: existingNickname, error } = await supabase
+      .from('primary_test_results')
+      .select('id, nickname')
+      .eq('nickname', nickname)
+      .maybeSingle();
+
+    if (error && !error.message.includes('nickname')) {
+      console.error('❌ [DASHBOARD] Ошибка при проверке никнейма:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    const available = !existingNickname;
+    console.log(available ? '✅ [DASHBOARD] Никнейм доступен' : '❌ [DASHBOARD] Никнейм занят');
+
+    res.json({ success: true, available });
+  } catch (error) {
+    console.error('❌ [DASHBOARD] Ошибка при проверке никнейма:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Создать учетные данные для доступа к ЛК
 router.post('/create-credentials', async (req, res) => {
   try {

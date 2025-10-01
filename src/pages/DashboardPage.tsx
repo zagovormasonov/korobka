@@ -214,6 +214,16 @@ const DashboardPage: React.FC = () => {
     }
   }, [sessionId, isVerifying]);
 
+  // Проверяем завершенность тестов когда загружены тесты или результаты
+  useEffect(() => {
+    if (recommendedTests.length > 0) {
+      const completedCount = Object.keys(testResults).length;
+      const isCompleted = completedCount >= recommendedTests.length;
+      console.log(`📊 Прогресс тестов: ${completedCount}/${recommendedTests.length}, завершено: ${isCompleted}`);
+      setAllTestsCompleted(isCompleted);
+    }
+  }, [recommendedTests, testResults]);
+
   // Автоматический скролл к кнопке завершения после прохождения всех тестов
   useEffect(() => {
     if (allTestsCompleted && completionButtonRef.current) {
@@ -371,7 +381,6 @@ const DashboardPage: React.FC = () => {
       
       const data = await response.json();
       if (data.success) {
-        setAllTestsCompleted(data.results.length >= recommendedTests.length);
         // Загружаем существующие результаты
         const resultsMap: {[key: number]: string} = {};
         data.results.forEach((result: any) => {
@@ -383,6 +392,9 @@ const DashboardPage: React.FC = () => {
         setTestResults(resultsMap);
         console.log('📊 [FETCH RESULTS] Загружено результатов дополнительных тестов:', data.results.length);
         console.log('📊 [FETCH RESULTS] Новое состояние testResults:', resultsMap);
+        
+        // Проверка завершенности тестов перенесена в useEffect
+        // который срабатывает после загрузки recommendedTests
         console.log('📊 [FETCH RESULTS] Данные из API:', data.results);
       }
     } catch (error) {

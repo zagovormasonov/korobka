@@ -80,22 +80,35 @@ const PaymentPage: React.FC = () => {
   }, [sessionId]);
 
   const generateMascotMessage = async () => {
+    if (!sessionId || sessionId.trim() === '') {
+      console.log('❌ SessionId пустой, пропускаем генерацию сообщения маскота');
+      setMascotMessage('Отлично! Ты прошел тест и теперь можешь получить персональный план!');
+      return;
+    }
+
     setLoadingMascotMessage(true);
+    console.log('🤖 Запрос на генерацию сообщения маскота для payment:', { sessionId });
+    
     try {
       const response = await apiRequest('api/ai/mascot-message/payment', {
         method: 'POST',
         body: JSON.stringify({ sessionId }),
       });
 
+      console.log('📥 Ответ от API:', response.status, response.statusText);
+
       if (response.ok) {
         const data = await response.json();
-        setMascotMessage(data.message);
+        console.log('📊 Данные ответа:', data);
+        setMascotMessage(data.message || 'Отлично! Ты прошел тест и теперь можешь получить персональный план!');
       } else {
-        console.error('Error generating mascot message');
+        console.error('❌ Ошибка API:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Ответ сервера:', errorText);
         setMascotMessage('Отлично! Ты прошел тест и теперь можешь получить персональный план!');
       }
     } catch (error) {
-      console.error('Error generating mascot message:', error);
+      console.error('❌ Ошибка при генерации сообщения маскота:', error);
       setMascotMessage('Отлично! Ты прошел тест и теперь можешь получить персональный план!');
     } finally {
       setLoadingMascotMessage(false);

@@ -37,36 +37,54 @@ const PersonalPlanPage: React.FC = () => {
 
   // Проверка токена при загрузке
   useEffect(() => {
-    const token = sessionStorage.getItem('dashboardToken');
-    if (!token) {
-      message.error('Требуется авторизация');
-      navigate('/lk/login');
-      return;
-    }
+    const verifyAccess = async () => {
+      console.log('🔐 [PERSONAL PLAN] Проверяем токен доступа');
+      
+      const token = sessionStorage.getItem('dashboardToken');
+      
+      if (!token) {
+        console.log('❌ [PERSONAL PLAN] Токен не найден, редирект на логин');
+        message.error('Требуется авторизация');
+        navigate('/lk/login', { replace: true });
+        return;
+      }
 
-    const verifyToken = async () => {
+      console.log('✅ [PERSONAL PLAN] Токен найден, проверяем его валидность');
+
       try {
         const response = await apiRequest('api/dashboard/verify-token', {
           method: 'POST',
           body: JSON.stringify({ token }),
         });
 
+        if (!response.ok) {
+          console.log('❌ [PERSONAL PLAN] Невалидный токен');
+          sessionStorage.removeItem('dashboardToken');
+          message.error('Сессия истекла');
+          navigate('/lk/login', { replace: true });
+          return;
+        }
+
         const data = await response.json();
-        if (data.success) {
+        
+        if (data.success && data.sessionId) {
+          console.log('✅ [PERSONAL PLAN] Токен валиден, sessionId:', data.sessionId);
           setSessionId(data.sessionId);
           setUserNickname(data.nickname || '');
         } else {
-          message.error('Сессия истекла');
+          console.log('❌ [PERSONAL PLAN] Ответ API не содержит success/sessionId');
           sessionStorage.removeItem('dashboardToken');
-          navigate('/lk/login');
+          message.error('Ошибка авторизации');
+          navigate('/lk/login', { replace: true });
         }
       } catch (error) {
-        console.error('Error verifying token:', error);
-        navigate('/lk/login');
+        console.error('❌ [PERSONAL PLAN] Ошибка при проверке токена:', error);
+        message.error('Ошибка проверки доступа');
+        navigate('/lk/login', { replace: true });
       }
     };
 
-    verifyToken();
+    verifyAccess();
   }, [navigate]);
 
   const handleLogout = () => {
