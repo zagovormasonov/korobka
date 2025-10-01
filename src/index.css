@@ -243,3 +243,17 @@ code {
 .ant-slider-track {
   height: 8px !important;
 }
+
+/* Анимация падения для салюта */
+@keyframes fall {
+  0% {
+    top: -50px;
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+  100% {
+    top: 100vh;
+    opacity: 0;
+    transform: rotate(720deg);
+  }
+}

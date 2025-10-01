@@ -215,6 +215,10 @@ const DashboardPage: React.FC = () => {
   // Автоматический скролл к кнопке завершения после прохождения всех тестов
   useEffect(() => {
     if (allTestsCompleted && completionButtonRef.current) {
+      // Показываем салют
+      showConfetti();
+      
+      // Скроллим к кнопке
       setTimeout(() => {
         completionButtonRef.current?.scrollIntoView({ 
           behavior: 'smooth', 
@@ -223,6 +227,38 @@ const DashboardPage: React.FC = () => {
       }, 500);
     }
   }, [allTestsCompleted]);
+
+  const showConfetti = () => {
+    // Создаем эмодзи конфетти
+    const emojis = ['🎉', '✨', '🎊', '⭐', '💫'];
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.pointerEvents = 'none';
+    container.style.zIndex = '9999';
+    document.body.appendChild(container);
+
+    for (let i = 0; i < 30; i++) {
+      setTimeout(() => {
+        const emoji = document.createElement('div');
+        emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        emoji.style.position = 'absolute';
+        emoji.style.fontSize = '30px';
+        emoji.style.left = Math.random() * 100 + '%';
+        emoji.style.top = '-50px';
+        emoji.style.animation = `fall ${2 + Math.random() * 2}s linear`;
+        emoji.style.opacity = '0';
+        container.appendChild(emoji);
+
+        setTimeout(() => emoji.remove(), 4000);
+      }, i * 100);
+    }
+
+    setTimeout(() => container.remove(), 4500);
+  };
 
   const generateMascotMessage = async () => {
     try {
