@@ -23,7 +23,8 @@ import { useThemeColor } from '../hooks/useThemeColor';
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-const recommendedTests = [
+// Этот список будет заменен на тесты из API
+const fallbackTests = [
   {
     id: 1,
     name: 'Тест на пограничное расстройство личности (ПРЛ)',
@@ -139,8 +140,8 @@ const DashboardPage: React.FC = () => {
   const [sessionId, setSessionId] = useState<string>('');
   const [isVerifying, setIsVerifying] = useState(true);
   const [mascotMessage, setMascotMessage] = useState('');
-  const [psychologistForm] = Form.useForm();
-  const [feedbackText, setFeedbackText] = useState('');
+  const [recommendedTests, setRecommendedTests] = useState<any[]>([]);
+  const [showTests, setShowTests] = useState(false);
   const [allTestsCompleted, setAllTestsCompleted] = useState(false);
   const [testResults, setTestResults] = useState<{[key: number]: string}>({});
   const [savingResults, setSavingResults] = useState<{[key: number]: boolean}>({});
@@ -267,32 +268,54 @@ const DashboardPage: React.FC = () => {
       if (!sessionId || sessionId.trim() === '') {
         console.log('❌ SessionId пустой, пропускаем генерацию сообщения маскота');
         setMascotMessage('Привет! На основе твоего теста я рекомендую пройти дополнительные тесты для более точной диагностики.');
+        setRecommendedTests(fallbackTests.slice(0, 5));
+        setShowTests(true);
         return;
       }
 
       setLoadingMascotMessage(true);
       console.log('🤖 Запрос на генерацию сообщения маскота для dashboard:', { sessionId });
       
+      // Таймер для показа тестов через 30 секунд
+      const testsTimer = setTimeout(() => {
+        console.log('⏱️ 30 секунд прошло, показываем тесты');
+        setShowTests(true);
+      }, 30000);
+      
       const response = await apiRequest('api/ai/mascot-message/dashboard', {
         method: 'POST',
         body: JSON.stringify({ sessionId }),
       });
 
+      clearTimeout(testsTimer);
       console.log('📥 Ответ от API:', response.status, response.statusText);
 
       if (response.ok) {
         const data = await response.json();
         console.log('📊 Данные ответа:', data);
         setMascotMessage(data.message);
+        
+        // Используем рекомендованные тесты из API или fallback
+        const testsToUse = data.recommendedTests && data.recommendedTests.length > 0 
+          ? data.recommendedTests 
+          : fallbackTests.slice(0, 5);
+        setRecommendedTests(testsToUse);
+        console.log('📋 Установлены тесты:', testsToUse.length);
       } else {
         console.error('❌ Ошибка API:', response.status);
         const errorText = await response.text();
         console.error('❌ Ответ сервера:', errorText);
         setMascotMessage('Привет! На основе твоего теста я рекомендую пройти дополнительные тесты для более точной диагностики.');
+        setRecommendedTests(fallbackTests.slice(0, 5));
       }
+      
+      // Показываем тесты после завершения генерации
+      setShowTests(true);
     } catch (error) {
       console.error('❌ Ошибка при генерации сообщения маскота:', error);
       setMascotMessage('Привет! На основе твоего теста я рекомендую пройти дополнительные тесты для более точной диагностики.');
+      setRecommendedTests(fallbackTests.slice(0, 5));
+      setShowTests(true);
     } finally {
       setLoadingMascotMessage(false);
     }
@@ -888,7 +911,7 @@ const DashboardPage: React.FC = () => {
             )}
             
             {/* Tests grid */}
-            {!allTestsCompleted && (
+            {!allTestsCompleted && showTests && (
               <>
                 <div style={{ 
                   marginBottom: '30px', 

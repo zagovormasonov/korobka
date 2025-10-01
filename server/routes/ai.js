@@ -588,24 +588,24 @@ router.post('/session-feedback', async (req, res) => {
 // Функция для анализа и рекомендации тестов
 async function analyzeAndRecommendTests(answers) {
   const allTests = [
-    { id: 1, name: "Тест на пограничное расстройство личности (ПРЛ)", url: "https://yasno.live/tests/pogranichnoye-rasstroystvo-lichnosti" },
-    { id: 2, name: "Тест на биполярное аффективное расстройство (БАР)", url: "https://iyaroslav.ru/test/test-na-gipomaniu-bipolarnoe-rasstroystvo/" },
-    { id: 3, name: "Тест на синдром дефицита внимания и гиперактивности (СДВГ)", url: "https://yasno.live/tests/sdvg" },
-    { id: 4, name: "Тест на посттравматическое стрессовое расстройство (ПТСР)", url: "https://yasno.live/tests/ptsr" },
-    { id: 5, name: "Тест на комплексное посттравматическое стрессовое расстройство (кПТСР)", url: "https://www.bipolar.su/test-kptsr-onlajn-oprosnik-na-kompleksnoe-ptsr/" },
-    { id: 6, name: "Тест на депрессию", url: "https://psi-praktika.ru/testyi/test-beka-na-depressiyu.html" },
+    { id: 1, name: "Тест на пограничное расстройство личности (ПРЛ)", url: "https://testometrika.com/diagnosis-of-abnormalities/do-you-have-a-border-disorder-of-personality/" },
+    { id: 2, name: "Тест на биполярное аффективное расстройство (БАР)", url: "https://psytests.org/diag/hcl32.html" },
+    { id: 3, name: "Тест на синдром дефицита внимания и гиперактивности (СДВГ)", url: "https://psytests.org/diag/asrs.html" },
+    { id: 4, name: "Тест на посттравматическое стрессовое расстройство (ПТСР)", url: "https://psytests.org/trauma/pcl5.html" },
+    { id: 5, name: "Тест на комплексное посттравматическое стрессовое расстройство (кПТСР)", url: "https://psytests.org/trauma/itq.html" },
+    { id: 6, name: "Тест на депрессию", url: "https://psytests.org/depression/bdi.html" },
     { id: 7, name: "Тест на генерализованное тревожное расстройство", url: "https://psytests.org/anxiety/gad7.html" },
-    { id: 8, name: "Тест на обсессивно-компульсивное расстройство (ОКР)", url: "https://yasno.live/tests/okr-jelya-brauna" },
-    { id: 9, name: "Тест на расстройства пищевого поведения", url: "https://centrsna.by/articles/testy/test-eat-26-test-na-veroyatnost-nalichiya-rasstroystv-pishchevogo-povedeniya/" },
-    { id: 10, name: "Тест на зависимость от веществ", url: "https://rehabfamily.com/o-klinike/testy/test-na-narkoticheskuyu-zavisimost/" },
-    { id: 11, name: "Тест на диссоциативное расстройство", url: "https://yasno.live/tests/dissociativnoe-rasstrojstvo-lichnosti" },
+    { id: 8, name: "Тест на обсессивно-компульсивное расстройство (ОКР)", url: "https://psytests.org/psyclinical/ybocs.html" },
+    { id: 9, name: "Тест на расстройства пищевого поведения", url: "https://psytests.org/food/eat26.html" },
+    { id: 10, name: "Тест на зависимость от психоактивных веществ", url: "https://www.samopomo.ch/proversja/test-po-vyjavleniju-rasstroistv-svjazannykh-s-upotrebleniem-narkotikov-dudit" },
+    { id: 11, name: "Тест на диссоциативное расстройство", url: "https://psytests.org/diag/des.html" },
     { id: 12, name: "Тест на расстройство аутистического спектра (РАС)", url: "https://psytests.org/arc/aq.html" },
     { id: 13, name: "Тест на социальное тревожное расстройство", url: "https://psytests.org/anxiety/lsas.html" },
-    { id: 14, name: "Тест на паническое расстройство", url: "https://akhmetovfoundation.org/ru/test/panycheskye-ataky-onlayn-test" },
-    { id: 15, name: "Тест на дисморфофобию", url: "https://testometrika.com/diagnosis-of-abnormalities/are-you-prone-to-dysmorphophobia/" },
-    { id: 16, name: "Тест на суицидальные тенденции", url: "https://testometrika.com/depression-and-stress/the-questionnaire-of-suicidal-risk-for-adolescents/" },
-    { id: 17, name: "Тест на детскую травму", url: "https://ershovlabexpert.ru/test/detskie_travmy" },
-    { id: 18, name: "Тест на шизотипическое расстройство личности", url: "https://onlinetestpad.com/ru/test/1492724-test-na-shizotipicheskoe-rasstrojstvo" }
+    { id: 14, name: "Тест на паническое расстройство", url: "https://psytests.org/psyclinical/pdss.html" },
+    { id: 15, name: "Тест на дисморфофобию (телесное дисморфическое расстройство)", url: "https://psytests.org/beauty/bddq.html" },
+    { id: 16, name: "Тест на суицидальные тенденции", url: "https://psytests.org/psyclinical/osr.html" },
+    { id: 17, name: "Тест на детскую травму", url: "https://psytests.org/trauma/ctq.html" },
+    { id: 18, name: "Тест на шизотипическое расстройство личности", url: "https://psytests.org/diag/spq.html" }
   ];
 
   try {
