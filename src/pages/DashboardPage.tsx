@@ -686,59 +686,66 @@ const DashboardPage: React.FC = () => {
         textAlign: 'center'
       }}>
         
-        {/* Mascot section */}
-        <div style={{ marginBottom: '60px' }}>
-          <div style={{
-            width: '120px',
-            height: '120px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, rgb(243, 186, 111) 0%, rgb(253, 196, 131) 100%)',
-            margin: '0 auto 30px auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 8px 32px rgba(243, 186, 111, 0.3)'
-          }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: 'rgba(255, 255, 255, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src="/mascot.png"  
-                alt="Луми" 
-                style={{ 
-                  width: '60px', 
-                  height: '60px', 
-                  objectFit: 'contain',
-                  filter: 'brightness(1.2)'
-                }}
-              />
-            </div>
-          </div>
-          
-          <Title level={2} style={{ 
+        {/* Header and subtitle */}
+        <div style={{ marginBottom: '40px', textAlign: 'left' }}>
+          <Title level={1} style={{ 
             color: '#2C3E50',
             fontSize: '32px',
             fontWeight: '600',
-            marginBottom: '10px',
-            margin: '0 0 10px 0'
+            marginBottom: '16px',
+            fontFamily: 'Comfortaa, sans-serif'
           }}>
-            Луми
+            Ваш персональный план почти готов
           </Title>
-          
           <Text style={{ 
             color: '#7B8794',
-            fontSize: '18px',
-            display: 'block',
-            marginBottom: '30px'
+            fontSize: '16px',
+            lineHeight: '1.6',
+            display: 'block'
           }}>
-            Ваш AI компаньон
+            Чтобы сделать его максимально точным и полезным именно для вас, нам нужно уточнить несколько деталей. Пожалуйста, пройдите ещё несколько коротких тестов.
           </Text>
+        </div>
+        
+        {/* Mascot section */}
+        <div style={{ marginBottom: '60px' }}>
+          {/* Mascot header with icon and text */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '16px',
+            marginBottom: '20px',
+            textAlign: 'left'
+          }}>
+            <img 
+              src="/mascot.png"  
+              alt="Луми" 
+              style={{ 
+                width: '60px', 
+                height: '60px', 
+                objectFit: 'contain',
+                flexShrink: 0
+              }}
+            />
+            <div style={{ flex: 1 }}>
+              <Title level={2} style={{ 
+                color: '#2C3E50',
+                fontSize: '24px',
+                fontWeight: '600',
+                marginBottom: '4px',
+                margin: '0 0 4px 0'
+              }}>
+                Луми
+              </Title>
+              <Text style={{ 
+                color: '#7B8794',
+                fontSize: '16px',
+                display: 'block'
+              }}>
+                Ваш AI компаньон
+              </Text>
+            </div>
+          </div>
 
           {/* Mascot message */}
           <div style={{
