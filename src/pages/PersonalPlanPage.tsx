@@ -72,19 +72,21 @@ const PersonalPlanPage: React.FC = () => {
         const data = await response.json();
         console.log('📊 [PERSONAL PLAN] Данные ответа:', data);
         
-        if (data.success) {
+        if (data.success && data.sessionId) {
           console.log('✅ [PERSONAL PLAN] Токен валиден, sessionId:', data.sessionId);
           setSessionId(data.sessionId);
           setUserNickname(data.nickname || '');
         } else {
-          console.log('⚠️ [PERSONAL PLAN] success=false, но продолжаем (возможно токен валиден)');
-          // Не редиректим, просто используем токен
-          // Возможно API вернул success:false, но токен валиден
+          console.log('❌ [PERSONAL PLAN] success=false или нет sessionId');
+          sessionStorage.removeItem('dashboardToken');
+          message.error('Ошибка авторизации');
+          navigate('/lk/login', { replace: true });
         }
       } catch (error) {
         console.error('❌ [PERSONAL PLAN] Ошибка при проверке токена:', error);
-        // Не редиректим при ошибке сети, просто логируем
-        console.log('⚠️ [PERSONAL PLAN] Продолжаем работу несмотря на ошибку проверки');
+        sessionStorage.removeItem('dashboardToken');
+        message.error('Ошибка проверки доступа');
+        navigate('/lk/login', { replace: true });
       }
     };
 

@@ -14,6 +14,47 @@ router.get('/test-route', (req, res) => {
   });
 });
 
+// Проверить валидность токена доступа
+router.post('/verify-token', async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Token is required' });
+    }
+
+    console.log('🔐 [DASHBOARD] Проверяем токен:', token.substring(0, 20) + '...');
+
+    // Ищем пользователя по токену
+    const { data: user, error } = await supabase
+      .from('primary_test_results')
+      .select('session_id, nickname')
+      .eq('dashboard_token', token)
+      .maybeSingle();
+
+    if (error) {
+      console.error('❌ [DASHBOARD] Ошибка при проверке токена:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    if (!user) {
+      console.log('❌ [DASHBOARD] Токен не найден в БД');
+      return res.status(401).json({ success: false, error: 'Invalid token' });
+    }
+
+    console.log('✅ [DASHBOARD] Токен валиден, sessionId:', user.session_id);
+
+    res.json({ 
+      success: true, 
+      sessionId: user.session_id,
+      nickname: user.nickname || ''
+    });
+  } catch (error) {
+    console.error('❌ [DASHBOARD] Ошибка при проверке токена:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Проверить доступность никнейма
 router.post('/check-nickname', async (req, res) => {
   try {
