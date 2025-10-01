@@ -569,126 +569,6 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const handlePsychologistRequest = async (values: any) => {
-    try {
-      const response = await apiRequest('api/telegram/psychologist-request', {
-        method: 'POST',
-        body: JSON.stringify({
-          sessionId,
-          ...values
-        }),
-      });
-
-      if (response.ok) {
-        message.success('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
-        psychologistForm.resetFields();
-      } else {
-        message.error('Ошибка при отправке заявки');
-      }
-    } catch (error) {
-      console.error('Error sending psychologist request:', error);
-      message.error('Произошла ошибка при отправке заявки');
-    }
-  };
-
-  const handleFeedbackSubmit = async () => {
-    if (!feedbackText.trim()) {
-      message.warning('Пожалуйста, введите текст обратной связи');
-      return;
-    }
-
-    setLoadingFeedback(true);
-    try {
-      const response = await apiRequest('api/ai/session-feedback', {
-        method: 'POST',
-        body: JSON.stringify({
-          sessionId,
-          feedbackText: feedbackText
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Показываем результат анализа в новом окне
-        const analysisHtml = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <title>Анализ обратной связи</title>
-            <style>
-              body {
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-                margin: 40px;
-                color: #333;
-                max-width: 800px;
-                margin: 40px auto;
-              }
-              h1 {
-                color: rgb(243, 186, 111);
-                border-bottom: 2px solid rgb(243, 186, 111);
-                padding-bottom: 10px;
-              }
-              h2 {
-                color: #4F958B;
-                margin-top: 30px;
-              }
-              .header {
-                text-align: center;
-                margin-bottom: 40px;
-              }
-              .content {
-                max-width: 800px;
-                margin: 0 auto;
-              }
-              .print-button {
-                background: rgb(243, 186, 111);
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
-                cursor: pointer;
-                margin: 20px 0;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="content">
-              <div class="header">
-                <h1>Анализ вашей обратной связи</h1>
-                <p>Персонализированный анализ сеанса</p>
-                <button class="print-button" onclick="window.print()">Печать</button>
-              </div>
-              
-              <div class="analysis-content">
-                ${data.analysis.replace(/\n/g, '<br>')}
-              </div>
-            </div>
-          </body>
-          </html>
-        `;
-        
-        const newWindow = window.open('', '_blank');
-        if (newWindow) {
-          newWindow.document.write(analysisHtml);
-          newWindow.document.close();
-        }
-        
-        message.success('Анализ обратной связи готов!');
-        setFeedbackText('');
-      } else {
-        message.error('Ошибка при обработке обратной связи');
-      }
-    } catch (error) {
-      console.error('Error processing feedback:', error);
-      message.error('Произошла ошибка при обработке обратной связи');
-    } finally {
-      setLoadingFeedback(false);
-    }
-  };
-
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
@@ -857,10 +737,10 @@ const DashboardPage: React.FC = () => {
           <div>
             <div style={{ textAlign: 'center', marginBottom: '40px' }}>
               <Title level={1} style={{ 
-                color: '#2C3E50',
-                fontSize: '32px',
-                fontWeight: '600',
-                marginBottom: '10px',
+            color: '#2C3E50',
+            fontSize: '32px',
+            fontWeight: '600',
+            marginBottom: '10px',
                 fontFamily: 'Comfortaa, sans-serif'
               }}>
                 Персональный план
