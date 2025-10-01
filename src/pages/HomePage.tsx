@@ -136,11 +136,13 @@ const HomePage: React.FC = () => {
             padding: '0 40px',
             width: '100%',
             maxWidth: '300px',
-            background: 'white',
+            background: 'rgba(255, 255, 255, 0.25)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
             color: 'black',
             borderRadius: '30px',
             boxShadow: 'none',
-            border: 'none',
+            border: '1px solid rgba(255, 255, 255, 0.6)',
             marginBottom: '40px'
           }}
         >
@@ -154,7 +156,10 @@ const HomePage: React.FC = () => {
         maxWidth: '400px', 
         borderRadius: '24px',
         boxShadow: 'none',
-        backgroundColor: '#f1f1f1',
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255, 255, 255, 0.6)',
         padding: '40px 24px'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
