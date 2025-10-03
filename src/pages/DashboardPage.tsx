@@ -181,9 +181,9 @@ const DashboardPage: React.FC = () => {
       }
 
       try {
-        const response = await apiRequest('api/tests/verify-dashboard-token', {
+        const response = await apiRequest('api/dashboard/verify-token', {
           method: 'POST',
-          body: JSON.stringify({ dashboardToken: token }),
+          body: JSON.stringify({ token: token }),
         });
 
         const data = await response.json();
@@ -193,7 +193,8 @@ const DashboardPage: React.FC = () => {
           console.log('📊 [DASHBOARD] Данные от API:', JSON.stringify(data, null, 2));
           setSessionId(data.sessionId);
           setUserNickname(data.nickname || '');
-          const isPlanUnlocked = data.personalPlanUnlocked || false;
+          // Явная проверка на true (не используем ||, чтобы не потерять false)
+          const isPlanUnlocked = data.personalPlanUnlocked === true;
           setPersonalPlanUnlocked(isPlanUnlocked);
           console.log('🔓 [DASHBOARD] Персональный план разблокирован:', isPlanUnlocked);
           console.log('🔓 [DASHBOARD] Значение из API:', data.personalPlanUnlocked);
