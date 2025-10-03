@@ -44,13 +44,18 @@ router.post('/verify-token', async (req, res) => {
 
     console.log('✅ [DASHBOARD] Токен валиден, sessionId:', user.session_id);
     console.log('🔓 [DASHBOARD] personal_plan_unlocked из БД:', user.personal_plan_unlocked);
+    console.log('🔓 [DASHBOARD] Тип значения:', typeof user.personal_plan_unlocked);
     console.log('📊 [DASHBOARD] Полные данные пользователя:', JSON.stringify(user, null, 2));
+
+    // Явная проверка на true (не используем ||, чтобы не потерять false/null/undefined)
+    const personalPlanUnlocked = user.personal_plan_unlocked === true;
+    console.log('🔓 [DASHBOARD] Итоговое значение personalPlanUnlocked:', personalPlanUnlocked);
 
     res.json({ 
       success: true, 
       sessionId: user.session_id,
       nickname: user.nickname || '',
-      personalPlanUnlocked: user.personal_plan_unlocked || false
+      personalPlanUnlocked: personalPlanUnlocked
     });
   } catch (error) {
     console.error('❌ [DASHBOARD] Ошибка при проверке токена:', error);
