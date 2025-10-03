@@ -352,13 +352,21 @@ router.post('/personal-plan', async (req, res) => {
     // Получаем результаты первичного теста
     const { data: primaryTest, error: primaryError } = await supabase
       .from('primary_test_results')
-      .select('answers, email')
+      .select('answers, email, personal_plan')
       .eq('session_id', sessionId)
       .single();
 
     if (primaryError || !primaryTest) {
       return res.status(404).json({ success: false, error: 'Primary test results not found' });
     }
+
+    // Если план уже сгенерирован, возвращаем его
+    if (primaryTest.personal_plan) {
+      console.log('💾 Возвращаем кэшированный персональный план');
+      return res.json({ success: true, plan: primaryTest.personal_plan, cached: true });
+    }
+
+    console.log('✨ Генерируем новый персональный план');
 
     const primaryAnswers = primaryTest.answers;
     const userEmail = primaryTest.email;
@@ -400,7 +408,20 @@ router.post('/personal-plan', async (req, res) => {
     console.log('🚀 Генерируем персональный план через Gemini AI...');
     const plan = await callGeminiAI(prompt, 4000);
     
-    res.json({ success: true, plan });
+    // Сохраняем план в БД для будущего использования
+    const { error: updateError } = await supabase
+      .from('primary_test_results')
+      .update({ personal_plan: plan })
+      .eq('session_id', sessionId);
+
+    if (updateError) {
+      console.error('⚠️ Ошибка при сохранении плана в БД:', updateError);
+      // Не возвращаем ошибку, так как план уже сгенерирован
+    } else {
+      console.log('💾 Персональный план сохранён в БД');
+    }
+    
+    res.json({ success: true, plan, cached: false });
   } catch (error) {
     console.error('Error generating personal plan:', error);
     res.status(500).json({ success: false, error: error.message });
