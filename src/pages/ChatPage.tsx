@@ -65,12 +65,27 @@ const ChatPage: React.FC = () => {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/chat/message`, {
+      const response = await fetch(`${API_BASE_URL}/api/chat/message`, {
         method: 'POST',
         body: formData
       });
 
-      const data = await response.json();
+      // Проверяем, что ответ успешен
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Ошибка ответа сервера:', errorText);
+        throw new Error(`Ошибка сервера: ${response.status} - ${errorText.substring(0, 100)}`);
+      }
+
+      // Парсим JSON
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        const responseText = await response.text();
+        console.error('Ошибка парсинга JSON:', responseText);
+        throw new Error('Сервер вернул некорректный ответ');
+      }
 
       if (!data.success) {
         throw new Error(data.error || 'Ошибка при получении ответа');

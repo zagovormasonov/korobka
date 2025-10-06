@@ -60,9 +60,10 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
     const files = req.files || [];
     
     console.log('💬 Запрос к чату:', {
-      message: message?.substring(0, 50) + '...',
+      message: message?.substring(0, 50),
       filesCount: files.length,
-      historyLength: history ? JSON.parse(history).length : 0
+      hasHistory: !!history,
+      historyLength: history ? (history === '[]' ? 0 : JSON.parse(history).length) : 0
     });
 
     if (!message && files.length === 0) {
@@ -116,16 +117,29 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
         const model = genAI.getGenerativeModel({ model: modelName });
         
         // Если есть история, создаем чат с контекстом
-        if (history && history !== '[]') {
-          const parsedHistory = JSON.parse(history);
-          const chat = model.startChat({
-            history: parsedHistory.map(msg => ({
-              role: msg.role === 'user' ? 'user' : 'model',
-              parts: [{ text: msg.content }]
-            }))
-          });
+        if (history && history !== '[]' && history !== '') {
+          let parsedHistory;
+          try {
+            parsedHistory = JSON.parse(history);
+          } catch (parseError) {
+            console.error('❌ Ошибка парсинга истории:', parseError);
+            // Если не можем распарсить историю, просто игнорируем её
+            parsedHistory = [];
+          }
           
-          result = await chat.sendMessage(parts);
+          if (parsedHistory.length > 0) {
+            const chat = model.startChat({
+              history: parsedHistory.map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+              }))
+            });
+            
+            result = await chat.sendMessage(parts);
+          } else {
+            // Если история пустая, генерируем как обычно
+            result = await model.generateContent(parts);
+          }
         } else {
           // Без истории - просто генерируем ответ
           result = await model.generateContent(parts);
@@ -154,10 +168,14 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
 
   } catch (error) {
     console.error('❌ Ошибка в чате:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Произошла ошибка при обработке запроса'
-    });
+    
+    // Проверяем, не отправлен ли уже ответ
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Произошла ошибка при обработке запроса'
+      });
+    }
   } finally {
     // Удаляем загруженные файлы
     for (const filePath of uploadedFiles) {
@@ -169,6 +187,24 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
       }
     }
   }
+});
+
+// Middleware для обработки ошибок multer
+router.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    console.error('❌ Ошибка загрузки файла:', error);
+    return res.status(400).json({
+      success: false,
+      error: `Ошибка загрузки файла: ${error.message}`
+    });
+  } else if (error) {
+    console.error('❌ Общая ошибка:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Произошла ошибка'
+    });
+  }
+  next();
 });
 
 export default router;
