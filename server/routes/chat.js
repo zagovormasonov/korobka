@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 20 * 1024 * 1024 // 20MB лимит
+    fileSize: 10 * 1024 * 1024 // 10MB лимит для лучшей производительности
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
@@ -94,9 +94,20 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
 
     // Добавляем файлы
     for (const file of files) {
-      console.log('📎 Обрабатываем файл:', file.originalname, file.mimetype);
-      const filePart = fileToGenerativePart(file.path, file.mimetype);
-      parts.push(filePart);
+      console.log('📎 Обрабатываем файл:', {
+        name: file.originalname,
+        type: file.mimetype,
+        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`
+      });
+      
+      try {
+        const filePart = fileToGenerativePart(file.path, file.mimetype);
+        parts.push(filePart);
+        console.log('✅ Файл успешно конвертирован в base64');
+      } catch (fileError) {
+        console.error('❌ Ошибка обработки файла:', fileError);
+        throw new Error(`Ошибка обработки файла ${file.originalname}: ${fileError.message}`);
+      }
     }
 
     // Пробуем разные модели с fallback (начиная с Gemini 2.5 Pro)
@@ -114,7 +125,14 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
     for (const modelName of models) {
       try {
         console.log(`🤖 Пробуем модель ${modelName}...`);
-        const model = genAI.getGenerativeModel({ model: modelName });
+        console.log(`📊 Количество частей в запросе: ${parts.length} (текст: ${parts.filter(p => p.text).length}, файлы: ${parts.filter(p => p.inlineData).length})`);
+        
+        const model = genAI.getGenerativeModel({ 
+          model: modelName,
+          generationConfig: {
+            maxOutputTokens: 8192, // Увеличиваем лимит для больших ответов
+          }
+        });
         
         // Если есть история, создаем чат с контекстом
         if (history && history !== '[]' && history !== '') {
@@ -128,6 +146,7 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
           }
           
           if (parsedHistory.length > 0) {
+            console.log('🔄 Создаем чат с контекстом истории');
             const chat = model.startChat({
               history: parsedHistory.map(msg => ({
                 role: msg.role === 'user' ? 'user' : 'model',
@@ -135,20 +154,34 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
               }))
             });
             
+            console.log('🚀 Отправляем сообщение с контекстом...');
+            const startTime = Date.now();
             result = await chat.sendMessage(parts);
+            const elapsed = Date.now() - startTime;
+            console.log(`⏱️ Время ответа Gemini с историей: ${(elapsed / 1000).toFixed(2)}с`);
           } else {
             // Если история пустая, генерируем как обычно
+            console.log('🚀 Отправляем запрос без истории...');
+            const startTime = Date.now();
             result = await model.generateContent(parts);
+            const elapsed = Date.now() - startTime;
+            console.log(`⏱️ Время ответа Gemini: ${(elapsed / 1000).toFixed(2)}с`);
           }
         } else {
           // Без истории - просто генерируем ответ
+          console.log('🚀 Отправляем запрос к Gemini API...');
+          const startTime = Date.now();
           result = await model.generateContent(parts);
+          const elapsed = Date.now() - startTime;
+          console.log(`⏱️ Время ответа Gemini: ${(elapsed / 1000).toFixed(2)}с`);
         }
         
+        console.log('📦 Получаем ответ...');
         const response = await result.response;
+        console.log('📝 Извлекаем текст...');
         const text = response.text();
 
-        console.log(`✅ Ответ получен от ${modelName}, длина:`, text.length);
+        console.log(`✅ Ответ получен от ${modelName}, длина:`, text.length, 'символов');
 
         return res.json({
           success: true,
@@ -157,7 +190,11 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
         });
         
       } catch (modelError) {
-        console.error(`❌ Ошибка с ${modelName}:`, modelError.message);
+        console.error(`❌ Ошибка с ${modelName}:`, {
+          message: modelError.message,
+          status: modelError.status,
+          statusText: modelError.statusText
+        });
         lastError = modelError;
         // Продолжаем со следующей моделью
       }

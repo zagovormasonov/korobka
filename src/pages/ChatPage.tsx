@@ -65,10 +65,17 @@ const ChatPage: React.FC = () => {
         }
       });
 
+      // Добавляем таймаут для больших файлов (2 минуты)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
+
       const response = await fetch(`${API_BASE_URL}/api/chat/message`, {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       // Проверяем, что ответ успешен
       if (!response.ok) {
@@ -100,7 +107,15 @@ const ChatPage: React.FC = () => {
       setFileList([]);
     } catch (error: any) {
       console.error('Ошибка отправки сообщения:', error);
-      antMessage.error(error.message || 'Не удалось отправить сообщение');
+      
+      // Обрабатываем разные типы ошибок
+      if (error.name === 'AbortError') {
+        antMessage.error('Время ожидания ответа истекло. Попробуйте файл меньшего размера или упростите вопрос.');
+      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        antMessage.error('Ошибка сети. Проверьте подключение к интернету.');
+      } else {
+        antMessage.error(error.message || 'Не удалось отправить сообщение');
+      }
     } finally {
       setLoading(false);
     }
@@ -123,9 +138,9 @@ const ChatPage: React.FC = () => {
       return false;
     }
 
-    const isLt20M = file.size / 1024 / 1024 < 20;
-    if (!isLt20M) {
-      antMessage.error('Файл должен быть меньше 20MB');
+    const isLt10M = file.size / 1024 / 1024 < 10;
+    if (!isLt10M) {
+      antMessage.error('Файл должен быть меньше 10MB');
       return false;
     }
 
