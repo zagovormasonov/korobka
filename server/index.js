@@ -10,6 +10,7 @@ import aiRoutes from './routes/ai.js';
 import telegramRoutes from './routes/telegram.js';
 import pdfRoutes from './routes/pdf.js';
 import dashboardRoutes from './routes/dashboard.js';
+import chatRoutes from './routes/chat.js';
 
 // Получаем путь к корневой директории проекта
 const __filename = fileURLToPath(import.meta.url);
@@ -130,6 +131,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

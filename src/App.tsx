@@ -14,6 +14,7 @@ import PersonalPlanPage from './pages/PersonalPlanPage';
 import OfferPage from './pages/OfferPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ConsentPage from './pages/ConsentPage';
+import ChatPage from './pages/ChatPage';
 
 const customTheme = {
   algorithm: theme.defaultAlgorithm,
@@ -88,6 +89,7 @@ function App() {
             <Route path="/offer" element={<OfferPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/consent" element={<ConsentPage />} />
+            <Route path="/chat" element={<ChatPage />} />
           </Routes>
         </div>
       </Router>
