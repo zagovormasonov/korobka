@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB лимит для лучшей производительности
+    fileSize: 20 * 1024 * 1024 // 20MB лимит (соответствует лимиту inline data в Gemini API)
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
@@ -41,7 +41,10 @@ const upload = multer({
   }
 });
 
-// Функция для конвертации файла в formат Gemini
+// Функция для конвертации файла в формат Gemini (inline data)
+// Примечание: Текущая реализация использует inline data (base64) с лимитом ~20MB
+// Для файлов больше 20MB можно использовать File API (до 2GB), но это требует
+// дополнительной реализации с uploadFile() и управлением файлами
 function fileToGenerativePart(filePath, mimeType) {
   return {
     inlineData: {

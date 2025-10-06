@@ -158,9 +158,9 @@ const ChatPage: React.FC = () => {
       return false;
     }
 
-    const isLt10M = file.size / 1024 / 1024 < 10;
-    if (!isLt10M) {
-      antMessage.error('Файл должен быть меньше 10MB');
+    const isLt20M = file.size / 1024 / 1024 < 20;
+    if (!isLt20M) {
+      antMessage.error('Файл должен быть меньше 20MB');
       return false;
     }
 
