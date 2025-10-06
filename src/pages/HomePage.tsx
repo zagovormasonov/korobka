@@ -203,6 +203,12 @@ const HomePage: React.FC = () => {
                 height: '48px',
                 fontSize: '16px'
               }}
+              styles={{
+                affixWrapper: {
+                  border: 'none',
+                  boxShadow: 'none'
+                }
+              }}
             />
           </Form.Item>
 
@@ -224,6 +230,12 @@ const HomePage: React.FC = () => {
                 backgroundColor: 'white',
                 height: '48px',
                 fontSize: '16px'
+              }}
+              styles={{
+                affixWrapper: {
+                  border: 'none',
+                  boxShadow: 'none'
+                }
               }}
             />
           </Form.Item>

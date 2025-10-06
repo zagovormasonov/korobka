@@ -168,6 +168,12 @@ const DashboardLoginPage: React.FC = () => {
                 height: '48px',
                 fontSize: '16px'
               }}
+              styles={{
+                affixWrapper: {
+                  border: 'none',
+                  boxShadow: 'none'
+                }
+              }}
             />
           </Form.Item>
 
@@ -189,6 +195,12 @@ const DashboardLoginPage: React.FC = () => {
                 backgroundColor: 'white',
                 height: '48px',
                 fontSize: '16px'
+              }}
+              styles={{
+                affixWrapper: {
+                  border: 'none',
+                  boxShadow: 'none'
+                }
               }}
             />
           </Form.Item>

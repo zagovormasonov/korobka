@@ -299,6 +299,12 @@ const PaymentSuccessPage: React.FC = () => {
                     borderRadius: '12px',
                     height: '48px'
                   }}
+                  styles={{
+                    affixWrapper: {
+                      border: 'none',
+                      boxShadow: 'none'
+                    }
+                  }}
                 />
               </Form.Item>
 
@@ -316,6 +322,12 @@ const PaymentSuccessPage: React.FC = () => {
                     borderRadius: '12px',
                     height: '48px'
                   }}
+                  styles={{
+                    affixWrapper: {
+                      border: 'none',
+                      boxShadow: 'none'
+                    }
+                  }}
                 />
               </Form.Item>
 
@@ -332,6 +344,12 @@ const PaymentSuccessPage: React.FC = () => {
                     backgroundColor: 'white',
                     borderRadius: '12px',
                     height: '48px'
+                  }}
+                  styles={{
+                    affixWrapper: {
+                      border: 'none',
+                      boxShadow: 'none'
+                    }
                   }}
                 />
               </Form.Item>
