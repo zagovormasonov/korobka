@@ -122,8 +122,9 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     // Создаем клиент Google AI
     console.log('🔧 Создаем клиент Google AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
-    console.log('🤖 Получаем модель gemini-1.5-pro...');
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const modelName = "gemini-2.5-pro"; // Точное название из AI Studio
+    console.log(`🤖 Получаем модель ${modelName}...`);
+    const model = genAI.getGenerativeModel({ model: modelName });
     
     console.log('🚀 Отправляем запрос к Gemini через SDK...');
     console.log('⏱️ Время начала:', new Date().toISOString());
@@ -148,21 +149,33 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     
     // Проверяем, если ошибка связана с неверной моделью
     if (error.message.includes('model') || error.message.includes('not found') || error.message.includes('Invalid')) {
-      console.log('⚠️ Возможно, проблема с именем модели. Пробуем gemini-1.5-pro...');
-      try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-        
-        console.log('🚀 Отправляем запрос к Gemini с моделью gemini-1.5-pro...');
-        
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        
-        console.log('✅ Gemini API ответ получен с gemini-1.5-pro, длина:', text.length, 'символов');
-        return text;
-      } catch (modelError) {
-        console.error('❌ Ошибка с gemini-1.5-pro:', modelError.message);
+      console.log('⚠️ Возможно, проблема с именем модели. Пробуем альтернативные модели...');
+      
+      // Список альтернативных моделей для попытки (от новых к старым)
+      const alternativeModels = [
+        'gemini-1.5-pro-latest',  // Стабильная 1.5 Pro (последняя версия)
+        'gemini-1.5-pro',         // Стабильная 1.5 Pro
+        'gemini-1.5-flash',       // Быстрая 1.5
+        'gemini-pro',             // Старая стабильная
+        'gemini-1.0-pro'          // Совсем старая
+      ];
+      
+      for (const modelName of alternativeModels) {
+        try {
+          console.log(`🔄 Пробуем модель ${modelName}...`);
+          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+          const model = genAI.getGenerativeModel({ model: modelName });
+          
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          const text = response.text();
+          
+          console.log(`✅ Gemini API ответ получен с ${modelName}, длина:`, text.length, 'символов');
+          return text;
+        } catch (modelError) {
+          console.error(`❌ Ошибка с ${modelName}:`, modelError.message);
+          // Продолжаем со следующей моделью
+        }
       }
     }
     
@@ -176,23 +189,25 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       delete process.env.HTTP_PROXY;
       delete process.env.HTTPS_PROXY;
       
-      try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-        
-        console.log('🚀 Отправляем fallback запрос к Gemini через SDK...');
-        
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        
-        console.log('✅ Gemini API ответ получен без прокси через SDK, длина:', text.length, 'символов');
-        return text;
-      } catch (fallbackError) {
-        console.error('❌ Ошибка Gemini API без прокси через SDK:', {
-          message: fallbackError.message,
-          stack: fallbackError.stack
-        });
+      // Пробуем альтернативные модели без прокси
+      const fallbackModels = ['gemini-1.5-pro-latest', 'gemini-1.5-pro', 'gemini-pro'];
+      
+      for (const modelName of fallbackModels) {
+        try {
+          console.log(`🔄 Пробуем ${modelName} без прокси...`);
+          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+          const model = genAI.getGenerativeModel({ model: modelName });
+          
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          const text = response.text();
+          
+          console.log(`✅ Gemini API ответ получен с ${modelName} без прокси, длина:`, text.length, 'символов');
+          return text;
+        } catch (fallbackError) {
+          console.error(`❌ Ошибка с ${modelName} без прокси:`, fallbackError.message);
+          // Продолжаем со следующей моделью
+        }
       }
     }
     
