@@ -1,15 +1,24 @@
 import express from 'express';
 import multer from 'multer';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { readFileSync, unlinkSync } from 'fs';
+import { readFileSync, unlinkSync, mkdirSync } from 'fs';
+import { tmpdir } from 'os';
 import path from 'path';
 
 const router = express.Router();
 
+// Создаем временную директорию для загрузок
+const uploadDir = path.join(tmpdir(), 'chat-uploads');
+try {
+  mkdirSync(uploadDir, { recursive: true });
+} catch (err) {
+  console.log('Директория для загрузок уже существует или создана:', uploadDir);
+}
+
 // Настройка multer для загрузки файлов
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, '/tmp'); // Используем временную директорию
+    cb(null, uploadDir); // Используем временную директорию системы
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -89,12 +98,13 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
       parts.push(filePart);
     }
 
-    // Пробуем разные модели с fallback
+    // Пробуем разные модели с fallback (начиная с Gemini 2.5 Pro)
     const models = [
-      'gemini-1.5-pro-latest',
-      'gemini-1.5-pro',
-      'gemini-1.5-flash',
-      'gemini-pro'
+      'gemini-2.5-pro',           // Последняя версия 2.5 Pro
+      'gemini-1.5-pro-latest',    // Стабильная 1.5 Pro (последняя версия)
+      'gemini-1.5-pro',           // Стабильная 1.5 Pro
+      'gemini-1.5-flash',         // Быстрая модель
+      'gemini-pro'                // Старая стабильная
     ];
     
     let result;
