@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Input, Button, Upload, message as antMessage, Spin, Card, Typography, Space, Tag } from 'antd';
 import { SendOutlined, PaperClipOutlined, FileImageOutlined, FilePdfOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
-import API_BASE_URL from '../config/api';
+import { API_BASE_URL } from '../config/api';
 
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
