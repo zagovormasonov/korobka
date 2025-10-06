@@ -103,7 +103,10 @@ function formatPlanContent(text) {
 // Генерировать персональный план (скопировано из session-preparation)
 router.post('/personal-plan', async (req, res) => {
   try {
+    console.log('🎯 [PDF-PERSONAL-PLAN] Начало обработки запроса');
+    
     if (isPdfDisabled) {
+      console.log('⚠️ [PDF-PERSONAL-PLAN] PDF генерация отключена');
       return res.status(503).json({ 
         success: false, 
         error: 'PDF generation is disabled. Please contact support.' 
@@ -111,9 +114,17 @@ router.post('/personal-plan', async (req, res) => {
     }
 
     const { sessionId } = req.body;
+    console.log('🎯 [PDF-PERSONAL-PLAN] SessionId:', sessionId);
+    
+    if (!sessionId) {
+      console.error('❌ [PDF-PERSONAL-PLAN] SessionId не передан');
+      return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
     
     // Получаем персональный план от Gemini AI
     const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
+    console.log('🔗 [PDF-PERSONAL-PLAN] Вызываем AI API:', `${baseUrl}/api/ai/personal-plan`);
+    
     const planResponse = await fetch(`${baseUrl}/api/ai/personal-plan`, {
       method: 'POST',
       headers: {
@@ -122,12 +133,29 @@ router.post('/personal-plan', async (req, res) => {
       body: JSON.stringify({ sessionId }),
     });
 
+    console.log('📥 [PDF-PERSONAL-PLAN] Ответ от AI API:', planResponse.status, planResponse.statusText);
+
+    if (!planResponse.ok) {
+      const errorText = await planResponse.text();
+      console.error('❌ [PDF-PERSONAL-PLAN] Ошибка от AI API:', errorText);
+      return res.status(500).json({ success: false, error: 'Failed to generate plan' });
+    }
+
     const planData = await planResponse.json();
+    console.log('📊 [PDF-PERSONAL-PLAN] Данные от AI API:', {
+      success: planData.success,
+      hasPlan: !!planData.plan,
+      planLength: planData.plan?.length || 0,
+      cached: planData.cached
+    });
+    
     if (!planData.success) {
+      console.error('❌ [PDF-PERSONAL-PLAN] AI API вернул ошибку');
       return res.status(500).json({ success: false, error: 'Failed to generate plan' });
     }
 
     const plan = planData.plan;
+    console.log('✅ [PDF-PERSONAL-PLAN] План получен, генерируем HTML...');
 
     // HTML шаблон - ТОЧНАЯ копия из session-preparation
     const html = `
@@ -351,10 +379,15 @@ router.post('/personal-plan', async (req, res) => {
     `;
 
     // Отправляем HTML точно так же, как session-preparation
+    console.log('📤 [PDF-PERSONAL-PLAN] Отправляем HTML клиенту, размер:', html.length);
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
+    console.log('✅ [PDF-PERSONAL-PLAN] HTML успешно отправлен клиенту');
   } catch (error) {
-    console.error('Error generating plan:', error);
+    console.error('❌ [PDF-PERSONAL-PLAN] Критическая ошибка:', {
+      message: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ success: false, error: error.message });
   }
 });

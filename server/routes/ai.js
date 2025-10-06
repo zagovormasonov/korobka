@@ -120,23 +120,51 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     }
     
     // Создаем клиент Google AI
+    console.log('🔧 Создаем клиент Google AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    console.log('🤖 Получаем модель gemini-1.5-pro...');
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     
     console.log('🚀 Отправляем запрос к Gemini через SDK...');
+    console.log('⏱️ Время начала:', new Date().toISOString());
     
     const result = await model.generateContent(prompt);
+    console.log('📦 Результат получен, обрабатываем ответ...');
     const response = await result.response;
+    console.log('📝 Извлекаем текст из ответа...');
     const text = response.text();
     
     console.log('✅ Gemini API ответ получен через SDK, длина:', text.length, 'символов');
+    console.log('⏱️ Время окончания:', new Date().toISOString());
     return text;
     
   } catch (error) {
     console.error('❌ Ошибка Gemini API через SDK:', {
       message: error.message,
-      stack: error.stack
+      name: error.name,
+      stack: error.stack,
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
     });
+    
+    // Проверяем, если ошибка связана с неверной моделью
+    if (error.message.includes('model') || error.message.includes('not found') || error.message.includes('Invalid')) {
+      console.log('⚠️ Возможно, проблема с именем модели. Пробуем gemini-1.5-pro...');
+      try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        
+        console.log('🚀 Отправляем запрос к Gemini с моделью gemini-1.5-pro...');
+        
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        console.log('✅ Gemini API ответ получен с gemini-1.5-pro, длина:', text.length, 'символов');
+        return text;
+      } catch (modelError) {
+        console.error('❌ Ошибка с gemini-1.5-pro:', modelError.message);
+      }
+    }
     
     // Если ошибка связана с прокси или сетью, попробуем без прокси
     if (error.message.includes('proxy') || error.message.includes('timeout') || 
@@ -150,7 +178,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       
       try {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
         
         console.log('🚀 Отправляем fallback запрос к Gemini через SDK...');
         
@@ -169,6 +197,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     }
     
     // Возвращаем заглушку если API недоступен
+    console.log('⚠️ Все попытки не удались, возвращаем заглушку');
     return 'Извините, сервис временно недоступен. Попробуйте позже.';
   }
 }
@@ -347,39 +376,64 @@ router.post('/mascot-message/dashboard', async (req, res) => {
 // Генерировать персональный план
 router.post('/personal-plan', async (req, res) => {
   try {
+    console.log('🎯 [PERSONAL-PLAN] Начало обработки запроса');
     const { sessionId } = req.body;
+    console.log('🎯 [PERSONAL-PLAN] SessionId:', sessionId);
+    
+    if (!sessionId) {
+      console.error('❌ [PERSONAL-PLAN] SessionId не передан');
+      return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
     
     // Получаем результаты первичного теста
+    console.log('🔍 [PERSONAL-PLAN] Получаем данные из БД...');
     const { data: primaryTest, error: primaryError } = await supabase
       .from('primary_test_results')
       .select('answers, email, personal_plan')
       .eq('session_id', sessionId)
       .single();
 
+    console.log('📊 [PERSONAL-PLAN] Результат запроса к БД:', {
+      hasData: !!primaryTest,
+      hasError: !!primaryError,
+      errorMessage: primaryError?.message
+    });
+
     if (primaryError || !primaryTest) {
+      console.error('❌ [PERSONAL-PLAN] Результаты теста не найдены:', primaryError);
       return res.status(404).json({ success: false, error: 'Primary test results not found' });
     }
 
     // Если план уже сгенерирован, возвращаем его
     if (primaryTest.personal_plan) {
-      console.log('💾 Возвращаем кэшированный персональный план');
+      console.log('💾 [PERSONAL-PLAN] Возвращаем кэшированный персональный план');
       return res.json({ success: true, plan: primaryTest.personal_plan, cached: true });
     }
 
-    console.log('✨ Генерируем новый персональный план');
+    console.log('✨ [PERSONAL-PLAN] Генерируем новый персональный план');
+    console.log('🔑 [PERSONAL-PLAN] GEMINI_API_KEY установлен:', process.env.GEMINI_API_KEY ? 'ДА' : 'НЕТ');
 
     const primaryAnswers = primaryTest.answers;
     const userEmail = primaryTest.email;
+    console.log('📧 [PERSONAL-PLAN] Email пользователя:', userEmail || 'не указан');
 
     // Получаем результаты дополнительных тестов по email
+    console.log('🔍 [PERSONAL-PLAN] Получаем дополнительные тесты из БД...');
     const { data: additionalTests, error: additionalError } = await supabase
       .from('additional_test_results')
       .select('test_type, answers')
       .eq('email', userEmail);
 
+    console.log('📊 [PERSONAL-PLAN] Дополнительные тесты:', {
+      hasTests: !!additionalTests,
+      count: additionalTests?.length || 0,
+      hasError: !!additionalError
+    });
+
     // Определяем пол пользователя из ответов
     const genderAnswer = primaryAnswers.find(a => a.questionId === 'Q2');
     const userGender = genderAnswer ? genderAnswer.answer : 'неопределен';
+    console.log('👤 [PERSONAL-PLAN] Пол пользователя:', userGender);
 
     // Формируем результаты дополнительных тестов
     let secondaryTestResults = 'Дополнительные тесты не пройдены';
@@ -388,8 +442,10 @@ router.post('/personal-plan', async (req, res) => {
         `${test.test_type}: ${test.answers}`
       ).join('; ');
     }
+    console.log('📋 [PERSONAL-PLAN] Результаты доп. тестов:', secondaryTestResults.substring(0, 100) + '...');
 
     // Читаем промпт из файла
+    console.log('📝 [PERSONAL-PLAN] Читаем шаблон промпта...');
     const fs = await import('fs');
     const path = await import('path');
     const { fileURLToPath } = await import('url');
@@ -397,33 +453,50 @@ router.post('/personal-plan', async (req, res) => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const promptPath = path.join(__dirname, '../../prompt.txt');
-    const promptTemplate = fs.readFileSync(promptPath, 'utf8');
-
-    // Формируем финальный промпт, заменяя переменные
-    const prompt = promptTemplate
-      .replace('{user_gender}', userGender)
-      .replace('{user_answers}', JSON.stringify(primaryAnswers))
-      .replace('{secondary_test_results}', secondaryTestResults);
-
-    console.log('🚀 Генерируем персональный план через Gemini AI...');
-    const plan = await callGeminiAI(prompt, 4000);
+    console.log('📝 [PERSONAL-PLAN] Путь к промпту:', promptPath);
     
-    // Сохраняем план в БД для будущего использования
-    const { error: updateError } = await supabase
-      .from('primary_test_results')
-      .update({ personal_plan: plan })
-      .eq('session_id', sessionId);
+    try {
+      const promptTemplate = fs.readFileSync(promptPath, 'utf8');
+      console.log('✅ [PERSONAL-PLAN] Промпт успешно прочитан, длина:', promptTemplate.length);
+      
+      // Формируем финальный промпт, заменяя переменные
+      const prompt = promptTemplate
+        .replace('{user_gender}', userGender)
+        .replace('{user_answers}', JSON.stringify(primaryAnswers))
+        .replace('{secondary_test_results}', secondaryTestResults);
 
-    if (updateError) {
-      console.error('⚠️ Ошибка при сохранении плана в БД:', updateError);
-      // Не возвращаем ошибку, так как план уже сгенерирован
-    } else {
-      console.log('💾 Персональный план сохранён в БД');
+      console.log('📝 [PERSONAL-PLAN] Финальный промпт сформирован, длина:', prompt.length);
+      console.log('🚀 [PERSONAL-PLAN] Вызываем Gemini API...');
+      
+      const plan = await callGeminiAI(prompt, 4000);
+      console.log('✅ [PERSONAL-PLAN] План получен от Gemini, длина:', plan?.length || 0);
+    
+      // Сохраняем план в БД для будущего использования
+      console.log('💾 [PERSONAL-PLAN] Сохраняем план в БД...');
+      const { error: updateError } = await supabase
+        .from('primary_test_results')
+        .update({ personal_plan: plan })
+        .eq('session_id', sessionId);
+
+      if (updateError) {
+        console.error('⚠️ [PERSONAL-PLAN] Ошибка при сохранении плана в БД:', updateError);
+        // Не возвращаем ошибку, так как план уже сгенерирован
+      } else {
+        console.log('✅ [PERSONAL-PLAN] Персональный план сохранён в БД');
+      }
+      
+      console.log('🎉 [PERSONAL-PLAN] Отправляем успешный ответ клиенту');
+      res.json({ success: true, plan, cached: false });
+      
+    } catch (promptError) {
+      console.error('❌ [PERSONAL-PLAN] Ошибка при чтении/обработке промпта:', promptError);
+      throw promptError;
     }
-    
-    res.json({ success: true, plan, cached: false });
   } catch (error) {
-    console.error('Error generating personal plan:', error);
+    console.error('❌ [PERSONAL-PLAN] Критическая ошибка:', {
+      message: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ success: false, error: error.message });
   }
 });
