@@ -70,8 +70,7 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
 
     // Создаем клиент Google AI
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-
+    
     // Сохраняем пути загруженных файлов для последующего удаления
     uploadedFiles.push(...files.map(f => f.path));
 
@@ -90,32 +89,58 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
       parts.push(filePart);
     }
 
-    // Если есть история, создаем чат с контекстом
+    // Пробуем разные модели с fallback
+    const models = [
+      'gemini-1.5-pro-latest',
+      'gemini-1.5-pro',
+      'gemini-1.5-flash',
+      'gemini-pro'
+    ];
+    
     let result;
-    if (history) {
-      const parsedHistory = JSON.parse(history);
-      const chat = model.startChat({
-        history: parsedHistory.map(msg => ({
-          role: msg.role === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.content }]
-        }))
-      });
-      
-      result = await chat.sendMessage(parts);
-    } else {
-      // Без истории - просто генерируем ответ
-      result = await model.generateContent(parts);
+    let lastError;
+    
+    for (const modelName of models) {
+      try {
+        console.log(`🤖 Пробуем модель ${modelName}...`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        
+        // Если есть история, создаем чат с контекстом
+        if (history && history !== '[]') {
+          const parsedHistory = JSON.parse(history);
+          const chat = model.startChat({
+            history: parsedHistory.map(msg => ({
+              role: msg.role === 'user' ? 'user' : 'model',
+              parts: [{ text: msg.content }]
+            }))
+          });
+          
+          result = await chat.sendMessage(parts);
+        } else {
+          // Без истории - просто генерируем ответ
+          result = await model.generateContent(parts);
+        }
+        
+        const response = await result.response;
+        const text = response.text();
+
+        console.log(`✅ Ответ получен от ${modelName}, длина:`, text.length);
+
+        return res.json({
+          success: true,
+          response: text,
+          model: modelName
+        });
+        
+      } catch (modelError) {
+        console.error(`❌ Ошибка с ${modelName}:`, modelError.message);
+        lastError = modelError;
+        // Продолжаем со следующей моделью
+      }
     }
-
-    const response = await result.response;
-    const text = response.text();
-
-    console.log('✅ Ответ получен от Gemini, длина:', text.length);
-
-    res.json({
-      success: true,
-      response: text
-    });
+    
+    // Если ни одна модель не сработала
+    throw lastError || new Error('Все модели Gemini недоступны');
 
   } catch (error) {
     console.error('❌ Ошибка в чате:', error);

@@ -148,7 +148,7 @@ const ChatPage: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <Title level={2} style={{ margin: 0, color: '#667eea' }}>
-                💬 Чат с Gemini 2.0
+                💬 Чат с Gemini AI
               </Title>
               <Text type="secondary">
                 Задавайте вопросы и загружайте изображения или PDF для анализа
