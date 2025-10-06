@@ -54,12 +54,15 @@ function fileToGenerativePart(filePath, mimeType) {
 // Роут для отправки сообщения в чат
 router.post('/message', upload.array('files', 10), async (req, res) => {
   const uploadedFiles = [];
+  const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  
+  console.log(`\n🆕 [${requestId}] Новый запрос к чату`);
   
   try {
     const { message, history } = req.body;
     const files = req.files || [];
     
-    console.log('💬 Запрос к чату:', {
+    console.log(`💬 [${requestId}] Запрос к чату:`, {
       message: message?.substring(0, 50),
       filesCount: files.length,
       hasHistory: !!history,
@@ -94,7 +97,7 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
 
     // Добавляем файлы
     for (const file of files) {
-      console.log('📎 Обрабатываем файл:', {
+      console.log(`📎 [${requestId}] Обрабатываем файл:`, {
         name: file.originalname,
         type: file.mimetype,
         size: `${(file.size / 1024 / 1024).toFixed(2)} MB`
@@ -103,9 +106,9 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
       try {
         const filePart = fileToGenerativePart(file.path, file.mimetype);
         parts.push(filePart);
-        console.log('✅ Файл успешно конвертирован в base64');
+        console.log(`✅ [${requestId}] Файл успешно конвертирован в base64`);
       } catch (fileError) {
-        console.error('❌ Ошибка обработки файла:', fileError);
+        console.error(`❌ [${requestId}] Ошибка обработки файла:`, fileError);
         throw new Error(`Ошибка обработки файла ${file.originalname}: ${fileError.message}`);
       }
     }
@@ -124,8 +127,8 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
     
     for (const modelName of models) {
       try {
-        console.log(`🤖 Пробуем модель ${modelName}...`);
-        console.log(`📊 Количество частей в запросе: ${parts.length} (текст: ${parts.filter(p => p.text).length}, файлы: ${parts.filter(p => p.inlineData).length})`);
+        console.log(`🤖 [${requestId}] Пробуем модель ${modelName}...`);
+        console.log(`📊 [${requestId}] Количество частей в запросе: ${parts.length} (текст: ${parts.filter(p => p.text).length}, файлы: ${parts.filter(p => p.inlineData).length})`);
         
         const model = genAI.getGenerativeModel({ 
           model: modelName,
@@ -181,13 +184,24 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
         console.log('📝 Извлекаем текст...');
         const text = response.text();
 
-        console.log(`✅ Ответ получен от ${modelName}, длина:`, text.length, 'символов');
+        console.log(`✅ [${requestId}] Ответ получен от ${modelName}, длина:`, text.length, 'символов');
 
-        return res.json({
+        // Проверяем, не был ли уже отправлен ответ
+        if (res.headersSent) {
+          console.error(`⚠️ [${requestId}] Заголовки уже отправлены! Пропускаем отправку ответа.`);
+          return;
+        }
+
+        // Явно устанавливаем заголовки перед отправкой
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.status(200).json({
           success: true,
           response: text,
           model: modelName
         });
+        
+        console.log(`📤 [${requestId}] JSON ответ отправлен клиенту успешно`);
+        return; // Явный return чтобы не продолжать выполнение
         
       } catch (modelError) {
         console.error(`❌ Ошибка с ${modelName}:`, {

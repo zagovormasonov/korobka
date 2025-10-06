@@ -34,6 +34,12 @@ const ChatPage: React.FC = () => {
       return;
     }
 
+    // Защита от двойной отправки
+    if (loading) {
+      console.log('⚠️ Запрос уже обрабатывается, пропускаем');
+      return;
+    }
+
     const userMessage: Message = {
       role: 'user',
       content: inputValue,
@@ -43,13 +49,21 @@ const ChatPage: React.FC = () => {
       }))
     };
 
+    // Сохраняем текст сообщения до очистки
+    const messageText = inputValue;
+    
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setLoading(true);
+    
+    console.log('🚀 Отправка запроса к серверу...', {
+      messageLength: messageText.length,
+      filesCount: fileList.length
+    });
 
     try {
       const formData = new FormData();
-      formData.append('message', inputValue);
+      formData.append('message', messageText);
       
       // Добавляем историю для контекста
       const history = messages.map(msg => ({
@@ -98,6 +112,11 @@ const ChatPage: React.FC = () => {
         throw new Error(data.error || 'Ошибка при получении ответа');
       }
 
+      console.log('✅ Успешно получен ответ от сервера:', {
+        responseLength: data.response?.length || 0,
+        model: data.model
+      });
+
       const assistantMessage: Message = {
         role: 'assistant',
         content: data.response
@@ -105,6 +124,7 @@ const ChatPage: React.FC = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
       setFileList([]);
+      console.log('✅ Сообщение добавлено в историю чата');
     } catch (error: any) {
       console.error('Ошибка отправки сообщения:', error);
       
