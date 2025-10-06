@@ -25,6 +25,7 @@ const ChatPage: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log('🔄 Messages обновлены:', messages.length, 'сообщений');
     scrollToBottom();
   }, [messages]);
 
@@ -79,9 +80,9 @@ const ChatPage: React.FC = () => {
         }
       });
 
-      // Добавляем таймаут для больших файлов (2 минуты)
+      // Добавляем таймаут для больших файлов (5 минут для PDF до 20MB)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000);
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 минут
 
       const response = await fetch(`${API_BASE_URL}/api/chat/message`, {
         method: 'POST',
@@ -91,20 +92,22 @@ const ChatPage: React.FC = () => {
 
       clearTimeout(timeoutId);
 
+      // Сначала получаем текст ответа
+      const responseText = await response.text();
+      console.log('📥 Получен ответ от сервера, размер:', responseText.length, 'символов');
+      
       // Проверяем, что ответ успешен
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Ошибка ответа сервера:', errorText);
-        throw new Error(`Ошибка сервера: ${response.status} - ${errorText.substring(0, 100)}`);
+        console.error('❌ Ошибка ответа сервера:', response.status, responseText.substring(0, 200));
+        throw new Error(`Ошибка сервера: ${response.status} - ${responseText.substring(0, 100)}`);
       }
 
       // Парсим JSON
       let data;
       try {
-        data = await response.json();
+        data = JSON.parse(responseText);
       } catch (jsonError) {
-        const responseText = await response.text();
-        console.error('Ошибка парсинга JSON:', responseText);
+        console.error('❌ Ошибка парсинга JSON:', responseText.substring(0, 200));
         throw new Error('Сервер вернул некорректный ответ');
       }
 
@@ -122,9 +125,19 @@ const ChatPage: React.FC = () => {
         content: data.response
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      console.log('📝 Добавляю сообщение в чат:', {
+        role: assistantMessage.role,
+        contentLength: assistantMessage.content.length
+      });
+
+      setMessages(prev => {
+        const newMessages = [...prev, assistantMessage];
+        console.log('📝 Новое состояние сообщений:', newMessages.length, 'сообщений');
+        return newMessages;
+      });
+      
       setFileList([]);
-      console.log('✅ Сообщение добавлено в историю чата');
+      console.log('✅ Сообщение успешно добавлено в историю чата');
     } catch (error: any) {
       console.error('Ошибка отправки сообщения:', error);
       
