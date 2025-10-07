@@ -221,10 +221,10 @@ code {
   color: #000000 !important;
 }
 
-/* Убираем дефолтный padding у контейнера слайдера */
+/* Убираем дефолтный padding у контейнера слайдера, но оставляем горизонтальный для краев */
 .ant-slider {
   padding-block: 0 !important;
-  padding: 0 !important;
+  padding-inline: 14px !important; /* Половина ширины бегунка для компенсации margin-inline-start */
 }
 
 /* Увеличенная область захвата для бегунка шкалы с идеальным центрированием */
