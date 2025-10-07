@@ -201,12 +201,14 @@ const HomePage: React.FC = () => {
                 border: 'none',
                 backgroundColor: 'white',
                 height: '48px',
-                fontSize: '16px'
+                fontSize: '16px',
+                outline: 'none'
               }}
               styles={{
                 affixWrapper: {
                   border: 'none',
-                  boxShadow: 'none'
+                  boxShadow: 'none',
+                  outline: 'none'
                 }
               }}
             />
@@ -229,12 +231,14 @@ const HomePage: React.FC = () => {
                 border: 'none',
                 backgroundColor: 'white',
                 height: '48px',
-                fontSize: '16px'
+                fontSize: '16px',
+                outline: 'none'
               }}
               styles={{
                 affixWrapper: {
                   border: 'none',
-                  boxShadow: 'none'
+                  boxShadow: 'none',
+                  outline: 'none'
                 }
               }}
             />

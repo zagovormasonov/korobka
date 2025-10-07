@@ -289,7 +289,7 @@ const PaymentSuccessPage: React.FC = () => {
                 label="Придумайте ник"
               >
                 <Input
-                  prefix={<UserOutlined style={{ color: 'whitesmoke' }} />}
+                  prefix={<UserOutlined style={{ color: 'rgba(0, 0, 0, 0.45)' }} />}
                   placeholder="Введите никнейм"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
@@ -297,12 +297,15 @@ const PaymentSuccessPage: React.FC = () => {
                   style={{
                     backgroundColor: 'white',
                     borderRadius: '12px',
-                    height: '48px'
+                    height: '48px',
+                    border: 'none',
+                    outline: 'none'
                   }}
                   styles={{
                     affixWrapper: {
                       border: 'none',
-                      boxShadow: 'none'
+                      boxShadow: 'none',
+                      outline: 'none'
                     }
                   }}
                 />
@@ -312,7 +315,7 @@ const PaymentSuccessPage: React.FC = () => {
                 label="Пароль"
               >
                 <Input.Password
-                  prefix={<LockOutlined style={{ color: 'whitesmoke' }} />}
+                  prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.45)' }} />}
                   placeholder="Введите пароль"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -320,12 +323,15 @@ const PaymentSuccessPage: React.FC = () => {
                   style={{
                     backgroundColor: 'white',
                     borderRadius: '12px',
-                    height: '48px'
+                    height: '48px',
+                    border: 'none',
+                    outline: 'none'
                   }}
                   styles={{
                     affixWrapper: {
                       border: 'none',
-                      boxShadow: 'none'
+                      boxShadow: 'none',
+                      outline: 'none'
                     }
                   }}
                 />
@@ -335,7 +341,7 @@ const PaymentSuccessPage: React.FC = () => {
                 label="Подтверждение пароля"
               >
                 <Input.Password
-                  prefix={<LockOutlined style={{ color: 'whitesmoke' }} />}
+                  prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.45)' }} />}
                   placeholder="Повторите пароль"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -343,12 +349,15 @@ const PaymentSuccessPage: React.FC = () => {
                   style={{
                     backgroundColor: 'white',
                     borderRadius: '12px',
-                    height: '48px'
+                    height: '48px',
+                    border: 'none',
+                    outline: 'none'
                   }}
                   styles={{
                     affixWrapper: {
                       border: 'none',
-                      boxShadow: 'none'
+                      boxShadow: 'none',
+                      outline: 'none'
                     }
                   }}
                 />
