@@ -179,6 +179,8 @@ router.get('/status/:paymentId', async (req, res) => {
     if (response.data.Success) {
       const status = response.data.Status;
       
+      console.log('📊 Статус платежа из Тинькофф:', status);
+      
       // Обновляем статус в базе данных
       const { error } = await supabase
         .from('payments')
@@ -189,6 +191,39 @@ router.get('/status/:paymentId', async (req, res) => {
         .eq('payment_id', paymentId);
 
       if (error) throw error;
+      
+      console.log('💾 Статус платежа обновлен в БД');
+      
+      // Если платеж подтвержден, разблокируем персональный план
+      if (status === 'CONFIRMED') {
+        console.log('✅ Платеж подтвержден, разблокируем персональный план...');
+        
+        // Получаем sessionId из таблицы payments
+        const { data: payment, error: paymentError } = await supabase
+          .from('payments')
+          .select('session_id')
+          .eq('payment_id', paymentId)
+          .single();
+        
+        if (paymentError || !payment) {
+          console.error('⚠️ Не удалось получить sessionId для платежа:', paymentId);
+        } else {
+          const sessionId = payment.session_id;
+          console.log('🔓 Разблокируем персональный план для sessionId:', sessionId);
+          
+          // Разблокируем персональный план
+          const { error: unlockError } = await supabase
+            .from('primary_test_results')
+            .update({ personal_plan_unlocked: true })
+            .eq('session_id', sessionId);
+          
+          if (unlockError) {
+            console.error('⚠️ Ошибка при разблокировке персонального плана:', unlockError);
+          } else {
+            console.log('✅ Персональный план успешно разблокирован');
+          }
+        }
+      }
       
       res.json({
         success: true,
@@ -212,6 +247,8 @@ router.post('/webhook', async (req, res) => {
   try {
     const { TerminalKey, Status, PaymentId, OrderId } = req.body;
     
+    console.log('🔔 Получен webhook от Тинькофф:', { Status, PaymentId, OrderId });
+    
     // Проверяем подпись
     const receivedToken = req.body.Token;
     const expectedToken = createToken({
@@ -223,8 +260,11 @@ router.post('/webhook', async (req, res) => {
     });
     
     if (receivedToken !== expectedToken) {
+      console.error('❌ Неверная подпись webhook');
       return res.status(400).json({ success: false, error: 'Invalid token' });
     }
+    
+    console.log('✅ Подпись webhook валидна');
     
     // Обновляем статус платежа
     const { error } = await supabase
@@ -236,6 +276,39 @@ router.post('/webhook', async (req, res) => {
       .eq('payment_id', PaymentId);
 
     if (error) throw error;
+    
+    console.log('💾 Статус платежа обновлен в БД');
+    
+    // Если платеж подтвержден, разблокируем персональный план
+    if (Status === 'CONFIRMED') {
+      console.log('✅ Платеж подтвержден, разблокируем персональный план...');
+      
+      // Получаем sessionId из таблицы payments
+      const { data: payment, error: paymentError } = await supabase
+        .from('payments')
+        .select('session_id')
+        .eq('payment_id', PaymentId)
+        .single();
+      
+      if (paymentError || !payment) {
+        console.error('⚠️ Не удалось получить sessionId для платежа:', PaymentId);
+      } else {
+        const sessionId = payment.session_id;
+        console.log('🔓 Разблокируем персональный план для sessionId:', sessionId);
+        
+        // Разблокируем персональный план
+        const { error: unlockError } = await supabase
+          .from('primary_test_results')
+          .update({ personal_plan_unlocked: true })
+          .eq('session_id', sessionId);
+        
+        if (unlockError) {
+          console.error('⚠️ Ошибка при разблокировке персонального плана:', unlockError);
+        } else {
+          console.log('✅ Персональный план успешно разблокирован через webhook');
+        }
+      }
+    }
     
     res.json({ success: true });
   } catch (error) {

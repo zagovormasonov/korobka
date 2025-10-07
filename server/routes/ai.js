@@ -301,10 +301,28 @@ router.post('/mascot-message/dashboard', async (req, res) => {
       .single();
 
     console.log('🔍 Результаты теста из БД:', primaryTest);
+    console.log('🔍 Есть ли ответы (answers)?', !!primaryTest?.answers);
+    console.log('🔍 Тип answers:', typeof primaryTest?.answers);
 
     if (error || !primaryTest) {
       console.log('❌ Результаты теста не найдены для sessionId:', sessionId);
       return res.status(404).json({ success: false, error: 'Test results not found' });
+    }
+
+    // Проверяем наличие ответов теста
+    if (!primaryTest.answers || (Array.isArray(primaryTest.answers) && primaryTest.answers.length === 0)) {
+      console.log('⚠️ Ответы теста отсутствуют или пусты для sessionId:', sessionId);
+      
+      // Возвращаем дружелюбное сообщение без генерации через AI
+      const defaultMessage = 'Привет! Я Луми, твой помощник в создании персонального плана психологического благополучия. 🌟\n\nЧтобы я мог подобрать для тебя подходящие дополнительные тесты и создать персональный план, пожалуйста, сначала пройди первичный тест на главной странице. Это поможет мне лучше понять твою ситуацию и предложить наиболее эффективные инструменты для улучшения твоего психологического состояния.';
+      
+      return res.json({ 
+        success: true, 
+        message: defaultMessage,
+        recommendedTests: [],
+        cached: false,
+        warning: 'Primary test not completed'
+      });
     }
 
     // Проверяем, есть ли уже сохраненное сообщение
@@ -417,6 +435,16 @@ router.post('/personal-plan', async (req, res) => {
     if (primaryError || !primaryTest) {
       console.error('❌ [PERSONAL-PLAN] Результаты теста не найдены:', primaryError);
       return res.status(404).json({ success: false, error: 'Primary test results not found' });
+    }
+
+    // Проверяем наличие ответов теста
+    if (!primaryTest.answers || (Array.isArray(primaryTest.answers) && primaryTest.answers.length === 0)) {
+      console.error('❌ [PERSONAL-PLAN] Ответы теста отсутствуют для sessionId:', sessionId);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Primary test not completed',
+        message: 'Пожалуйста, сначала пройдите первичный тест на главной странице'
+      });
     }
 
     // Если план уже сгенерирован, возвращаем его
