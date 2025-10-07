@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Progress, Card, Input, Slider, Space, Checkbox, InputNumber } from 'antd';
+import { Button, Typography, Progress, Card, Input, Slider, Space, Checkbox, InputNumber, message } from 'antd';
 import { apiRequest } from '../config/api';
 import { ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -73,6 +73,10 @@ const TestPage: React.FC = () => {
           // Показываем уведомление о восстановлении
           if (testData.currentQuestionIndex > 0 || testData.answers.length > 0) {
             console.log('📱 Восстановлен прогресс теста из localStorage');
+            message.success({
+              content: `Восстановлен прогресс теста! Вопрос ${testData.currentQuestionIndex + 1} из ${testData.answers.length > 0 ? 'сохранённых ответов: ' + testData.answers.length : ''}`,
+              duration: 3,
+            });
           }
           return true;
         }
