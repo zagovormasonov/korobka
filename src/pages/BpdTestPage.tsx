@@ -443,9 +443,9 @@ const BpdTestPage: React.FC = () => {
                     <Text style={{ color: '#666', fontSize: '14px' }}>{question.scale?.labels?.max || 'Очень часто'}</Text>
                     </div>
                   <Slider
-                    min={0}
-                    max={10}
-                    value={sliderValue}
+                    min={1}
+                    max={9}
+                    value={sliderValue > 9 ? 5 : sliderValue}
                     onChange={handleSliderChange}
                     style={{ marginBottom: '16px' }}
                     tooltip={{ formatter: null }}
