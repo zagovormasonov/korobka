@@ -255,21 +255,23 @@ router.post('/create-credentials', async (req, res) => {
     // Автоматически разблокируем персональный план после создания credentials
     // (так как пользователь попадает сюда только после оплаты)
     console.log('🔓 [DASHBOARD] Разблокируем персональный план после создания credentials...');
-    try {
-      const { error: unlockError } = await supabase
-        .from('primary_test_results')
-        .update({ personal_plan_unlocked: true })
-        .eq('session_id', sessionId);
-      
-      if (unlockError) {
-        console.error('⚠️ [DASHBOARD] Ошибка при разблокировке персонального плана:', unlockError);
-        // Не прерываем выполнение, просто логируем
-      } else {
-        console.log('✅ [DASHBOARD] Персональный план автоматически разблокирован');
-      }
-    } catch (unlockErr) {
-      console.error('⚠️ [DASHBOARD] Исключение при разблокировке:', unlockErr);
-      // Не прерываем выполнение
+    const { data: unlockData, error: unlockError } = await supabase
+      .from('primary_test_results')
+      .update({ personal_plan_unlocked: true })
+      .eq('session_id', sessionId)
+      .select();
+    
+    if (unlockError) {
+      console.error('❌ [DASHBOARD] Ошибка при разблокировке персонального плана:', {
+        code: unlockError.code,
+        message: unlockError.message,
+        details: unlockError.details,
+        hint: unlockError.hint
+      });
+      // НЕ прерываем выполнение, но логируем детально
+    } else {
+      console.log('✅ [DASHBOARD] Персональный план автоматически разблокирован');
+      console.log('✅ [DASHBOARD] Обновленные данные после разблокировки:', unlockData);
     }
 
     res.json({ 

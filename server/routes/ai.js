@@ -296,9 +296,10 @@ router.post('/mascot-message/dashboard', async (req, res) => {
     
     // Получаем результаты первичного теста
     // Используем maybeSingle() вместо single() чтобы избежать ошибок
+    // TODO: Добавить lumi_dashboard_message после применения миграции
     const { data: primaryTest, error } = await supabase
       .from('primary_test_results')
-      .select('answers, email, lumi_dashboard_message')
+      .select('answers, email')
       .eq('session_id', sessionId)
       .maybeSingle();
 
@@ -343,21 +344,22 @@ router.post('/mascot-message/dashboard', async (req, res) => {
       });
     }
 
+    // TODO: Раскомментировать после применения миграции для кэширования сообщений
     // Проверяем, есть ли уже сохраненное сообщение
-    if (primaryTest.lumi_dashboard_message) {
-      console.log('💾 Найдено сохраненное сообщение Луми, возвращаем его');
-      
-      // Всё равно генерируем список рекомендованных тестов
-      const answers = primaryTest.answers;
-      const recommendedTests = await analyzeAndRecommendTests(answers);
-      
-      return res.json({ 
-        success: true, 
-        message: primaryTest.lumi_dashboard_message,
-        recommendedTests,
-        cached: true 
-      });
-    }
+    // if (primaryTest.lumi_dashboard_message) {
+    //   console.log('💾 Найдено сохраненное сообщение Луми, возвращаем его');
+    //   
+    //   // Всё равно генерируем список рекомендованных тестов
+    //   const answers = primaryTest.answers;
+    //   const recommendedTests = await analyzeAndRecommendTests(answers);
+    //   
+    //   return res.json({ 
+    //     success: true, 
+    //     message: primaryTest.lumi_dashboard_message,
+    //     recommendedTests,
+    //     cached: true 
+    //   });
+    // }
 
     const answers = primaryTest.answers;
     const email = primaryTest.email;
@@ -398,19 +400,20 @@ router.post('/mascot-message/dashboard', async (req, res) => {
     
     const message = await callGeminiAI(prompt, 350);
     
+    // TODO: Раскомментировать после применения миграции для кэширования
     // Сохраняем сгенерированное сообщение в БД
-    console.log('💾 Сохраняем сообщение Луми в БД...');
-    const { error: updateError } = await supabase
-      .from('primary_test_results')
-      .update({ lumi_dashboard_message: message })
-      .eq('session_id', sessionId);
-
-    if (updateError) {
-      console.error('⚠️ Ошибка при сохранении сообщения:', updateError);
-      // Не останавливаем выполнение, просто логируем
-    } else {
-      console.log('✅ Сообщение Луми успешно сохранено в БД');
-    }
+    // console.log('💾 Сохраняем сообщение Луми в БД...');
+    // const { error: updateError } = await supabase
+    //   .from('primary_test_results')
+    //   .update({ lumi_dashboard_message: message })
+    //   .eq('session_id', sessionId);
+    //
+    // if (updateError) {
+    //   console.error('⚠️ Ошибка при сохранении сообщения:', updateError);
+    //   // Не останавливаем выполнение, просто логируем
+    // } else {
+    //   console.log('✅ Сообщение Луми успешно сохранено в БД');
+    // }
     
     res.json({ success: true, message, recommendedTests, cached: false });
   } catch (error) {
