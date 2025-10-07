@@ -285,6 +285,8 @@ const BpdTestPage: React.FC = () => {
   useEffect(() => {
     if (questions.length > 0) {
       resetCurrentState();
+      // Скроллим вверх при смене вопроса
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [currentQuestionIndex, questions]);
 
