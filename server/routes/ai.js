@@ -236,9 +236,10 @@ router.post('/mascot-message/payment', async (req, res) => {
       .from('primary_test_results')
       .select('answers')
       .eq('session_id', sessionId)
-      .single();
+      .maybeSingle();
 
     if (error || !testResult) {
+      console.log('❌ [PAYMENT MASCOT] Результаты теста не найдены:', { sessionId, error });
       return res.status(404).json({ success: false, error: 'Test results not found' });
     }
 
@@ -294,18 +295,35 @@ router.post('/mascot-message/dashboard', async (req, res) => {
     }
     
     // Получаем результаты первичного теста
+    // Используем maybeSingle() вместо single() чтобы избежать ошибок
     const { data: primaryTest, error } = await supabase
       .from('primary_test_results')
       .select('answers, email, lumi_dashboard_message')
       .eq('session_id', sessionId)
-      .single();
+      .maybeSingle();
 
     console.log('🔍 Результаты теста из БД:', primaryTest);
     console.log('🔍 Есть ли ответы (answers)?', !!primaryTest?.answers);
     console.log('🔍 Тип answers:', typeof primaryTest?.answers);
+    console.log('🔍 Ошибка Supabase:', error);
 
     if (error || !primaryTest) {
       console.log('❌ Результаты теста не найдены для sessionId:', sessionId);
+      console.log('❌ Код ошибки Supabase:', error?.code);
+      console.log('❌ Сообщение ошибки:', error?.message);
+      console.log('❌ Детали ошибки:', error?.details);
+      
+      // Попробуем получить запись со всеми полями для отладки
+      console.log('🔍 Пробуем получить запись со всеми полями...');
+      const { data: fullRecord, error: fullError } = await supabase
+        .from('primary_test_results')
+        .select('*')
+        .eq('session_id', sessionId)
+        .maybeSingle();
+      
+      console.log('🔍 Полная запись:', fullRecord);
+      console.log('🔍 Ошибка при получении полной записи:', fullError);
+      
       return res.status(404).json({ success: false, error: 'Test results not found' });
     }
 
@@ -420,20 +438,40 @@ router.post('/personal-plan', async (req, res) => {
     
     // Получаем результаты первичного теста
     console.log('🔍 [PERSONAL-PLAN] Получаем данные из БД...');
+    // Используем maybeSingle() вместо single() чтобы избежать ошибок
     const { data: primaryTest, error: primaryError } = await supabase
       .from('primary_test_results')
       .select('answers, email, personal_plan')
       .eq('session_id', sessionId)
-      .single();
+      .maybeSingle();
 
     console.log('📊 [PERSONAL-PLAN] Результат запроса к БД:', {
       hasData: !!primaryTest,
       hasError: !!primaryError,
       errorMessage: primaryError?.message
     });
+    console.log('📊 [PERSONAL-PLAN] Полные данные primaryTest:', primaryTest);
+    console.log('📊 [PERSONAL-PLAN] Детали ошибки:', {
+      code: primaryError?.code,
+      message: primaryError?.message,
+      details: primaryError?.details,
+      hint: primaryError?.hint
+    });
 
     if (primaryError || !primaryTest) {
       console.error('❌ [PERSONAL-PLAN] Результаты теста не найдены:', primaryError);
+      
+      // Попробуем получить запись со всеми полями для отладки
+      console.log('🔍 [PERSONAL-PLAN] Пробуем получить запись со всеми полями...');
+      const { data: fullRecord, error: fullError } = await supabase
+        .from('primary_test_results')
+        .select('*')
+        .eq('session_id', sessionId)
+        .maybeSingle();
+      
+      console.log('🔍 [PERSONAL-PLAN] Полная запись:', fullRecord);
+      console.log('🔍 [PERSONAL-PLAN] Ошибка при получении полной записи:', fullError);
+      
       return res.status(404).json({ success: false, error: 'Primary test results not found' });
     }
 
