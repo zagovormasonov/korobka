@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../index.js';
+import htmlPdf from 'html-pdf-node';
 
 const router = express.Router();
 

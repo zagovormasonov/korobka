@@ -9,6 +9,7 @@ import paymentRoutes from './routes/payments.js';
 import aiRoutes from './routes/ai.js';
 import telegramRoutes from './routes/telegram.js';
 import pdfRoutes from './routes/pdf.js';
+import pdfHtmlRoutes from './routes/pdf-html.js';
 import dashboardRoutes from './routes/dashboard.js';
 import chatRoutes from './routes/chat.js';
 
@@ -130,6 +131,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/pdf', pdfRoutes);
+app.use('/api/pdf-html', pdfHtmlRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chat', chatRoutes);
 
