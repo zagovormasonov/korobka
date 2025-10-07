@@ -221,11 +221,14 @@ code {
   color: #000000 !important;
 }
 
-/* Увеличенная область захвата для бегунка шкалы */
+/* Увеличенная область захвата для бегунка шкалы с идеальным центрированием */
 .ant-slider-handle {
   width: 28px !important;
   height: 28px !important;
+  /* Идеальное вертикальное центрирование: -(высота_бегунка - высота_трека) / 2 = -(28 - 8) / 2 = -10px */
   margin-top: -10px !important;
+  /* Убираем margin-left для правильного горизонтального позиционирования */
+  margin-inline-start: -14px !important;
 }
 
 .ant-slider-handle::after {
@@ -233,15 +236,20 @@ code {
   height: 28px !important;
   inset-inline-start: 0 !important;
   inset-block-start: 0 !important;
+  /* Центрируем псевдоэлемент точно */
+  transform: translate(0, 0) !important;
 }
 
 /* Увеличиваем толщину трека для лучшего таргетинга */
 .ant-slider-rail {
   height: 8px !important;
+  /* Убираем border-radius для более четкого отображения */
+  border-radius: 4px !important;
 }
 
 .ant-slider-track {
   height: 8px !important;
+  border-radius: 4px !important;
 }
 
 /* Анимация падения для салюта */

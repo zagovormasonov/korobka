@@ -433,7 +433,7 @@ const TestPage: React.FC = () => {
                     <Text style={{ color: '#666', fontSize: '14px' }}>{question.scale?.labels?.max || 'Очень часто'}</Text>
                   </div>
                   <Slider
-                    min={1}
+                    min={0}
                     max={10}
                     value={sliderValue}
                     onChange={handleSliderChange}
