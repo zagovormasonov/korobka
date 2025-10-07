@@ -231,8 +231,8 @@ code {
 .ant-slider-handle {
   width: 28px !important;
   height: 28px !important;
-  /* Идеальное вертикальное центрирование: -(высота_бегунка - высота_трека) / 2 = -(28 - 8) / 2 = -10px */
-  margin-top: -10px !important;
+  /* Идеальное вертикальное центрирование: -(высота_бегунка - высота_трека) / 2 = -(28 - 10) / 2 = -9px */
+  margin-top: -9px !important;
   /* Убираем margin-left для правильного горизонтального позиционирования */
   margin-inline-start: -14px !important;
 }
@@ -248,14 +248,13 @@ code {
 
 /* Увеличиваем толщину трека для лучшего таргетинга */
 .ant-slider-rail {
-  height: 8px !important;
-  /* Убираем border-radius для более четкого отображения */
-  border-radius: 4px !important;
+  height: 10px !important;
+  border-radius: 5px !important;
 }
 
 .ant-slider-track {
-  height: 8px !important;
-  border-radius: 4px !important;
+  height: 10px !important;
+  border-radius: 5px !important;
 }
 
 /* Анимация падения для салюта */
