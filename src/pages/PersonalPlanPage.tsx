@@ -421,7 +421,9 @@ const PersonalPlanPage: React.FC = () => {
                   placeholder="Ваше имя" 
                   style={{ 
                     borderRadius: '12px',
-                    height: '40px'
+                    height: '40px',
+                    border: 'none',
+                    outline: 'none'
                   }}
                 />
               </Form.Item>
@@ -434,7 +436,9 @@ const PersonalPlanPage: React.FC = () => {
                   placeholder="+7 (999) 123-45-67" 
                   style={{ 
                     borderRadius: '12px',
-                    height: '40px'
+                    height: '40px',
+                    border: 'none',
+                    outline: 'none'
                   }}
                 />
               </Form.Item>
@@ -450,7 +454,9 @@ const PersonalPlanPage: React.FC = () => {
                   placeholder="example@email.com" 
                   style={{ 
                     borderRadius: '12px',
-                    height: '40px'
+                    height: '40px',
+                    border: 'none',
+                    outline: 'none'
                   }}
                 />
               </Form.Item>
@@ -462,7 +468,9 @@ const PersonalPlanPage: React.FC = () => {
                   placeholder="username или @username" 
                   style={{ 
                     borderRadius: '12px',
-                    height: '40px'
+                    height: '40px',
+                    border: 'none',
+                    outline: 'none'
                   }}
                 />
               </Form.Item>
