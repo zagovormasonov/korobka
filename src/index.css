@@ -270,49 +270,121 @@ code {
   }
 }
 
-/* Полупрозрачные поля ввода для страниц с градиентом */
+/* Стили по умолчанию для полей ввода с аккуратными обводками */
 .ant-input,
-.ant-input-password input {
-  background-color: rgba(255, 255, 255, 0.7) !important;
-  border: none !important;
-  outline: none !important;
+.ant-input-password input,
+.ant-input-number,
+.ant-input-textarea textarea {
+  border: 1px solid #d9d9d9 !important;
+  transition: all 0.3s !important;
 }
 
 .ant-input:hover,
-.ant-input-password input:hover {
-  border: none !important;
-  outline: none !important;
+.ant-input-password input:hover,
+.ant-input-number:hover,
+.ant-input-textarea textarea:hover {
+  border-color: rgb(243, 186, 111) !important;
 }
 
 .ant-input:focus,
 .ant-input-password input:focus,
 .ant-input-focused,
-.ant-input-password-focused input {
+.ant-input-password-focused input,
+.ant-input-number:focus,
+.ant-input-number-focused,
+.ant-input-textarea textarea:focus,
+.ant-input-textarea-focused textarea {
+  border-color: rgb(243, 186, 111) !important;
+  box-shadow: 0 0 0 2px rgba(243, 186, 111, 0.1) !important;
+}
+
+/* Обводки для контейнеров с иконками и textarea */
+.ant-input-affix-wrapper,
+.ant-input-password,
+.ant-input-number-wrapper,
+.ant-input-textarea {
+  border: 1px solid #d9d9d9 !important;
+  transition: all 0.3s !important;
+}
+
+.ant-input-affix-wrapper:hover,
+.ant-input-password:hover,
+.ant-input-number-wrapper:hover,
+.ant-input-textarea:hover {
+  border-color: rgb(243, 186, 111) !important;
+}
+
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused,
+.ant-input-password:focus,
+.ant-input-password-focused,
+.ant-input-number-wrapper:focus,
+.ant-input-number-wrapper-focused,
+.ant-input-textarea:focus,
+.ant-input-textarea-focused {
+  border-color: rgb(243, 186, 111) !important;
+  box-shadow: 0 0 0 2px rgba(243, 186, 111, 0.1) !important;
+}
+
+/* Специальный класс для полей с эффектом матового стекла БЕЗ обводок */
+.glass-input.ant-input,
+.glass-input .ant-input,
+.glass-input.ant-input-password input,
+.glass-input .ant-input-password input {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.glass-input.ant-input:hover,
+.glass-input .ant-input:hover,
+.glass-input.ant-input-password input:hover,
+.glass-input .ant-input-password input:hover {
+  border: none !important;
+  outline: none !important;
+}
+
+.glass-input.ant-input:focus,
+.glass-input .ant-input:focus,
+.glass-input.ant-input-password input:focus,
+.glass-input .ant-input-password input:focus,
+.glass-input.ant-input-focused,
+.glass-input .ant-input-focused,
+.glass-input.ant-input-password-focused input,
+.glass-input .ant-input-password-focused input {
   background-color: rgba(255, 255, 255, 0.95) !important;
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
 }
 
-/* Убираем серые прямоугольники (outline) у контейнеров с иконками */
-.ant-input-affix-wrapper,
-.ant-input-password {
+/* Убираем обводки у контейнеров с иконками для glass-input */
+.glass-input.ant-input-affix-wrapper,
+.glass-input .ant-input-affix-wrapper,
+.glass-input.ant-input-password,
+.glass-input .ant-input-password {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
 }
 
-.ant-input-affix-wrapper:hover,
-.ant-input-password:hover {
+.glass-input.ant-input-affix-wrapper:hover,
+.glass-input .ant-input-affix-wrapper:hover,
+.glass-input.ant-input-password:hover,
+.glass-input .ant-input-password:hover {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
 }
 
-.ant-input-affix-wrapper:focus,
-.ant-input-affix-wrapper-focused,
-.ant-input-password:focus,
-.ant-input-password-focused {
+.glass-input.ant-input-affix-wrapper:focus,
+.glass-input.ant-input-affix-wrapper-focused,
+.glass-input .ant-input-affix-wrapper:focus,
+.glass-input .ant-input-affix-wrapper-focused,
+.glass-input.ant-input-password:focus,
+.glass-input.ant-input-password-focused,
+.glass-input .ant-input-password:focus,
+.glass-input .ant-input-password-focused {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;

@@ -191,11 +191,13 @@ const HomePage: React.FC = () => {
             rules={[
               { required: true, message: 'Пожалуйста, введите никнейм!' }
             ]}
+            className="glass-input"
           >
             <Input
               prefix={<UserOutlined style={{ color: 'black' }} />}
               placeholder="Введите никнейм"
               autoComplete="username"
+              className="glass-input"
               style={{ 
                 borderRadius: '12px',
                 border: 'none',
@@ -221,11 +223,13 @@ const HomePage: React.FC = () => {
               { required: true, message: 'Пожалуйста, введите пароль!' }
             ]}
             style={{ marginBottom: '32px' }}
+            className="glass-input"
           >
             <Input.Password
               prefix={<LockOutlined style={{ color: 'black' }} />}
               placeholder="Введите пароль"
               autoComplete="current-password"
+              className="glass-input"
               style={{ 
                 borderRadius: '12px',
                 border: 'none',
