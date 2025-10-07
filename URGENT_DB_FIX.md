@@ -20,20 +20,23 @@ ADD COLUMN IF NOT EXISTS lumi_dashboard_message TEXT;
 COMMENT ON COLUMN primary_test_results.lumi_dashboard_message IS 'Cached AI-generated welcome message from Lumi mascot for dashboard';
 ```
 
-### 2. Unlock Personal Plan for User
+### 2. Reset Personal Plan Lock for User
 
-Run this SQL to unlock the personal plan for the specific user:
+**IMPORTANT:** The personal plan should be locked after payment until the user completes additional tests.
+
+Run this SQL to reset the incorrect unlock:
 
 ```sql
--- Unlock personal plan for user 'deve'
+-- Reset personal_plan_unlocked to false (user needs to complete additional tests first)
 UPDATE primary_test_results
-SET personal_plan_unlocked = true
-WHERE session_id = '48528d64-9f6f-40e8-b1f4-ce39d97eb84b';
+SET personal_plan_unlocked = false
+WHERE nickname = 'deve';
 
 -- Verify the update
-SELECT session_id, nickname, personal_plan_unlocked
+SELECT session_id, nickname, personal_plan_unlocked, created_at
 FROM primary_test_results
-WHERE session_id = '48528d64-9f6f-40e8-b1f4-ce39d97eb84b';
+WHERE nickname = 'deve'
+ORDER BY created_at DESC;
 ```
 
 ### 3. After Migration - Enable Caching
@@ -60,9 +63,12 @@ After running the SQL:
 
 ```
 ✅ Column `lumi_dashboard_message` exists
-✅ User 'deve' has `personal_plan_unlocked = true`
+✅ User 'deve' has `personal_plan_unlocked = false` (correct state after payment)
 ✅ Mascot generates AI message on dashboard
-✅ Recommended tests are shown
+✅ Recommended additional tests are shown
+✅ After completing all tests and clicking "Перейти к персональному плану":
+   → `personal_plan_unlocked` becomes `true`
+   → Personal plan page is displayed
 ```
 
 ## Verification Query
@@ -74,7 +80,7 @@ FROM information_schema.columns
 WHERE table_name = 'primary_test_results'
 ORDER BY ordinal_position;
 
--- Check user status
+-- Check user status (should show personal_plan_unlocked = false after reset)
 SELECT 
   session_id,
   nickname,
@@ -83,6 +89,7 @@ SELECT
   created_at,
   updated_at
 FROM primary_test_results
-WHERE nickname = 'deve';
+WHERE nickname = 'deve'
+ORDER BY created_at DESC;
 ```
 
