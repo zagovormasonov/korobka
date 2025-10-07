@@ -590,34 +590,22 @@ const DashboardPage: React.FC = () => {
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
-      const response = await apiRequest('api/pdf/personal-plan', {
+      const response = await apiRequest('api/pdf-html/personal-plan', {
         method: 'POST',
         body: JSON.stringify({ sessionId }),
       });
 
       if (response.ok) {
-        // Получаем HTML как текст
-        const html = await response.text();
-        
-        // Создаем Blob из HTML
-        const blob = new Blob([html], { type: 'text/html' });
-        
-        // Создаем временную ссылку для скачивания
-        const url = window.URL.createObjectURL(blob);
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'personal-plan.html'; // Указываем имя файла и расширение
-        
-        // Симулируем клик для начала скачивания
+        link.download = 'personal-plan.pdf';
         document.body.appendChild(link);
         link.click();
-        
-        // Очищаем
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
-        message.success('Персональный план скачан! Откройте файл personal-plan.html в вашем браузере.');
-        
+        message.success('Персональный план скачан в PDF!');
       } else {
         message.error('Ошибка при генерации персонального плана');
       }
