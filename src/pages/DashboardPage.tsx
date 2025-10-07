@@ -178,44 +178,44 @@ const DashboardPage: React.FC = () => {
     if (!isAuthenticated || !authData) return;
     
     console.log('🔄 [DASHBOARD] useEffect загрузки данных:', {
-      sessionId: !!authData.sessionId,
-      personalPlanUnlocked: authData.personalPlanUnlocked,
-      shouldLoadTests: authData.sessionId && authData.personalPlanUnlocked === false
+      sessionId: !!authData?.sessionId,
+      personalPlanUnlocked: authData?.personalPlanUnlocked,
+      shouldLoadTests: authData?.sessionId && authData?.personalPlanUnlocked === false
     });
     
     // Загружаем тесты только если:
     // 1. sessionId есть
     // 2. personalPlanUnlocked ЯВНО равен false (не undefined)
-    if (authData.sessionId && authData.personalPlanUnlocked === false) {
+    if (authData?.sessionId && authData?.personalPlanUnlocked === false) {
       console.log('📥 [DASHBOARD] Загружаем данные тестов');
       generateMascotMessage();
       // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
     } else {
-      console.log('⏭️ [DASHBOARD] Пропускаем загрузку тестов. personalPlanUnlocked:', authData.personalPlanUnlocked);
+      console.log('⏭️ [DASHBOARD] Пропускаем загрузку тестов. authData?.personalPlanUnlocked:', authData?.personalPlanUnlocked);
     }
   }, [authData]);
 
   // Загружаем результаты тестов после того, как загрузились рекомендованные тесты
   useEffect(() => {
-    if (recommendedTests.length > 0 && sessionId && !isVerifying && personalPlanUnlocked === false) {
+    if (recommendedTests.length > 0 && authData?.authData?.sessionId && authData?.personalPlanUnlocked === false) {
       console.log('📋 Рекомендованные тесты загружены, загружаем результаты...');
       fetchAdditionalTestResults();
     }
-  }, [recommendedTests.length, sessionId, isVerifying, personalPlanUnlocked]);
+  }, [recommendedTests.length, authData]);
 
   // Проверяем завершенность тестов когда загружены тесты или результаты
   useEffect(() => {
-    if (recommendedTests.length > 0 && personalPlanUnlocked === false) {
+    if (recommendedTests.length > 0 && authData?.authData?.personalPlanUnlocked === false) {
       const completedCount = Object.keys(testResults).length;
       const isCompleted = completedCount >= recommendedTests.length;
       console.log(`📊 Прогресс тестов: ${completedCount}/${recommendedTests.length}, завершено: ${isCompleted}`);
       setAllTestsCompleted(isCompleted);
     }
-  }, [recommendedTests, testResults, personalPlanUnlocked]);
+  }, [recommendedTests, testResults, authData]);
 
   // Автоматический скролл к кнопке завершения после прохождения всех тестов
   useEffect(() => {
-    if (allTestsCompleted && completionButtonRef.current && personalPlanUnlocked === false) {
+    if (allTestsCompleted && completionButtonRef.current && authData?.authData?.personalPlanUnlocked === false) {
       // Показываем салют
       showConfetti();
       
@@ -227,7 +227,7 @@ const DashboardPage: React.FC = () => {
         });
       }, 500);
     }
-  }, [allTestsCompleted, personalPlanUnlocked]);
+  }, [allTestsCompleted, authData]);
 
   const showConfetti = () => {
     // Создаем эмодзи конфетти
@@ -263,8 +263,8 @@ const DashboardPage: React.FC = () => {
 
   const generateMascotMessage = async () => {
     try {
-      // Проверяем, что sessionId существует
-      if (!sessionId || sessionId.trim() === '') {
+      // Проверяем, что authData?.sessionId существует
+      if (!authData?.authData?.sessionId || authData?.sessionId.trim() === '') {
         console.log('❌ SessionId пустой, пропускаем генерацию сообщения маскота');
         setMascotMessage('Привет! На основе твоего теста я рекомендую пройти дополнительные тесты для более точной диагностики.');
         setRecommendedTests(fallbackTests.slice(0, 5));
@@ -273,7 +273,7 @@ const DashboardPage: React.FC = () => {
       }
 
       setLoadingMascotMessage(true);
-      console.log('🤖 Запрос на генерацию сообщения маскота для dashboard:', { sessionId });
+      console.log('🤖 Запрос на генерацию сообщения маскота для dashboard:', { sessionId: authData?.sessionId });
       
       // Таймер для показа тестов через 30 секунд
       const testsTimer = setTimeout(() => {
@@ -283,7 +283,7 @@ const DashboardPage: React.FC = () => {
       
       const response = await apiRequest('api/ai/mascot-message/dashboard', {
         method: 'POST',
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
       });
 
       clearTimeout(testsTimer);
@@ -339,10 +339,10 @@ const DashboardPage: React.FC = () => {
     try {
       const response = await apiRequest('api/telegram/psychologist-request', {
         method: 'POST',
-        body: JSON.stringify({
-          sessionId,
-          ...values
-        }),
+          body: JSON.stringify({
+            sessionId: authData?.sessionId,
+            ...values
+          }),
       });
 
       if (response.ok) {
@@ -367,10 +367,10 @@ const DashboardPage: React.FC = () => {
     try {
       const response = await apiRequest('api/ai/session-feedback', {
         method: 'POST',
-        body: JSON.stringify({
-          sessionId,
-          feedbackText: feedbackText.trim()
-        }),
+          body: JSON.stringify({
+            sessionId: authData?.sessionId,
+            feedbackText: feedbackText.trim()
+          }),
       });
 
       if (response.ok) {
@@ -399,15 +399,15 @@ const DashboardPage: React.FC = () => {
       
       setLoadingTestResults(true);
       
-      // Проверяем, что sessionId существует
-      if (!sessionId || sessionId.trim() === '') {
+      // Проверяем, что authData?.sessionId существует
+      if (!authData?.sessionId || authData?.sessionId.trim() === '') {
         console.log('❌ SessionId пустой, пропускаем загрузку результатов');
         setLoadingTestResults(false);
         return;
       }
 
       // Проверяем существование primary test results (email больше не обязателен)
-      const primaryResponse = await apiRequest(`api/tests/primary/${sessionId}`);
+      const primaryResponse = await apiRequest(`api/tests/primary/${authData?.sessionId}`);
       const primaryData = await primaryResponse.json();
       
       if (!primaryData.success) {
@@ -426,8 +426,8 @@ const DashboardPage: React.FC = () => {
         setUserNickname(nickname);
       }
       
-      // Загружаем результаты дополнительных тестов по sessionId
-      const response = await apiRequest(`api/tests/additional/results/${sessionId}`);
+      // Загружаем результаты дополнительных тестов по authData?.sessionId
+      const response = await apiRequest(`api/tests/additional/results/${authData?.sessionId}`);
       
       if (!response.ok) {
         console.error('❌ Ошибка HTTP:', response.status, response.statusText);
@@ -507,8 +507,8 @@ const DashboardPage: React.FC = () => {
       return;
     }
 
-    // Проверяем, что sessionId существует
-    if (!sessionId || sessionId.trim() === '') {
+    // Проверяем, что authData?.sessionId существует
+    if (!authData?.sessionId || authData?.sessionId.trim() === '') {
       message.error('Ошибка: не найден идентификатор сессии. Пожалуйста, пройдите тест заново.');
       return;
     }
@@ -520,10 +520,10 @@ const DashboardPage: React.FC = () => {
 
       const response = await apiRequest('api/tests/additional/save-result', {
         method: 'POST',
-        body: JSON.stringify({
-          sessionId,
-          testName: test.name,
-          testUrl: test.url,
+          body: JSON.stringify({
+            sessionId: authData?.sessionId,
+            testName: test.name,
+            testUrl: test.url,
           testResult: result.trim()
         }),
       });
@@ -549,7 +549,7 @@ const DashboardPage: React.FC = () => {
     try {
       const response = await apiRequest('api/pdf-html/personal-plan', {
         method: 'POST',
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
       });
 
       if (response.ok) {
@@ -579,7 +579,7 @@ const DashboardPage: React.FC = () => {
     try {
       const response = await apiRequest('api/pdf/session-preparation', {
         method: 'POST',
-        body: JSON.stringify({ sessionId, specialistType }),
+        body: JSON.stringify({ sessionId: authData?.sessionId, specialistType }),
       });
 
       if (response.ok) {
@@ -605,8 +605,8 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // Показываем загрузку во время проверки токена
-  if (isVerifying) {
+  // Показываем загрузку во время проверки авторизации
+  if (isLoading) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -618,7 +618,7 @@ const DashboardPage: React.FC = () => {
         <div style={{ textAlign: 'center' }}>
           <Spin size="large" />
           <Text style={{ display: 'block', marginTop: '20px', fontSize: '16px', color: '#666' }}>
-            Проверяем доступ...
+            Проверяем авторизацию...
           </Text>
         </div>
       </div>
@@ -627,9 +627,9 @@ const DashboardPage: React.FC = () => {
 
   // Логирование перед рендером
   console.log('🎨 [DASHBOARD] Рендер компонента:', {
-    personalPlanUnlocked,
-    sessionId: !!sessionId,
-    isVerifying,
+    personalPlanUnlocked: authData?.personalPlanUnlocked,
+    sessionId: !!authData?.sessionId,
+    isLoading,
     showTests,
     allTestsCompleted,
     recommendedTestsCount: recommendedTests.length
@@ -650,7 +650,7 @@ const DashboardPage: React.FC = () => {
         maxWidth: '800px',
         margin: '0 auto 20px auto'
       }}>
-        {userNickname && (
+        {authData?.nickname && (
           <div style={{ 
             display: 'flex',
             alignItems: 'center',
@@ -669,7 +669,7 @@ const DashboardPage: React.FC = () => {
               fontWeight: '600',
               fontFamily: 'Inter, sans-serif'
             }}>
-              {userNickname.charAt(0).toUpperCase()}
+              {authData?.nickname.charAt(0).toUpperCase()}
             </div>
             <Text style={{ 
               fontSize: '18px',
@@ -677,7 +677,7 @@ const DashboardPage: React.FC = () => {
               color: '#333',
               fontFamily: 'Inter, sans-serif'
             }}>
-              {userNickname}
+              {authData?.nickname}
             </Text>
           </div>
         )}
@@ -706,7 +706,7 @@ const DashboardPage: React.FC = () => {
       }}>
         
         {/* Персональный план (показывается после завершения всех тестов) */}
-        {personalPlanUnlocked ? (
+        {authData?.personalPlanUnlocked ? (
           <div>
             <div style={{ textAlign: 'center', marginBottom: '40px' }}>
               <Title level={1} style={{ 
@@ -1145,11 +1145,11 @@ const DashboardPage: React.FC = () => {
                   size="large"
                   onClick={async () => {
                     console.log('🔘 [DASHBOARD] Нажата кнопка "Перейти к персональному плану"');
-                    console.log('🔘 [DASHBOARD] Текущий sessionId:', sessionId);
+                    console.log('🔘 [DASHBOARD] Текущий authData?.sessionId:', authData?.sessionId);
                     try {
                       const response = await apiRequest('api/dashboard/unlock-personal-plan', {
                         method: 'POST',
-                        body: JSON.stringify({ sessionId }),
+                        body: JSON.stringify({ sessionId: authData?.sessionId }),
                       });
                       
                       console.log('📥 [DASHBOARD] Ответ от unlock API:', response.status);
@@ -1159,7 +1159,7 @@ const DashboardPage: React.FC = () => {
                         console.log('✅ [DASHBOARD] Персональный план разблокирован успешно');
                         console.log('📊 [DASHBOARD] Данные ответа:', data);
                         setPersonalPlanUnlocked(true);
-                        console.log('🔓 [DASHBOARD] Установлен флаг personalPlanUnlocked = true');
+                        console.log('🔓 [DASHBOARD] Установлен флаг authData?.personalPlanUnlocked = true');
                         message.success('Добро пожаловать в персональный план!');
                       } else {
                         const errorText = await response.text();
