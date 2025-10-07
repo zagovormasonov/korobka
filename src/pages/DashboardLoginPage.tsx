@@ -75,7 +75,9 @@ const DashboardLoginPage: React.FC = () => {
         console.log('✅ [LOGIN] Учетные данные подтверждены, перенаправляем в ЛК');
         message.success('Добро пожаловать в личный кабинет!');
         
-        // Сохраняем токен в sessionStorage
+        // Сохраняем токен в localStorage для долгосрочного хранения
+        localStorage.setItem('dashboardToken', data.dashboardToken);
+        // Также сохраняем в sessionStorage для совместимости
         sessionStorage.setItem('dashboardToken', data.dashboardToken);
         navigate(`/dashboard`);
       } else {

@@ -29,7 +29,9 @@ const DashboardTokenPage: React.FC = () => {
 
       if (data.success) {
         console.log('✅ [TOKEN PAGE] Токен валиден, сохраняем в sessionStorage');
-        // Сохраняем токен в sessionStorage для безопасного доступа
+        // Сохраняем токен в localStorage для долгосрочного хранения
+        localStorage.setItem('dashboardToken', dashboardToken);
+        // Также сохраняем в sessionStorage для совместимости
         sessionStorage.setItem('dashboardToken', dashboardToken);
         // Перенаправляем в ЛК
         navigate(`/dashboard`, { replace: true });

@@ -19,6 +19,7 @@ import {
   CheckOutlined
 } from '@ant-design/icons';
 import { useThemeColor } from '../hooks/useThemeColor';
+import { useAuth } from '../hooks/useAuth';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -137,16 +138,13 @@ const fallbackTests = [
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const [sessionId, setSessionId] = useState<string>('');
-  const [isVerifying, setIsVerifying] = useState(true);
+  const { isAuthenticated, isLoading, authData, logout } = useAuth();
   const [mascotMessage, setMascotMessage] = useState('');
   const [recommendedTests, setRecommendedTests] = useState<any[]>([]);
   const [showTests, setShowTests] = useState(false);
   const [allTestsCompleted, setAllTestsCompleted] = useState(false);
   const [testResults, setTestResults] = useState<{[key: number]: string}>({});
   const [savingResults, setSavingResults] = useState<{[key: number]: boolean}>({});
-  const [userNickname, setUserNickname] = useState('');
-  const [personalPlanUnlocked, setPersonalPlanUnlocked] = useState<boolean | undefined>(undefined);
   const completionButtonRef = useRef<HTMLDivElement>(null);
   const [psychologistForm] = Form.useForm();
   const [feedbackText, setFeedbackText] = useState('');
@@ -166,77 +164,36 @@ const DashboardPage: React.FC = () => {
   const [currentTestId, setCurrentTestId] = useState<number | null>(null);
   const [modalText, setModalText] = useState('');
 
-  // Проверка токена при загрузке страницы
+  // Проверяем авторизацию и редиректим если не авторизован
   useEffect(() => {
-    const verifyAccessToken = async () => {
-      console.log('🔐 [DASHBOARD] Проверяем токен доступа');
-      
-      const token = sessionStorage.getItem('dashboardToken');
-      
-      if (!token) {
-        console.log('❌ [DASHBOARD] Токен не найден, перенаправляем на страницу входа');
-        message.error('Необходимо войти в личный кабинет');
-        navigate('/lk/login', { replace: true });
-        return;
-      }
-
-      try {
-        const response = await apiRequest('api/dashboard/verify-token', {
-          method: 'POST',
-          body: JSON.stringify({ token: token }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          console.log('✅ [DASHBOARD] Токен валиден, sessionId:', data.sessionId);
-          console.log('📊 [DASHBOARD] Данные от API:', JSON.stringify(data, null, 2));
-          setSessionId(data.sessionId);
-          setUserNickname(data.nickname || '');
-          // Явная проверка на true (не используем ||, чтобы не потерять false)
-          const isPlanUnlocked = data.personalPlanUnlocked === true;
-          setPersonalPlanUnlocked(isPlanUnlocked);
-          console.log('🔓 [DASHBOARD] Персональный план разблокирован:', isPlanUnlocked);
-          console.log('🔓 [DASHBOARD] Значение из API:', data.personalPlanUnlocked);
-          setIsVerifying(false);
-        } else {
-          console.log('❌ [DASHBOARD] Токен недействителен');
-          sessionStorage.removeItem('dashboardToken');
-          message.error('Сессия истекла. Пожалуйста, войдите снова.');
-          navigate('/lk/login', { replace: true });
-        }
-      } catch (error) {
-        console.error('❌ [DASHBOARD] Ошибка при проверке токена:', error);
-        sessionStorage.removeItem('dashboardToken');
-        message.error('Ошибка проверки доступа');
-        navigate('/lk/login', { replace: true });
-      }
-    };
-
-    verifyAccessToken();
-  }, [navigate]);
+    if (!isLoading && !isAuthenticated) {
+      console.log('❌ [DASHBOARD] Пользователь не авторизован, редирект на логин');
+      message.error('Необходимо войти в личный кабинет');
+      navigate('/lk/login', { replace: true });
+    }
+  }, [isLoading, isAuthenticated, navigate]);
 
   // Загрузка данных после успешной верификации
   useEffect(() => {
+    if (!isAuthenticated || !authData) return;
+    
     console.log('🔄 [DASHBOARD] useEffect загрузки данных:', {
-      sessionId: !!sessionId,
-      isVerifying,
-      personalPlanUnlocked,
-      shouldLoadTests: sessionId && !isVerifying && personalPlanUnlocked === false
+      sessionId: !!authData.sessionId,
+      personalPlanUnlocked: authData.personalPlanUnlocked,
+      shouldLoadTests: authData.sessionId && authData.personalPlanUnlocked === false
     });
     
     // Загружаем тесты только если:
     // 1. sessionId есть
-    // 2. верификация завершена
-    // 3. personalPlanUnlocked ЯВНО равен false (не undefined)
-    if (sessionId && !isVerifying && personalPlanUnlocked === false) {
+    // 2. personalPlanUnlocked ЯВНО равен false (не undefined)
+    if (authData.sessionId && authData.personalPlanUnlocked === false) {
       console.log('📥 [DASHBOARD] Загружаем данные тестов');
       generateMascotMessage();
       // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
     } else {
-      console.log('⏭️ [DASHBOARD] Пропускаем загрузку тестов. personalPlanUnlocked:', personalPlanUnlocked);
+      console.log('⏭️ [DASHBOARD] Пропускаем загрузку тестов. personalPlanUnlocked:', authData.personalPlanUnlocked);
     }
-  }, [sessionId, isVerifying, personalPlanUnlocked]);
+  }, [authData]);
 
   // Загружаем результаты тестов после того, как загрузились рекомендованные тесты
   useEffect(() => {

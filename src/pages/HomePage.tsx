@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Typography, Button, Form, Input, Card, message } from 'antd';
+import { Typography, Button, Form, Input, Card, message, Spin } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import Silk from '../components/Silk';
 import { apiRequest } from '../config/api';
 import { useThemeColor } from '../hooks/useThemeColor';
+import { useAuth } from '../hooks/useAuth';
 
 const { Title } = Typography;
 
@@ -12,9 +13,25 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [verifying, setVerifying] = useState(false);
   const [form] = Form.useForm();
+  const { isAuthenticated, isLoading, checkAuth } = useAuth();
   
   // Устанавливаем цвет статус-бара для градиентного фона
   useThemeColor('#f5b878');
+
+  // Проверяем авторизацию при загрузке страницы
+  useEffect(() => {
+    const checkAuthAndRedirect = async () => {
+      if (isAuthenticated) {
+        console.log('✅ [HOME] Пользователь авторизован, редирект в личный кабинет');
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+    };
+
+    if (!isLoading) {
+      checkAuthAndRedirect();
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   const verifyCredentialsAndEnter = async (values: { nickname: string; password: string }) => {
     setVerifying(true);
@@ -35,7 +52,9 @@ const HomePage: React.FC = () => {
       if (data.success) {
         console.log('✅ [LOGIN] Учетные данные подтверждены');
         message.success('Добро пожаловать в личный кабинет!');
-        // Сохраняем токен в sessionStorage
+        // Сохраняем токен в localStorage для долгосрочного хранения
+        localStorage.setItem('dashboardToken', data.dashboardToken);
+        // Также сохраняем в sessionStorage для совместимости
         sessionStorage.setItem('dashboardToken', data.dashboardToken);
         navigate(`/dashboard`);
       } else {
@@ -49,6 +68,24 @@ const HomePage: React.FC = () => {
       setVerifying(false);
     }
   };
+
+  // Показываем спиннер во время проверки авторизации
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh',
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
+        <Silk />
+        <Spin size="large" />
+        <div style={{ color: '#666', fontSize: '16px' }}>Проверяем авторизацию...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 
