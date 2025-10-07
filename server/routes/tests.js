@@ -20,7 +20,7 @@ router.get('/primary/questions', (req, res) => {
       id: 2,
       text: "Испытываете ли вы периоды чрезмерной энергии, когда спите мало, но чувствуете себя полным сил и идей?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Редко", max: "Очень часто" } }
+      scale: { min: 0, max: 10, labels: { min: "Редко", max: "Очень часто" } }
     },
     {
       id: 3,
@@ -32,7 +32,7 @@ router.get('/primary/questions', (req, res) => {
       id: 4,
       text: "Часто ли вы чувствуете себя рассеянным, забываете вещи или не можете сосредоточиться на задачах?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Редко", max: "Очень часто" } }
+      scale: { min: 0, max: 10, labels: { min: "Редко", max: "Очень часто" } }
     },
     {
       id: 5,
@@ -44,7 +44,7 @@ router.get('/primary/questions', (req, res) => {
       id: 6,
       text: "Испытываете ли вы сильную тревогу или панику в повседневных ситуациях?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Слабо", max: "Очень сильно" } }
+      scale: { min: 0, max: 10, labels: { min: "Слабо", max: "Очень сильно" } }
     },
     {
       id: 7,
@@ -68,7 +68,7 @@ router.get('/primary/questions', (req, res) => {
       id: 10,
       text: "Чувствуете ли вы хроническую усталость или потерю энергии без видимой причины?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Слабо", max: "Очень сильно" } }
+      scale: { min: 0, max: 10, labels: { min: "Слабо", max: "Очень сильно" } }
     },
     {
       id: 11,
@@ -86,7 +86,7 @@ router.get('/primary/questions', (req, res) => {
       id: 13,
       text: "Испытываете ли вы социальную тревогу, избегая встреч или общения?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Лёгкая", max: "Сильная" } }
+      scale: { min: 0, max: 10, labels: { min: "Лёгкая", max: "Сильная" } }
     },
     {
       id: 14,
@@ -98,7 +98,7 @@ router.get('/primary/questions', (req, res) => {
       id: 15,
       text: "Чувствуете ли вы себя оторванным от реальности или своих эмоций в стрессовых ситуациях?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Редко", max: "Очень часто" } }
+      scale: { min: 0, max: 10, labels: { min: "Редко", max: "Очень часто" } }
     },
     {
       id: 16,
@@ -122,7 +122,7 @@ router.get('/primary/questions', (req, res) => {
       id: 19,
       text: "Трудно ли вам регулировать эмоции, например, от гнева к слезам за минуты?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Легко", max: "Очень трудно" } }
+      scale: { min: 0, max: 10, labels: { min: "Легко", max: "Очень трудно" } }
     },
     {
       id: 20,
@@ -140,7 +140,7 @@ router.get('/primary/questions', (req, res) => {
       id: 22,
       text: "Чувствуете ли вы хроническую пустоту или скуку?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Редко", max: "Постоянно" } }
+      scale: { min: 0, max: 10, labels: { min: "Редко", max: "Постоянно" } }
     },
     {
       id: 23,
@@ -175,7 +175,7 @@ router.get('/primary/questions', (req, res) => {
       id: 28,
       text: "Сколько сеансов в месяц вы планируете (или можете себе позволить)?",
       type: "scale",
-      scale: { min: 1, max: 10, labels: { min: "1 сеанс", max: "10+ сеансов" } }
+      scale: { min: 0, max: 10, labels: { min: "0 сеансов", max: "10+ сеансов" } }
     },
     {
       id: 29,
@@ -192,7 +192,7 @@ router.get('/primary/questions', (req, res) => {
       id: 31,
       text: "Зависите ли вы финансово от кого-то (родителей, партнера)?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Не завишу", max: "Полностью завишу" } }
+      scale: { min: 0, max: 10, labels: { min: "Не завишу", max: "Полностью завишу" } }
     },
     {
       id: 32,
@@ -210,7 +210,7 @@ router.get('/primary/questions', (req, res) => {
       id: 34,
       text: "Чувствуете ли вы себя изолированным от друзей или семьи?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Много поддержки", max: "Полная изоляция" } }
+      scale: { min: 0, max: 10, labels: { min: "Много поддержки", max: "Полная изоляция" } }
     },
     {
       id: 35,
@@ -240,7 +240,7 @@ router.get('/primary/questions', (req, res) => {
       id: 40,
       text: "Испытываете ли вы финансовый стресс (долги, безработица)?",
       type: "yes_no_scale",
-      scale: { min: 1, max: 10, labels: { min: "Нет стресса", max: "Критический стресс" } }
+      scale: { min: 0, max: 10, labels: { min: "Нет стресса", max: "Критический стресс" } }
     },
     {
       id: 41,
@@ -258,13 +258,13 @@ router.get('/primary/questions', (req, res) => {
       id: 43,
       text: "Чувствуете ли вы давление от общества или культуры по поводу психического здоровья?",
       type: "scale",
-      scale: { min: 1, max: 10, labels: { min: "Нет давления", max: "Сильное давление" } }
+      scale: { min: 0, max: 10, labels: { min: "Нет давления", max: "Сильное давление" } }
     },
     {
       id: 44,
       text: "Готовы ли вы к изменениям в образе жизни (например, отказ от зависимостей)?",
       type: "scale",
-      scale: { min: 1, max: 10, labels: { min: "Нет готовности", max: "Максимум мотивации" } }
+      scale: { min: 0, max: 10, labels: { min: "Нет готовности", max: "Максимум мотивации" } }
     },
     {
       id: 45,
