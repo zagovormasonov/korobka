@@ -36,7 +36,26 @@ const TestPage: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
-  const [sessionId] = useState(() => searchParams.get('sessionId') || uuidv4());
+  
+  // Восстанавливаем sessionId из localStorage или создаём новый
+  const [sessionId] = useState(() => {
+    const savedData = localStorage.getItem('testProgress');
+    if (savedData) {
+      try {
+        const testData = JSON.parse(savedData);
+        if (testData.sessionId) {
+          console.log('🔄 Восстановлен sessionId из localStorage:', testData.sessionId);
+          return testData.sessionId;
+        }
+      } catch (error) {
+        console.error('Ошибка восстановления sessionId:', error);
+      }
+    }
+    const newSessionId = searchParams.get('sessionId') || uuidv4();
+    console.log('🆕 Создан новый sessionId:', newSessionId);
+    return newSessionId;
+  });
+  
   const [loading, setLoading] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState<string>('');
   const [additionalText, setAdditionalText] = useState<string>('');
@@ -62,24 +81,23 @@ const TestPage: React.FC = () => {
     if (savedData) {
       try {
         const testData = JSON.parse(savedData);
-        if (testData.sessionId === sessionId) {
-          setCurrentQuestionIndex(testData.currentQuestionIndex || 0);
-          setAnswers(testData.answers || []);
-          setCurrentAnswer(testData.currentAnswer || '');
-          setAdditionalText(testData.additionalText || '');
-          setSliderValue(testData.sliderValue || 5);
-          setSelectedOptions(testData.selectedOptions || []);
-          
-          // Показываем уведомление о восстановлении
-          if (testData.currentQuestionIndex > 0 || testData.answers.length > 0) {
-            console.log('📱 Восстановлен прогресс теста из localStorage');
-            message.success({
-              content: `Восстановлен прогресс теста! Вопрос ${testData.currentQuestionIndex + 1} из ${testData.answers.length > 0 ? 'сохранённых ответов: ' + testData.answers.length : ''}`,
-              duration: 3,
-            });
-          }
-          return true;
+        // Не проверяем sessionId, так как он уже восстановлен из того же хранилища
+        setCurrentQuestionIndex(testData.currentQuestionIndex || 0);
+        setAnswers(testData.answers || []);
+        setCurrentAnswer(testData.currentAnswer || '');
+        setAdditionalText(testData.additionalText || '');
+        setSliderValue(testData.sliderValue || 5);
+        setSelectedOptions(testData.selectedOptions || []);
+        
+        // Показываем уведомление о восстановлении
+        if (testData.currentQuestionIndex > 0 || testData.answers.length > 0) {
+          console.log('📱 Восстановлен прогресс теста из localStorage');
+          message.success({
+            content: `Восстановлен прогресс теста! Вопрос ${testData.currentQuestionIndex + 1}, сохранённых ответов: ${testData.answers.length}`,
+            duration: 3,
+          });
         }
+        return true;
       } catch (error) {
         console.error('Ошибка при загрузке данных из localStorage:', error);
       }
