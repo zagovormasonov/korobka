@@ -221,6 +221,12 @@ code {
   color: #000000 !important;
 }
 
+/* Убираем дефолтный padding у контейнера слайдера */
+.ant-slider {
+  padding-block: 0 !important;
+  padding: 0 !important;
+}
+
 /* Увеличенная область захвата для бегунка шкалы с идеальным центрированием */
 .ant-slider-handle {
   width: 28px !important;
