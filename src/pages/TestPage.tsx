@@ -434,10 +434,10 @@ const TestPage: React.FC = () => {
                   </div>
                   <Slider
                     min={1}
-                    max={9}
-                    value={sliderValue > 9 ? 5 : sliderValue}
+                    max={10}
+                    value={sliderValue}
                     onChange={handleSliderChange}
-                    style={{ marginBottom: '16px' }}
+                    style={{ marginBottom: '16px', paddingLeft: '5%', paddingRight: '5%' }}
                     tooltip={{ formatter: null }}
                   />
                   <div style={{ textAlign: 'center' }}>
