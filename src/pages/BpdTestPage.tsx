@@ -83,13 +83,27 @@ const BpdTestPage: React.FC = () => {
       selectedOptions
     };
     localStorage.setItem('testProgress', JSON.stringify(testData));
+    console.log('💾 Сохранено в localStorage:', {
+      sessionId,
+      questionIndex: currentQuestionIndex,
+      answersCount: answers.length,
+      hasCurrentAnswer: !!currentAnswer
+    });
   };
 
   const loadFromLocalStorage = () => {
     const savedData = localStorage.getItem('testProgress');
+    console.log('📂 Читаем из localStorage, найдены данные:', !!savedData);
+    
     if (savedData) {
       try {
         const testData = JSON.parse(savedData);
+        console.log('📂 Распарсенные данные:', {
+          sessionId: testData.sessionId,
+          currentQuestionIndex: testData.currentQuestionIndex,
+          answersCount: testData.answers?.length || 0
+        });
+        
         // Не проверяем sessionId, так как он уже восстановлен из того же хранилища
         setCurrentQuestionIndex(testData.currentQuestionIndex || 0);
         setAnswers(testData.answers || []);
@@ -97,6 +111,11 @@ const BpdTestPage: React.FC = () => {
         setAdditionalText(testData.additionalText || '');
         setSliderValue(testData.sliderValue || 5);
         setSelectedOptions(testData.selectedOptions || []);
+        
+        console.log('✅ Состояние восстановлено:', {
+          currentQuestionIndex: testData.currentQuestionIndex,
+          answersCount: testData.answers?.length || 0
+        });
         
         // Показываем уведомление о восстановлении
         if (testData.currentQuestionIndex > 0 || testData.answers.length > 0) {
@@ -108,8 +127,10 @@ const BpdTestPage: React.FC = () => {
         }
         return true;
       } catch (error) {
-        console.error('Ошибка при загрузке данных из localStorage:', error);
+        console.error('❌ Ошибка при загрузке данных из localStorage:', error);
       }
+    } else {
+      console.log('ℹ️ Нет сохранённых данных в localStorage');
     }
     return false;
   };
@@ -118,14 +139,23 @@ const BpdTestPage: React.FC = () => {
     localStorage.removeItem('testProgress');
   };
 
+  // Восстанавливаем данные ДО загрузки вопросов
   useEffect(() => {
     window.scrollTo(0, 0);
+    console.log('🔄 Инициализация: восстановление данных из localStorage');
+    const restored = loadFromLocalStorage();
+    console.log('📊 Данные восстановлены:', restored);
     fetchQuestions();
   }, []);
 
   // Автоматическое сохранение при изменении состояния
   useEffect(() => {
     if (questions.length > 0) {
+      console.log('💾 Автосохранение:', {
+        currentQuestionIndex,
+        answersCount: answers.length,
+        currentAnswer
+      });
       saveToLocalStorage();
     }
   }, [currentQuestionIndex, answers, currentAnswer, additionalText, sliderValue, selectedOptions]);
@@ -135,13 +165,7 @@ const BpdTestPage: React.FC = () => {
        const response = await apiRequest('api/tests/primary/questions');
       const data = await response.json();
       console.log('📋 Загружено вопросов:', data.length);
-      console.log('📋 Последний вопрос:', data[data.length - 1]);
       setQuestions(data);
-      
-      // Загружаем сохраненные данные после получения вопросов
-      setTimeout(() => {
-        loadFromLocalStorage();
-      }, 100);
     } catch (error) {
       console.error('Error fetching questions:', error);
     }
