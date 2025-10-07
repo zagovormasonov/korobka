@@ -221,10 +221,10 @@ code {
   color: #000000 !important;
 }
 
-/* Убираем дефолтный padding у контейнера слайдера, но оставляем горизонтальный для краев */
+/* Убираем дефолтный padding у контейнера слайдера */
 .ant-slider {
   padding-block: 0 !important;
-  padding-inline: 14px !important; /* Половина ширины бегунка для компенсации margin-inline-start */
+  padding-inline: 0 !important;
 }
 
 /* Увеличенная область захвата для бегунка шкалы с идеальным центрированием */
@@ -233,8 +233,7 @@ code {
   height: 28px !important;
   /* Идеальное вертикальное центрирование: -(высота_бегунка - высота_трека) / 2 = -(28 - 10) / 2 = -9px */
   margin-top: -9px !important;
-  /* Убираем margin-left для правильного горизонтального позиционирования */
-  margin-inline-start: -14px !important;
+  /* НЕ трогаем margin-inline-start - Ant Design сам центрирует бегунок по треку */
 }
 
 .ant-slider-handle::after {
