@@ -16,14 +16,14 @@ import {
   MessageOutlined
 } from '@ant-design/icons';
 import { useThemeColor } from '../hooks/useThemeColor';
+import { useAuth } from '../hooks/useAuth';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const PersonalPlanPage: React.FC = () => {
   const navigate = useNavigate();
-  const [sessionId, setSessionId] = useState<string>('');
-  const [userNickname, setUserNickname] = useState('');
+  const { isAuthenticated, isLoading, authData, logout } = useAuth();
   const [psychologistForm] = Form.useForm();
   const [feedbackText, setFeedbackText] = useState('');
   
@@ -35,68 +35,20 @@ const PersonalPlanPage: React.FC = () => {
   // Устанавливаем цвет статус-бара для градиентного фона
   useThemeColor('#c3cfe2');
 
-  // Проверка токена при загрузке
+  // Проверяем авторизацию и редиректим если не авторизован
   useEffect(() => {
-    const verifyAccess = async () => {
-      console.log('🔐 [PERSONAL PLAN] Проверяем токен доступа');
-      
-      const token = sessionStorage.getItem('dashboardToken');
-      
-      if (!token) {
-        console.log('❌ [PERSONAL PLAN] Токен не найден, редирект на логин');
-        message.error('Требуется авторизация');
-        navigate('/lk/login', { replace: true });
-        return;
-      }
-
-      console.log('✅ [PERSONAL PLAN] Токен найден:', token.substring(0, 20) + '...');
-
-      try {
-        const response = await apiRequest('api/dashboard/verify-token', {
-          method: 'POST',
-          body: JSON.stringify({ token }),
-        });
-
-        console.log('📥 [PERSONAL PLAN] Ответ от API verify-token:', response.status);
-
-        if (!response.ok) {
-          console.log('❌ [PERSONAL PLAN] Невалидный токен, статус:', response.status);
-          const errorText = await response.text();
-          console.log('❌ [PERSONAL PLAN] Ошибка:', errorText);
-          sessionStorage.removeItem('dashboardToken');
-          message.error('Сессия истекла');
-          navigate('/lk/login', { replace: true });
-          return;
-        }
-
-        const data = await response.json();
-        console.log('📊 [PERSONAL PLAN] Данные ответа:', data);
-        
-        if (data.success && data.sessionId) {
-          console.log('✅ [PERSONAL PLAN] Токен валиден, sessionId:', data.sessionId);
-          setSessionId(data.sessionId);
-          setUserNickname(data.nickname || '');
-        } else {
-          console.log('❌ [PERSONAL PLAN] success=false или нет sessionId');
-          sessionStorage.removeItem('dashboardToken');
-          message.error('Ошибка авторизации');
-          navigate('/lk/login', { replace: true });
-        }
-      } catch (error) {
-        console.error('❌ [PERSONAL PLAN] Ошибка при проверке токена:', error);
-        sessionStorage.removeItem('dashboardToken');
-        message.error('Ошибка проверки доступа');
-        navigate('/lk/login', { replace: true });
-      }
-    };
-
-    verifyAccess();
-  }, [navigate]);
+    if (!isLoading && !isAuthenticated) {
+      console.log('❌ [PERSONAL PLAN] Пользователь не авторизован, редирект на логин');
+      message.error('Необходимо войти в личный кабинет');
+      navigate('/lk/login', { replace: true });
+    }
+  }, [isLoading, isAuthenticated, navigate]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem('dashboardToken');
-    message.success('Вы вышли из системы');
-    navigate('/');
+    console.log('🚪 [LOGOUT] Выход из ЛК');
+    // Используем функцию logout из хука useAuth
+    logout();
+    navigate('/', { replace: true });
   };
 
   const downloadPersonalPlan = async () => {
@@ -104,7 +56,7 @@ const PersonalPlanPage: React.FC = () => {
     try {
       const response = await apiRequest('api/pdf-html/personal-plan', {
         method: 'POST',
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
       });
 
       if (response.ok) {
@@ -134,7 +86,7 @@ const PersonalPlanPage: React.FC = () => {
     try {
       const response = await apiRequest('api/pdf/session-preparation', {
         method: 'POST',
-        body: JSON.stringify({ sessionId, specialistType }),
+        body: JSON.stringify({ sessionId: authData?.sessionId, specialistType }),
       });
 
       if (response.ok) {
@@ -164,10 +116,10 @@ const PersonalPlanPage: React.FC = () => {
     try {
       const response = await apiRequest('api/telegram/psychologist-request', {
         method: 'POST',
-        body: JSON.stringify({
-          sessionId,
-          ...values
-        }),
+          body: JSON.stringify({
+            sessionId: authData?.sessionId,
+            ...values
+          }),
       });
 
       if (response.ok) {
@@ -192,10 +144,10 @@ const PersonalPlanPage: React.FC = () => {
     try {
       const response = await apiRequest('api/ai/session-feedback', {
         method: 'POST',
-        body: JSON.stringify({
-          sessionId,
-          feedbackText: feedbackText.trim()
-        }),
+          body: JSON.stringify({
+            sessionId: authData?.sessionId,
+            feedbackText: feedbackText.trim()
+          }),
       });
 
       if (response.ok) {
@@ -218,8 +170,8 @@ const PersonalPlanPage: React.FC = () => {
     }
   };
 
-  // Показываем загрузку если еще нет sessionId
-  if (!sessionId) {
+  // Показываем загрузку во время проверки авторизации
+  if (isLoading) {
     return (
       <div style={{ 
         minHeight: '100vh',
@@ -230,7 +182,7 @@ const PersonalPlanPage: React.FC = () => {
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '24px', marginBottom: '10px' }}>Загрузка...</div>
-          <div style={{ fontSize: '14px', color: '#666' }}>Проверяем доступ</div>
+          <div style={{ fontSize: '14px', color: '#666' }}>Проверяем авторизацию</div>
         </div>
       </div>
     );
@@ -251,7 +203,7 @@ const PersonalPlanPage: React.FC = () => {
         maxWidth: '800px',
         margin: '0 auto 20px auto'
       }}>
-        {userNickname && (
+        {authData?.nickname && (
           <div style={{ 
             display: 'flex',
             alignItems: 'center',
@@ -269,14 +221,14 @@ const PersonalPlanPage: React.FC = () => {
               fontSize: '18px',
               fontWeight: '600'
             }}>
-              {userNickname.charAt(0).toUpperCase()}
+              {authData?.nickname.charAt(0).toUpperCase()}
             </div>
             <Text style={{ 
               fontSize: '18px',
               fontWeight: '500',
               color: '#333'
             }}>
-              {userNickname}
+              {authData?.nickname}
             </Text>
           </div>
         )}

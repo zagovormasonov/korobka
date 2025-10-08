@@ -329,9 +329,8 @@ const DashboardPage: React.FC = () => {
 
   const handleLogout = () => {
     console.log('🚪 [LOGOUT] Выход из ЛК');
-    // Удаляем токен из sessionStorage
-    sessionStorage.removeItem('dashboardToken');
-    message.success('Вы вышли из личного кабинета');
+    // Используем функцию logout из хука useAuth
+    logout();
     navigate('/', { replace: true });
   };
 
