@@ -614,17 +614,16 @@ const DashboardPage: React.FC = () => {
       });
 
       if (response.ok) {
-        const html = await response.text();
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = window.URL.createObjectURL(blob);
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'psychologist-pdf.html';
+        link.download = 'psychologist-pdf.pdf';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        message.success('PDF для психолога скачан! Откройте файл в вашем браузере.');
+        message.success('PDF для психолога скачан!');
       } else {
         message.error('Ошибка при генерации PDF для психолога');
       }

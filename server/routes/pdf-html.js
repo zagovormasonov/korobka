@@ -527,7 +527,7 @@ router.post('/psychologist-pdf', async (req, res) => {
 <body>
     <div class="header">
         <h1>PDF для психолога</h1>
-        <p>Краткая выжимка результатов тестирования для ${userNickname}</p>
+        <p>Краткая выжимка результатов тестирования</p>
     </div>
     
     <div class="content">
@@ -536,16 +536,22 @@ router.post('/psychologist-pdf', async (req, res) => {
     
     <div class="footer">
         <p>Документ сгенерирован автоматически на основе результатов психологического тестирования</p>
-        <p>Дата создания: ${new Date().toLocaleDateString('ru-RU')}</p>
+        <p>Дата формирования: ${new Date().toLocaleDateString('ru-RU', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}</p>
     </div>
 </body>
 </html>`;
 
     console.log('✅ [PDF-HTML-PSYCHOLOGIST-PDF] HTML сгенерирован, длина:', html.length, 'символов');
     
-    // Устанавливаем заголовки для скачивания HTML файла
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="psychologist-pdf-${userNickname}.html"`);
+    // Устанавливаем заголовки для скачивания PDF файла
+    res.setHeader('Content-Type', 'application/pdf; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="psychologist-pdf-${userNickname}.pdf"`);
     
     res.send(html);
 
