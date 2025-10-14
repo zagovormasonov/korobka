@@ -608,7 +608,7 @@ const DashboardPage: React.FC = () => {
   const downloadPsychologistPdf = async () => {
     setLoadingPsychologistPdf(true);
     try {
-      const response = await apiRequest('api/pdf-html/psychologist-pdf', {
+      const response = await apiRequest('api/pdf/psychologist-pdf', {
         method: 'POST',
         body: JSON.stringify({ sessionId: authData?.sessionId }),
       });

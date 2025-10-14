@@ -665,4 +665,210 @@ router.post('/session-preparation', async (req, res) => {
   }
 });
 
+// Генерировать PDF для психолога
+router.post('/psychologist-pdf', async (req, res) => {
+  try {
+    console.log('🎯 [PDF-PSYCHOLOGIST-PDF] Начало обработки запроса');
+    
+    if (isPdfDisabled) {
+      console.log('⚠️ [PDF-PSYCHOLOGIST-PDF] PDF генерация отключена');
+      return res.status(503).json({ 
+        success: false, 
+        error: 'PDF generation is disabled. Please contact support.' 
+      });
+    }
+
+    const { sessionId } = req.body;
+    console.log('🎯 [PDF-PSYCHOLOGIST-PDF] SessionId:', sessionId);
+    
+    if (!sessionId) {
+      console.error('❌ [PDF-PSYCHOLOGIST-PDF] SessionId не передан');
+      return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
+    
+    // Получаем PDF для психолога от AI API
+    const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
+    console.log('🔗 [PDF-PSYCHOLOGIST-PDF] Вызываем AI API:', `${baseUrl}/api/ai/psychologist-pdf`);
+    
+    const pdfResponse = await fetch(`${baseUrl}/api/ai/psychologist-pdf`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sessionId }),
+    });
+
+    console.log('📥 [PDF-PSYCHOLOGIST-PDF] Ответ от AI API:', pdfResponse.status, pdfResponse.statusText);
+
+    if (!pdfResponse.ok) {
+      const errorText = await pdfResponse.text();
+      console.error('❌ [PDF-PSYCHOLOGIST-PDF] Ошибка от AI API:', errorText);
+      return res.status(500).json({ success: false, error: 'Failed to generate psychologist PDF' });
+    }
+
+    const pdfData = await pdfResponse.json();
+    
+    if (!pdfData.success || !pdfData.psychologistPdf) {
+      console.error('❌ [PDF-PSYCHOLOGIST-PDF] AI API вернул ошибку или пустой PDF');
+      return res.status(500).json({ success: false, error: 'Failed to generate psychologist PDF' });
+    }
+
+    const psychologistPdf = pdfData.psychologistPdf;
+    console.log('✅ [PDF-PSYCHOLOGIST-PDF] PDF для психолога получен, длина:', psychologistPdf.length, 'символов');
+
+    // Форматируем контент для HTML
+    const formattedContent = formatPlanContent(psychologistPdf);
+    
+    // Создаем HTML документ
+    const html = `
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF для психолога</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .content h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+        .content h2:first-child {
+            margin-top: 0;
+        }
+        .content h3 {
+            color: #34495e;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        .content p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        .content ul, .content ol {
+            margin-bottom: 15px;
+            padding-left: 25px;
+        }
+        .content li {
+            margin-bottom: 8px;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+        }
+        @media print {
+            body { background: white; }
+            .header { background: #667eea !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PDF для психолога</h1>
+        <p>Краткая выжимка результатов тестирования</p>
+    </div>
+    
+    <div class="content">
+        ${formattedContent}
+    </div>
+    
+    <div class="footer">
+        <p>Документ сгенерирован автоматически на основе результатов психологического тестирования</p>
+        <p>Дата формирования: ${new Date().toLocaleDateString('ru-RU', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}</p>
+    </div>
+</body>
+</html>`;
+
+    console.log('✅ [PDF-PSYCHOLOGIST-PDF] HTML сгенерирован, длина:', html.length, 'символов');
+    
+    // Генерируем PDF
+    const options = {
+      format: 'A4',
+      margin: {
+        top: '20mm',
+        right: '20mm',
+        bottom: '20mm',
+        left: '20mm'
+      },
+      printBackground: true,
+      displayHeaderFooter: false
+    };
+
+    const pdfBuffer = await htmlPdf.generatePdf({ content: html }, options);
+    
+    console.log('✅ [PDF-PSYCHOLOGIST-PDF] PDF сгенерирован, размер:', pdfBuffer.length, 'байт');
+    
+    // Устанавливаем заголовки для скачивания PDF файла
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="psychologist-pdf.pdf"');
+    res.setHeader('Content-Length', pdfBuffer.length);
+    
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error('❌ [PDF-PSYCHOLOGIST-PDF] Критическая ошибка:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Ошибка при генерации PDF для психолога',
+      details: error.message 
+    });
+  }
+});
+
 export default router;
