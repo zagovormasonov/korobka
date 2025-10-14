@@ -157,6 +157,7 @@ const DashboardPage: React.FC = () => {
   const [loadingPersonalPlan, setLoadingPersonalPlan] = useState(false);
   const [loadingSessionPreparation, setLoadingSessionPreparation] = useState(false);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [loadingPsychologistPdf, setLoadingPsychologistPdf] = useState(false);
   const [loadingTestResults, setLoadingTestResults] = useState(true); // Загрузка результатов тестов
   
   // Состояния для модального окна
@@ -604,6 +605,37 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const downloadPsychologistPdf = async () => {
+    setLoadingPsychologistPdf(true);
+    try {
+      const response = await apiRequest('api/pdf-html/psychologist-pdf', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
+      });
+
+      if (response.ok) {
+        const html = await response.text();
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'psychologist-pdf.html';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        message.success('PDF для психолога скачан! Откройте файл в вашем браузере.');
+      } else {
+        message.error('Ошибка при генерации PDF для психолога');
+      }
+    } catch (error) {
+      console.error('Error downloading psychologist PDF:', error);
+      message.error('Произошла ошибка при скачивании PDF для психолога');
+    } finally {
+      setLoadingPsychologistPdf(false);
+    }
+  };
+
   // Показываем загрузку во время проверки авторизации
   if (isLoading) {
     return (
@@ -942,6 +974,62 @@ const DashboardPage: React.FC = () => {
                   }}
                 >
                   {loadingSessionPreparation ? 'Генерируем...' : 'Скачать подготовку'}
+                </Button>
+              </div>
+
+              {/* Psychologist PDF Card */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                padding: '30px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#F0F9FF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px auto'
+                }}>
+                  <FileTextOutlined style={{ fontSize: '24px', color: '#3B82F6' }} />
+                </div>
+                <Title level={4} style={{ 
+                  color: '#2C3E50', 
+                  marginBottom: '15px',
+                  fontSize: '18px',
+                  fontWeight: '600'
+                }}>
+                  PDF для психолога
+                </Title>
+                <Text style={{ 
+                  color: '#7B8794', 
+                  fontSize: '14px',
+                  display: 'block',
+                  marginBottom: '25px',
+                  lineHeight: '1.5'
+                }}>
+                  Краткая выжимка результатов тестирования для психолога
+                </Text>
+                <Button 
+                  type="primary"
+                  onClick={downloadPsychologistPdf}
+                  loading={loadingPsychologistPdf}
+                  style={{
+                    width: '100%',
+                    height: '45px',
+                    borderRadius: '22px',
+                    backgroundColor: 'rgb(243, 186, 111)',
+                    borderColor: 'rgb(243, 186, 111)',
+                    color: '#ffffff',
+                    fontSize: '16px',
+                    fontWeight: '500'
+                  }}
+                >
+                  {loadingPsychologistPdf ? 'Генерируем...' : 'Скачать PDF'}
                 </Button>
               </div>
 
