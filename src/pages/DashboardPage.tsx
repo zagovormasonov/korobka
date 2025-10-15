@@ -955,7 +955,7 @@ const DashboardPage: React.FC = () => {
                   marginBottom: '25px',
                   lineHeight: '1.5'
                 }}>
-                  PDF с рекомендациями для психолога и психиатра
+                  Руководство для эффективной подготовки к сеансу
                 </Text>
                 <Button 
                   type="primary"
@@ -1011,7 +1011,7 @@ const DashboardPage: React.FC = () => {
                   marginBottom: '25px',
                   lineHeight: '1.5'
                 }}>
-                  Краткая выжимка результатов тестирования для психолога
+                  PDF с рекомендациями для психолога и психиатра
                 </Text>
                 <Button 
                   type="primary"

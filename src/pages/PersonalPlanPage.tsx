@@ -471,7 +471,7 @@ const PersonalPlanPage: React.FC = () => {
               marginBottom: '25px',
               lineHeight: '1.5'
             }}>
-              PDF с рекомендациями для психолога и психиатра
+              Руководство для эффективной подготовки к сеансу
             </Text>
             <Button 
               type="primary"
