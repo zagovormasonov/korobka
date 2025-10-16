@@ -3,6 +3,11 @@ import { supabase } from '../index.js';
 
 const router = express.Router();
 
+// Инициализируем глобальный объект для отслеживания запущенных генераций
+if (!global.generationInProgress) {
+  global.generationInProgress = new Set();
+}
+
 // Запуск фоновой генерации документов
 router.post('/start', async (req, res) => {
   try {
@@ -111,11 +116,17 @@ router.get('/status/:sessionId', async (req, res) => {
     }
 
     // Если генерация запущена, но не завершена, принудительно запускаем её
+    // НО только если она не запущена уже в данный момент
     if (data.documents_generation_started && !data.documents_generation_completed) {
-      console.log('🔄 [BACKGROUND-GENERATION-STATUS] Принудительно запускаем генерацию из статуса...');
-      generateDocumentsInBackground(sessionId).catch(error => {
-        console.error('❌ [BACKGROUND-GENERATION-STATUS] Ошибка в принудительной генерации:', error);
-      });
+      // Проверяем, не запущена ли уже генерация в данный момент
+      if (!global.generationInProgress || !global.generationInProgress.has(sessionId)) {
+        console.log('🔄 [BACKGROUND-GENERATION-STATUS] Принудительно запускаем генерацию из статуса...');
+        generateDocumentsInBackground(sessionId).catch(error => {
+          console.error('❌ [BACKGROUND-GENERATION-STATUS] Ошибка в принудительной генерации:', error);
+        });
+      } else {
+        console.log('⏳ [BACKGROUND-GENERATION-STATUS] Генерация уже выполняется для sessionId:', sessionId);
+      }
     }
 
     res.json({
@@ -142,6 +153,9 @@ router.get('/status/:sessionId', async (req, res) => {
 // Функция для фоновой генерации документов
 async function generateDocumentsInBackground(sessionId) {
   try {
+    // Отмечаем, что генерация запущена
+    global.generationInProgress.add(sessionId);
+    
     console.log('🔄 [BACKGROUND-GENERATION] ===== ФУНКЦИЯ generateDocumentsInBackground ЗАПУЩЕНА =====');
     console.log('🔄 [BACKGROUND-GENERATION] Начинаем последовательную генерацию документов для sessionId:', sessionId);
     console.log('⏰ [BACKGROUND-GENERATION] Время начала:', new Date().toISOString());
@@ -279,10 +293,10 @@ async function generateDocumentsInBackground(sessionId) {
       console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу уже сгенерирована');
     }
 
-    // 3. Генерируем PDF для психолога (на основе подготовки к сеансу)
+    // 3. Генерируем рекомендации для психолога (на основе подготовки к сеансу)
     if (!existingData.psychologist_pdf_generated) {
-      console.log('📄 [BACKGROUND-GENERATION] === ЭТАП 3: Генерация PDF для психолога ===');
-      console.log('📄 [BACKGROUND-GENERATION] Генерируем PDF для психолога на основе подготовки к сеансу...');
+      console.log('📄 [BACKGROUND-GENERATION] === ЭТАП 3: Генерация рекомендаций для психолога ===');
+      console.log('📄 [BACKGROUND-GENERATION] Генерируем рекомендации для психолога на основе подготовки к сеансу...');
       console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 3:', new Date().toISOString());
       try {
         const pdfResponse = await fetch(`${baseUrl}/api/pdf/psychologist`, {
@@ -292,23 +306,36 @@ async function generateDocumentsInBackground(sessionId) {
           signal: AbortSignal.timeout(300000), // 5 минут timeout
         });
 
+        console.log('📥 [BACKGROUND-GENERATION] Получен ответ от psychologist API:', pdfResponse.status, pdfResponse.statusText);
+        
         if (pdfResponse.ok) {
           const pdfContent = await pdfResponse.text();
-          await supabase
+          const { error: updateError } = await supabase
             .from('primary_test_results')
             .update({ 
               psychologist_pdf_generated: true,
               psychologist_pdf_content: pdfContent
             })
             .eq('session_id', sessionId);
-          console.log('✅ [BACKGROUND-GENERATION] PDF для психолога сгенерирован');
+          
+          if (updateError) {
+            console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
+          } else {
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: psychologist_pdf_generated = true');
+          }
+          console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога сгенерированы');
+          console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 3:', new Date().toISOString());
+        } else {
+          const errorText = await pdfResponse.text();
+          console.error('❌ [BACKGROUND-GENERATION] HTTP ошибка при генерации рекомендаций для психолога:', pdfResponse.status, errorText);
+          return;
         }
       } catch (error) {
-        console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации PDF для психолога:', error);
+        console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации рекомендаций для психолога:', error);
         return;
       }
     } else {
-      console.log('✅ [BACKGROUND-GENERATION] PDF для психолога уже сгенерирован');
+      console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога уже сгенерированы');
     }
 
     // Отмечаем, что генерация завершена
@@ -342,6 +369,10 @@ async function generateDocumentsInBackground(sessionId) {
     } catch (dbError) {
       console.error('❌ [BACKGROUND-GENERATION] Ошибка при записи ошибки в БД:', dbError);
     }
+  } finally {
+    // Убираем из списка запущенных генераций
+    global.generationInProgress.delete(sessionId);
+    console.log('✅ [BACKGROUND-GENERATION] Генерация завершена для sessionId:', sessionId);
   }
 }
 
