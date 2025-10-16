@@ -110,6 +110,14 @@ router.get('/status/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
+    // Если генерация запущена, но не завершена, принудительно запускаем её
+    if (data.documents_generation_started && !data.documents_generation_completed) {
+      console.log('🔄 [BACKGROUND-GENERATION-STATUS] Принудительно запускаем генерацию из статуса...');
+      generateDocumentsInBackground(sessionId).catch(error => {
+        console.error('❌ [BACKGROUND-GENERATION-STATUS] Ошибка в принудительной генерации:', error);
+      });
+    }
+
     res.json({
       success: true,
       status: data.documents_generation_completed ? 'completed' : 
@@ -139,6 +147,8 @@ async function generateDocumentsInBackground(sessionId) {
     console.log('⏰ [BACKGROUND-GENERATION] Время начала:', new Date().toISOString());
     console.log('🔄 [BACKGROUND-GENERATION] Process ID:', process.pid);
     console.log('🔄 [BACKGROUND-GENERATION] Memory usage:', process.memoryUsage());
+    console.log('🔄 [BACKGROUND-GENERATION] Node version:', process.version);
+    console.log('🔄 [BACKGROUND-GENERATION] Platform:', process.platform);
     
     // Используем относительный URL для внутренних запросов
     const baseUrl = process.env.NODE_ENV === 'production' 
@@ -316,6 +326,8 @@ async function generateDocumentsInBackground(sessionId) {
     console.error('❌ [BACKGROUND-GENERATION] Критическая ошибка фоновой генерации:', error);
     console.error('❌ [BACKGROUND-GENERATION] Stack trace:', error.stack);
     console.error('❌ [BACKGROUND-GENERATION] SessionId:', sessionId);
+    console.error('❌ [BACKGROUND-GENERATION] Error name:', error.name);
+    console.error('❌ [BACKGROUND-GENERATION] Error message:', error.message);
     
     // Отмечаем ошибку в БД
     try {
