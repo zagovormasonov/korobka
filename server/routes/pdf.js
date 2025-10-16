@@ -379,11 +379,34 @@ router.post('/personal-plan', async (req, res) => {
       </html>
     `;
 
-    // Отправляем HTML точно так же, как session-preparation
-    console.log('📤 [PDF-PERSONAL-PLAN] Отправляем HTML клиенту, размер:', html.length);
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
-    console.log('✅ [PDF-PERSONAL-PLAN] HTML успешно отправлен клиенту');
+    // Генерируем PDF с помощью html-pdf-node
+    const options = {
+      format: 'A4',
+      margin: {
+        top: '20mm',
+        right: '20mm',
+        bottom: '20mm',
+        left: '20mm'
+      },
+      printBackground: true,
+      displayHeaderFooter: false
+    };
+
+    const file = { content: html };
+    
+    try {
+      const pdfBuffer = await htmlPdf.generatePdf(file, options);
+      console.log('✅ [PDF-PERSONAL-PLAN] PDF сгенерирован, размер:', pdfBuffer.length, 'байт');
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="personal-plan.pdf"');
+      res.send(pdfBuffer);
+    } catch (pdfError) {
+      console.error('❌ [PDF-PERSONAL-PLAN] Ошибка генерации PDF:', pdfError);
+      // Fallback: возвращаем HTML
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+    }
   } catch (error) {
     console.error('❌ [PDF-PERSONAL-PLAN] Критическая ошибка:', {
       message: error.message,
@@ -656,9 +679,34 @@ router.post('/session-preparation', async (req, res) => {
       </html>
     `;
 
-    // Отправляем HTML
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
+    // Генерируем PDF с помощью html-pdf-node
+    const options = {
+      format: 'A4',
+      margin: {
+        top: '20mm',
+        right: '20mm',
+        bottom: '20mm',
+        left: '20mm'
+      },
+      printBackground: true,
+      displayHeaderFooter: false
+    };
+
+    const file = { content: html };
+    
+    try {
+      const pdfBuffer = await htmlPdf.generatePdf(file, options);
+      console.log('✅ [PDF-SESSION-PREPARATION] PDF сгенерирован, размер:', pdfBuffer.length, 'байт');
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="session-preparation-${specialistType}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (pdfError) {
+      console.error('❌ [PDF-SESSION-PREPARATION] Ошибка генерации PDF:', pdfError);
+      // Fallback: возвращаем HTML
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+    }
   } catch (error) {
     console.error('Error generating preparation:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -982,9 +1030,34 @@ router.post('/psychologist', async (req, res) => {
 
     console.log('✅ [PDF-PSYCHOLOGIST] HTML сгенерирован, длина:', html.length);
     
-    // Возвращаем HTML вместо PDF (так как PDF генерация отключена)
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(html);
+    // Генерируем PDF с помощью html-pdf-node
+    const options = {
+      format: 'A4',
+      margin: {
+        top: '20mm',
+        right: '20mm',
+        bottom: '20mm',
+        left: '20mm'
+      },
+      printBackground: true,
+      displayHeaderFooter: false
+    };
+
+    const file = { content: html };
+    
+    try {
+      const pdfBuffer = await htmlPdf.generatePdf(file, options);
+      console.log('✅ [PDF-PSYCHOLOGIST] PDF сгенерирован, размер:', pdfBuffer.length, 'байт');
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="psychologist-report.pdf"');
+      res.send(pdfBuffer);
+    } catch (pdfError) {
+      console.error('❌ [PDF-PSYCHOLOGIST] Ошибка генерации PDF:', pdfError);
+      // Fallback: возвращаем HTML
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+    }
 
   } catch (error) {
     console.error('❌ [PDF-PSYCHOLOGIST] Ошибка:', error);
