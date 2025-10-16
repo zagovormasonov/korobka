@@ -96,25 +96,24 @@ const PersonalPlanPage: React.FC = () => {
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
-      const response = await apiRequest(`api/background-generation/download/personal-plan/${authData?.sessionId}`, {
-        method: 'GET',
+      const response = await apiRequest('api/pdf/personal-plan', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
       });
 
       if (response.ok) {
-        const html = await response.text();
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = window.URL.createObjectURL(blob);
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'personal-plan.html';
+        link.download = 'personal-plan.pdf';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        message.success('Персональный план скачан!');
+        message.success('Персональный план скачан в PDF!');
       } else {
-        const errorData = await response.json();
-        message.error(errorData.error || 'Ошибка при скачивании персонального плана');
+        message.error('Ошибка при генерации персонального плана');
       }
     } catch (error) {
       console.error('Error downloading personal plan:', error);
@@ -179,25 +178,24 @@ const PersonalPlanPage: React.FC = () => {
   const downloadPsychologistRecommendations = async () => {
     setLoadingPsychologistRecommendations(true);
     try {
-      const response = await apiRequest(`api/background-generation/download/psychologist-pdf/${authData?.sessionId}`, {
-        method: 'GET',
+      const response = await apiRequest('api/pdf/psychologist-pdf', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
       });
 
       if (response.ok) {
-        const html = await response.text();
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = window.URL.createObjectURL(blob);
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'psychologist-recommendations.html';
+        link.download = 'psychologist-recommendations.pdf';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        message.success('Рекомендации для психолога скачаны!');
+        message.success('Рекомендации для психолога скачаны в PDF!');
       } else {
-        const errorData = await response.json();
-        message.error(errorData.error || 'Ошибка при скачивании рекомендаций для психолога');
+        message.error('Ошибка при генерации рекомендаций для психолога');
       }
     } catch (error) {
       console.error('Error downloading psychologist recommendations:', error);
