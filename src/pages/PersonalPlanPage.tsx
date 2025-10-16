@@ -93,6 +93,47 @@ const PersonalPlanPage: React.FC = () => {
     navigate('/', { replace: true });
   };
 
+  // Утилитарная функция для определения мобильных браузеров
+  const isMobileSafari = () => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
+    return isMobile && isSafari;
+  };
+
+  // Утилитарная функция для открытия PDF
+  const openPdf = (url: string, filename: string, successMessage: string) => {
+    if (isMobileSafari()) {
+      // Для мобильного Safari используем скачивание
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      message.success(`${successMessage} скачан!`);
+    } else {
+      // Для десктопных браузеров открываем в новой вкладке
+      const newWindow = window.open(url, '_blank');
+      if (newWindow) {
+        message.success(`${successMessage} открыт в новой вкладке!`);
+      } else {
+        // Fallback: если popup заблокирован, скачиваем
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        message.success(`${successMessage} скачан!`);
+      }
+    }
+    
+    // Очищаем URL через 5 секунд
+    setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+  };
+
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
@@ -104,10 +145,8 @@ const PersonalPlanPage: React.FC = () => {
         const pdfBlob = await response.blob();
         const url = window.URL.createObjectURL(pdfBlob);
         
-        // Открываем PDF в новой вкладке браузера
-        window.open(url, '_blank');
-        
-        message.success('Персональный план открыт в новой вкладке!');
+        // Используем утилитарную функцию для открытия PDF
+        openPdf(url, 'personal-plan.pdf', 'Персональный план');
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании персонального плана');
@@ -131,10 +170,8 @@ const PersonalPlanPage: React.FC = () => {
         const pdfBlob = await response.blob();
         const url = window.URL.createObjectURL(pdfBlob);
         
-        // Открываем PDF в новой вкладке браузера
-        window.open(url, '_blank');
-        
-        message.success(`Подготовка к сеансу открыта в новой вкладке!`);
+        // Используем утилитарную функцию для открытия PDF
+        openPdf(url, `session-preparation-${specialistType}.pdf`, 'Подготовка к сеансу');
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании подготовки к сеансу');
@@ -180,10 +217,8 @@ const PersonalPlanPage: React.FC = () => {
         const pdfBlob = await response.blob();
         const url = window.URL.createObjectURL(pdfBlob);
         
-        // Открываем PDF в новой вкладке браузера
-        window.open(url, '_blank');
-        
-        message.success('Рекомендации для психолога открыты в новой вкладке!');
+        // Используем утилитарную функцию для открытия PDF
+        openPdf(url, 'psychologist-recommendations.pdf', 'Рекомендации для психолога');
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании рекомендаций для психолога');
