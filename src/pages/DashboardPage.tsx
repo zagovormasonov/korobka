@@ -152,6 +152,22 @@ const DashboardPage: React.FC = () => {
   const startBackgroundGeneration = async () => {
     try {
       console.log('🚀 [DASHBOARD] Запуск фоновой генерации документов');
+      
+      // Проверяем валидность sessionId
+      if (!authData?.sessionId || authData?.sessionId === true || authData?.sessionId.trim() === '') {
+        console.error('❌ [DASHBOARD] SessionId невалидный для фоновой генерации:', authData?.sessionId);
+        message.error('Ошибка: невалидный идентификатор сессии');
+        return;
+      }
+      
+      // Дополнительная проверка на валидность UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(authData.sessionId)) {
+        console.error('❌ [DASHBOARD] SessionId не является валидным UUID:', authData.sessionId);
+        message.error('Ошибка: невалидный формат идентификатора сессии');
+        return;
+      }
+      
       setIsGenerating(true);
       setGenerationStep(0);
       setGenerationStatus('in_progress');
@@ -182,6 +198,19 @@ const DashboardPage: React.FC = () => {
   const monitorGenerationStatus = async () => {
     const checkStatus = async () => {
       try {
+        // Проверяем валидность sessionId перед запросом
+        if (!authData?.sessionId || authData?.sessionId === true || authData?.sessionId.trim() === '') {
+          console.error('❌ [DASHBOARD] SessionId невалидный для мониторинга:', authData?.sessionId);
+          return;
+        }
+        
+        // Дополнительная проверка на валидность UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(authData.sessionId)) {
+          console.error('❌ [DASHBOARD] SessionId не является валидным UUID для мониторинга:', authData.sessionId);
+          return;
+        }
+        
         const response = await apiRequest(`api/background-generation/status/${authData?.sessionId}`, {
           method: 'GET',
         });
@@ -263,14 +292,30 @@ const DashboardPage: React.FC = () => {
     
     console.log('🔄 [DASHBOARD] useEffect загрузки данных:', {
       sessionId: !!authData?.sessionId,
+      sessionIdValue: authData?.sessionId,
+      sessionIdType: typeof authData?.sessionId,
       personalPlanUnlocked: authData?.personalPlanUnlocked,
       shouldLoadTests: authData?.sessionId && authData?.personalPlanUnlocked === false
     });
     
+    // Проверяем валидность sessionId
+    const isValidSessionId = authData?.sessionId && 
+      authData.sessionId !== true && 
+      typeof authData.sessionId === 'string' && 
+      authData.sessionId.trim() !== '';
+    
+    if (!isValidSessionId) {
+      console.error('❌ [DASHBOARD] Невалидный sessionId:', authData?.sessionId);
+      console.error('❌ [DASHBOARD] Перенаправляем на логин');
+      message.error('Ошибка авторизации. Пожалуйста, войдите заново.');
+      navigate('/lk/login', { replace: true });
+      return;
+    }
+    
     // Загружаем тесты только если:
-    // 1. sessionId есть
+    // 1. sessionId валидный
     // 2. personalPlanUnlocked ЯВНО равен false (не undefined)
-    if (authData?.sessionId && authData?.personalPlanUnlocked === false) {
+    if (isValidSessionId && authData?.personalPlanUnlocked === false) {
       console.log('📥 [DASHBOARD] Загружаем данные тестов');
       generateMascotMessage();
       // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
@@ -482,9 +527,19 @@ const DashboardPage: React.FC = () => {
       
       setLoadingTestResults(true);
       
-      // Проверяем, что authData?.sessionId существует
-      if (!authData?.sessionId || authData?.sessionId.trim() === '') {
-        console.log('❌ SessionId пустой, пропускаем загрузку результатов');
+      // Проверяем, что authData?.sessionId существует и является валидным UUID
+      if (!authData?.sessionId || authData?.sessionId === true || authData?.sessionId.trim() === '') {
+        console.log('❌ SessionId пустой или невалидный, пропускаем загрузку результатов');
+        console.log('❌ SessionId значение:', authData?.sessionId);
+        console.log('❌ SessionId тип:', typeof authData?.sessionId);
+        setLoadingTestResults(false);
+        return;
+      }
+      
+      // Дополнительная проверка на валидность UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(authData.sessionId)) {
+        console.log('❌ SessionId не является валидным UUID:', authData.sessionId);
         setLoadingTestResults(false);
         return;
       }

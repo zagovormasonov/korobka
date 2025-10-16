@@ -47,6 +47,12 @@ router.post('/verify-token', async (req, res) => {
     console.log('🔓 [DASHBOARD] Тип значения:', typeof user.personal_plan_unlocked);
     console.log('📊 [DASHBOARD] Полные данные пользователя:', JSON.stringify(user, null, 2));
 
+    // Проверяем валидность sessionId
+    if (!user.session_id || user.session_id === true || typeof user.session_id !== 'string') {
+      console.error('❌ [DASHBOARD] Невалидный sessionId:', user.session_id);
+      return res.status(500).json({ success: false, error: 'Invalid session ID' });
+    }
+
     // Явная проверка на true (не используем ||, чтобы не потерять false/null/undefined)
     const personalPlanUnlocked = user.personal_plan_unlocked === true;
     console.log('🔓 [DASHBOARD] Итоговое значение personalPlanUnlocked:', personalPlanUnlocked);
