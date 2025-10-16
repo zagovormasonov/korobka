@@ -50,7 +50,10 @@ router.post('/start', async (req, res) => {
     }
 
     // Запускаем фоновую генерацию (не ждем завершения)
-    generateDocumentsInBackground(sessionId);
+    console.log('🚀 [BACKGROUND-GENERATION] Запускаем функцию generateDocumentsInBackground...');
+    generateDocumentsInBackground(sessionId).catch(error => {
+      console.error('❌ [BACKGROUND-GENERATION] Ошибка в фоновой генерации:', error);
+    });
 
     console.log('✅ [BACKGROUND-GENERATION] Фоновая генерация запущена для sessionId:', sessionId);
     res.json({ 
@@ -121,6 +124,7 @@ router.get('/status/:sessionId', async (req, res) => {
 // Функция для фоновой генерации документов
 async function generateDocumentsInBackground(sessionId) {
   try {
+    console.log('🔄 [BACKGROUND-GENERATION] ===== ФУНКЦИЯ generateDocumentsInBackground ЗАПУЩЕНА =====');
     console.log('🔄 [BACKGROUND-GENERATION] Начинаем последовательную генерацию документов для sessionId:', sessionId);
     console.log('⏰ [BACKGROUND-GENERATION] Время начала:', new Date().toISOString());
     
@@ -130,16 +134,31 @@ async function generateDocumentsInBackground(sessionId) {
       : `http://127.0.0.1:${process.env.PORT || 5000}`;
     
     // Проверяем, не запущена ли уже генерация
+    console.log('🔍 [BACKGROUND-GENERATION] Запрашиваем данные из БД для sessionId:', sessionId);
     const { data: existingData, error: fetchError } = await supabase
       .from('primary_test_results')
       .select('documents_generation_started, documents_generation_completed, personal_plan_generated, session_preparation_generated, psychologist_pdf_generated')
       .eq('session_id', sessionId)
       .single();
+    
+    console.log('📊 [BACKGROUND-GENERATION] Результат запроса к БД:', {
+      hasData: !!existingData,
+      hasError: !!fetchError,
+      errorMessage: fetchError?.message
+    });
 
     if (fetchError) {
       console.error('❌ [BACKGROUND-GENERATION] Ошибка при получении данных:', fetchError);
       return;
     }
+
+    console.log('📊 [BACKGROUND-GENERATION] Данные из БД:', {
+      documents_generation_started: existingData.documents_generation_started,
+      documents_generation_completed: existingData.documents_generation_completed,
+      personal_plan_generated: existingData.personal_plan_generated,
+      session_preparation_generated: existingData.session_preparation_generated,
+      psychologist_pdf_generated: existingData.psychologist_pdf_generated
+    });
 
     if (existingData.documents_generation_completed) {
       console.log('⚠️ [BACKGROUND-GENERATION] Генерация уже завершена для sessionId:', sessionId);
@@ -158,6 +177,7 @@ async function generateDocumentsInBackground(sessionId) {
       console.log('🔗 [BACKGROUND-GENERATION] URL для запроса:', `${baseUrl}/api/ai/personal-plan`);
       console.log('📤 [BACKGROUND-GENERATION] Отправляем запрос с sessionId:', sessionId);
       console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 1:', new Date().toISOString());
+      console.log('🌐 [BACKGROUND-GENERATION] Выполняем fetch запрос к:', `${baseUrl}/api/ai/personal-plan`);
       try {
         const planResponse = await fetch(`${baseUrl}/api/ai/personal-plan`, {
           method: 'POST',
@@ -167,6 +187,7 @@ async function generateDocumentsInBackground(sessionId) {
         });
 
         console.log('📥 [BACKGROUND-GENERATION] Получен ответ от AI API:', planResponse.status, planResponse.statusText);
+        console.log('⏰ [BACKGROUND-GENERATION] Время получения ответа:', new Date().toISOString());
         
         if (planResponse.ok) {
           const planData = await planResponse.json();
@@ -183,6 +204,7 @@ async function generateDocumentsInBackground(sessionId) {
             }
             console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован');
             console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 1:', new Date().toISOString());
+            console.log('🔄 [BACKGROUND-GENERATION] Переходим к этапу 2...');
           } else {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации персонального плана:', planData.error);
             return;
