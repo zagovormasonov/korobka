@@ -103,14 +103,11 @@ const PersonalPlanPage: React.FC = () => {
       if (response.ok) {
         const pdfBlob = await response.blob();
         const url = window.URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'personal-plan.pdf';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        message.success('Персональный план скачан в PDF!');
+        
+        // Открываем PDF в новой вкладке браузера
+        window.open(url, '_blank');
+        
+        message.success('Персональный план открыт в новой вкладке!');
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании персонального плана');
@@ -133,14 +130,11 @@ const PersonalPlanPage: React.FC = () => {
       if (response.ok) {
         const pdfBlob = await response.blob();
         const url = window.URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `session-preparation-${specialistType}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        message.success(`Подготовка к сеансу скачана в PDF!`);
+        
+        // Открываем PDF в новой вкладке браузера
+        window.open(url, '_blank');
+        
+        message.success(`Подготовка к сеансу открыта в новой вкладке!`);
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании подготовки к сеансу');
@@ -185,14 +179,11 @@ const PersonalPlanPage: React.FC = () => {
       if (response.ok) {
         const pdfBlob = await response.blob();
         const url = window.URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'psychologist-recommendations.pdf';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        message.success('Рекомендации для психолога скачаны в PDF!');
+        
+        // Открываем PDF в новой вкладке браузера
+        window.open(url, '_blank');
+        
+        message.success('Рекомендации для психолога открыты в новой вкладке!');
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании рекомендаций для психолога');
