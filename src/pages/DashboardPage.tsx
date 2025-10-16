@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
+import GenerationAnimation from '../components/GenerationAnimation';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -146,6 +147,83 @@ const DashboardPage: React.FC = () => {
   const [testResults, setTestResults] = useState<{[key: number]: string}>({});
   const [savingResults, setSavingResults] = useState<{[key: number]: boolean}>({});
   const completionButtonRef = useRef<HTMLDivElement>(null);
+  
+  // Функции для фоновой генерации
+  const startBackgroundGeneration = async () => {
+    try {
+      console.log('🚀 [DASHBOARD] Запуск фоновой генерации документов');
+      setIsGenerating(true);
+      setGenerationStep(0);
+      setGenerationStatus('in_progress');
+      
+      const response = await apiRequest('api/background-generation/start', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ [DASHBOARD] Фоновая генерация запущена:', data);
+        message.success('Генерация документов запущена!');
+        
+        // Запускаем мониторинг статуса
+        monitorGenerationStatus();
+      } else {
+        throw new Error('Failed to start background generation');
+      }
+    } catch (error) {
+      console.error('❌ [DASHBOARD] Ошибка запуска фоновой генерации:', error);
+      message.error('Ошибка при запуске генерации документов');
+      setIsGenerating(false);
+      setGenerationStatus('not_started');
+    }
+  };
+  
+  const monitorGenerationStatus = async () => {
+    const checkStatus = async () => {
+      try {
+        const response = await apiRequest(`api/background-generation/status/${authData?.sessionId}`, {
+          method: 'GET',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('📊 [DASHBOARD] Статус генерации:', data);
+          
+          setGenerationStatus(data.status);
+          
+          // Обновляем текущий шаг на основе готовых документов
+          let currentStep = 0;
+          if (data.documents.personal_plan) currentStep = 1;
+          if (data.documents.session_preparation) currentStep = 2;
+          if (data.documents.psychologist_pdf) currentStep = 3;
+          
+          setGenerationStep(currentStep);
+          
+          if (data.status === 'completed') {
+            setIsGenerating(false);
+            message.success('Все документы готовы!');
+            // Перенаправляем на страницу персонального плана
+            navigate('/personal-plan');
+          }
+        }
+      } catch (error) {
+        console.error('❌ [DASHBOARD] Ошибка проверки статуса:', error);
+      }
+    };
+    
+    // Проверяем статус каждые 3 секунды
+    const interval = setInterval(checkStatus, 3000);
+    
+    // Очищаем интервал через 5 минут (на случай зависания)
+    setTimeout(() => {
+      clearInterval(interval);
+      if (isGenerating) {
+        setIsGenerating(false);
+        message.warning('Генерация документов занимает больше времени, чем ожидалось. Проверьте статус позже.');
+      }
+    }, 300000); // 5 минут
+  };
   const [psychologistForm] = Form.useForm();
   const [feedbackText, setFeedbackText] = useState('');
   
@@ -164,6 +242,11 @@ const DashboardPage: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentTestId, setCurrentTestId] = useState<number | null>(null);
   const [modalText, setModalText] = useState('');
+  
+  // Состояния для фоновой генерации
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState(0);
+  const [generationStatus, setGenerationStatus] = useState<'not_started' | 'in_progress' | 'completed'>('not_started');
 
   // Проверяем авторизацию и редиректим если не авторизован
   useEffect(() => {
@@ -1246,7 +1329,9 @@ const DashboardPage: React.FC = () => {
                         console.log('📊 [DASHBOARD] Данные ответа:', data);
                         setPersonalPlanUnlocked(true);
                         console.log('🔓 [DASHBOARD] Установлен флаг authData?.personalPlanUnlocked = true');
-                        message.success('Добро пожаловать в персональный план!');
+                        
+                        // Запускаем фоновую генерацию документов
+                        await startBackgroundGeneration();
                       } else {
                         const errorText = await response.text();
                         console.error('❌ [DASHBOARD] Ошибка при разблокировке:', errorText);
@@ -1523,6 +1608,14 @@ const DashboardPage: React.FC = () => {
         </Modal>
         </div>
         )}
+        
+        {/* Анимация генерации документов */}
+        <GenerationAnimation 
+          isGenerating={isGenerating}
+          currentStep={generationStep}
+          totalSteps={3}
+          stepNames={['Персональный план', 'Подготовка к сеансу', 'PDF для психолога']}
+        />
       </div>
     </div>
   );

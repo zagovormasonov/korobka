@@ -871,4 +871,125 @@ router.post('/psychologist-pdf', async (req, res) => {
   }
 });
 
+// Генерировать PDF для психолога
+router.post('/psychologist', async (req, res) => {
+  try {
+    if (isPdfDisabled) {
+      console.log('⚠️ [PDF-PSYCHOLOGIST] PDF генерация отключена');
+      return res.status(503).json({ 
+        success: false, 
+        error: 'PDF generation is disabled. Please contact support.' 
+      });
+    }
+
+    const { sessionId } = req.body;
+    console.log('🎯 [PDF-PSYCHOLOGIST] SessionId:', sessionId);
+    
+    if (!sessionId) {
+      console.error('❌ [PDF-PSYCHOLOGIST] SessionId не передан');
+      return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
+    
+    // Получаем данные пользователя и результаты тестов
+    const { data: primaryTest, error: primaryError } = await supabase
+      .from('primary_test_results')
+      .select('answers, email, personal_plan')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (primaryError || !primaryTest) {
+      console.error('❌ [PDF-PSYCHOLOGIST] Ошибка получения данных:', primaryError);
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+
+    // Получаем результаты дополнительных тестов
+    const { data: additionalTests, error: additionalError } = await supabase
+      .from('additional_test_results')
+      .select('test_type, answers')
+      .eq('session_id', sessionId);
+
+    if (additionalError) {
+      console.error('❌ [PDF-PSYCHOLOGIST] Ошибка получения дополнительных тестов:', additionalError);
+    }
+
+    // Формируем HTML для PDF
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Отчет для психолога</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .section { margin-bottom: 25px; }
+          .section h2 { color: #2C3E50; border-bottom: 2px solid #4F958B; padding-bottom: 5px; }
+          .test-result { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; }
+          .highlight { background: #E8F4FD; padding: 2px 4px; border-radius: 3px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Отчет для психолога</h1>
+          <p>Данные пациента: ${primaryTest.email || 'Не указан'}</p>
+          <p>Дата создания: ${new Date().toLocaleDateString('ru-RU')}</p>
+        </div>
+
+        <div class="section">
+          <h2>Результаты первичного тестирования</h2>
+          <div class="test-result">
+            <strong>Ответы на вопросы:</strong><br>
+            ${JSON.stringify(primaryTest.answers, null, 2)}
+          </div>
+        </div>
+
+        ${additionalTests && additionalTests.length > 0 ? `
+        <div class="section">
+          <h2>Результаты дополнительных тестов</h2>
+          ${additionalTests.map(test => `
+            <div class="test-result">
+              <strong>${test.test_type}:</strong><br>
+              ${test.answers}
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+
+        ${primaryTest.personal_plan ? `
+        <div class="section">
+          <h2>Персональный план пациента</h2>
+          <div class="test-result">
+            ${primaryTest.personal_plan}
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="section">
+          <h2>Рекомендации для психолога</h2>
+          <div class="test-result">
+            <p>На основе проведенного тестирования рекомендуется:</p>
+            <ul>
+              <li>Провести углубленную диагностику с учетом выявленных симптомов</li>
+              <li>Обратить внимание на эмоциональную регуляцию пациента</li>
+              <li>Рассмотреть возможность комплексного подхода к терапии</li>
+              <li>Учесть индивидуальные особенности при составлении плана лечения</li>
+            </ul>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    console.log('✅ [PDF-PSYCHOLOGIST] HTML сгенерирован, длина:', html.length);
+    
+    // Возвращаем HTML вместо PDF (так как PDF генерация отключена)
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+
+  } catch (error) {
+    console.error('❌ [PDF-PSYCHOLOGIST] Ошибка:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;

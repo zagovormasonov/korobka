@@ -12,6 +12,7 @@ import pdfRoutes from './routes/pdf.js';
 import pdfHtmlRoutes from './routes/pdf-html.js';
 import dashboardRoutes from './routes/dashboard.js';
 import chatRoutes from './routes/chat.js';
+import backgroundGenerationRoutes from './routes/background-generation.js';
 
 // Получаем путь к корневой директории проекта
 const __filename = fileURLToPath(import.meta.url);
@@ -134,6 +135,7 @@ app.use('/api/pdf', pdfRoutes);
 app.use('/api/pdf-html', pdfHtmlRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/background-generation', backgroundGenerationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

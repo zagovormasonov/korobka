@@ -32,6 +32,15 @@ const PersonalPlanPage: React.FC = () => {
   const [loadingSessionPreparation, setLoadingSessionPreparation] = useState(false);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   
+  // Состояния для проверки готовности документов
+  const [documentsStatus, setDocumentsStatus] = useState({
+    personal_plan: false,
+    session_preparation: false,
+    psychologist_pdf: false,
+    generation_completed: false
+  });
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  
   // Устанавливаем цвет статус-бара для градиентного фона
   useThemeColor('#c3cfe2');
 
@@ -43,6 +52,38 @@ const PersonalPlanPage: React.FC = () => {
       navigate('/lk/login', { replace: true });
     }
   }, [isLoading, isAuthenticated, navigate]);
+
+  // Проверяем статус генерации документов при загрузке страницы
+  useEffect(() => {
+    if (isAuthenticated && authData?.sessionId) {
+      checkDocumentsStatus();
+    }
+  }, [isAuthenticated, authData?.sessionId]);
+
+  const checkDocumentsStatus = async () => {
+    try {
+      setCheckingStatus(true);
+      const response = await apiRequest(`api/background-generation/status/${authData?.sessionId}`, {
+        method: 'GET',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📊 [PERSONAL PLAN] Статус документов:', data);
+        
+        setDocumentsStatus({
+          personal_plan: data.documents.personal_plan,
+          session_preparation: data.documents.session_preparation,
+          psychologist_pdf: data.documents.psychologist_pdf,
+          generation_completed: data.status === 'completed'
+        });
+      }
+    } catch (error) {
+      console.error('❌ [PERSONAL PLAN] Ошибка проверки статуса документов:', error);
+    } finally {
+      setCheckingStatus(false);
+    }
+  };
 
   const handleLogout = () => {
     console.log('🚪 [LOGOUT] Выход из ЛК');
@@ -188,6 +229,24 @@ const PersonalPlanPage: React.FC = () => {
     );
   }
 
+  // Показываем загрузку во время проверки статуса документов
+  if (checkingStatus) {
+    return (
+      <div style={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '24px', marginBottom: '10px' }}>Проверяем документы...</div>
+          <div style={{ fontSize: '14px', color: '#666' }}>Загружаем статус генерации</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ 
       minHeight: '100vh',
@@ -313,18 +372,20 @@ const PersonalPlanPage: React.FC = () => {
               type="primary"
               onClick={downloadPersonalPlan}
               loading={loadingPersonalPlan}
+              disabled={!documentsStatus.personal_plan}
               style={{
                 width: '100%',
                 height: '45px',
                 borderRadius: '22px',
-                backgroundColor: 'rgb(243, 186, 111)',
-                borderColor: 'rgb(243, 186, 111)',
+                backgroundColor: documentsStatus.personal_plan ? 'rgb(243, 186, 111)' : '#D9D9D9',
+                borderColor: documentsStatus.personal_plan ? 'rgb(243, 186, 111)' : '#D9D9D9',
                 color: '#ffffff',
                 fontSize: '16px',
                 fontWeight: '500'
               }}
             >
-              {loadingPersonalPlan ? 'Генерируем план...' : 'Скачать план'}
+              {loadingPersonalPlan ? 'Генерируем план...' : 
+               documentsStatus.personal_plan ? 'Скачать план' : 'План готовится...'}
             </Button>
           </div>
 
@@ -477,18 +538,20 @@ const PersonalPlanPage: React.FC = () => {
               type="primary"
               onClick={() => downloadSessionPreparation('psychologist')}
               loading={loadingSessionPreparation}
+              disabled={!documentsStatus.session_preparation}
               style={{
                 width: '100%',
                 height: '45px',
                 borderRadius: '22px',
-                backgroundColor: 'rgb(243, 186, 111)',
-                borderColor: 'rgb(243, 186, 111)',
+                backgroundColor: documentsStatus.session_preparation ? 'rgb(243, 186, 111)' : '#D9D9D9',
+                borderColor: documentsStatus.session_preparation ? 'rgb(243, 186, 111)' : '#D9D9D9',
                 color: '#ffffff',
                 fontSize: '16px',
                 fontWeight: '500'
               }}
             >
-              {loadingSessionPreparation ? 'Генерируем...' : 'Скачать подготовку'}
+              {loadingSessionPreparation ? 'Генерируем...' : 
+               documentsStatus.session_preparation ? 'Скачать подготовку' : 'Подготовка готовится...'}
             </Button>
           </div>
 
