@@ -139,7 +139,7 @@ const fallbackTests = [
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading, authData, logout } = useAuth();
+  const { isAuthenticated, isLoading, authData, logout, updatePersonalPlanUnlocked } = useAuth();
   const [mascotMessage, setMascotMessage] = useState('');
   const [recommendedTests, setRecommendedTests] = useState<any[]>([]);
   const [showTests, setShowTests] = useState(false);
@@ -1381,7 +1381,7 @@ const DashboardPage: React.FC = () => {
                         const data = await response.json();
                         console.log('✅ [DASHBOARD] Персональный план разблокирован успешно');
                         console.log('📊 [DASHBOARD] Данные ответа:', data);
-                        setPersonalPlanUnlocked(true);
+                        updatePersonalPlanUnlocked(true);
                         console.log('🔓 [DASHBOARD] Установлен флаг authData?.personalPlanUnlocked = true');
                         
                         // Запускаем фоновую генерацию документов

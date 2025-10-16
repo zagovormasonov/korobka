@@ -15,6 +15,7 @@ interface UseAuthReturn {
   authData: AuthData | null;
   logout: () => void;
   checkAuth: () => Promise<boolean>;
+  updatePersonalPlanUnlocked: (unlocked: boolean) => void;
 }
 
 export const useAuth = (): UseAuthReturn => {
@@ -29,6 +30,15 @@ export const useAuth = (): UseAuthReturn => {
     setIsAuthenticated(false);
     setAuthData(null);
     message.success('Вы вышли из системы');
+  };
+
+  const updatePersonalPlanUnlocked = (unlocked: boolean) => {
+    if (authData) {
+      setAuthData({
+        ...authData,
+        personalPlanUnlocked: unlocked
+      });
+    }
   };
 
   const checkAuth = async (): Promise<boolean> => {
@@ -108,6 +118,7 @@ export const useAuth = (): UseAuthReturn => {
     isLoading,
     authData,
     logout,
-    checkAuth
+    checkAuth,
+    updatePersonalPlanUnlocked
   };
 };
