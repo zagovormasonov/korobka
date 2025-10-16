@@ -28,6 +28,15 @@ router.post('/start', async (req, res) => {
 
     if (existingData.documents_generation_started) {
       console.log('⚠️ [BACKGROUND-GENERATION] Генерация уже запущена для sessionId:', sessionId);
+      
+      // Если генерация не завершена, принудительно запускаем её снова
+      if (!existingData.documents_generation_completed) {
+        console.log('🔄 [BACKGROUND-GENERATION] Принудительно перезапускаем генерацию...');
+        generateDocumentsInBackground(sessionId).catch(error => {
+          console.error('❌ [BACKGROUND-GENERATION] Ошибка в принудительной генерации:', error);
+        });
+      }
+      
       return res.json({ 
         success: true, 
         message: 'Generation already started',
@@ -128,6 +137,8 @@ async function generateDocumentsInBackground(sessionId) {
     console.log('🔄 [BACKGROUND-GENERATION] ===== ФУНКЦИЯ generateDocumentsInBackground ЗАПУЩЕНА =====');
     console.log('🔄 [BACKGROUND-GENERATION] Начинаем последовательную генерацию документов для sessionId:', sessionId);
     console.log('⏰ [BACKGROUND-GENERATION] Время начала:', new Date().toISOString());
+    console.log('🔄 [BACKGROUND-GENERATION] Process ID:', process.pid);
+    console.log('🔄 [BACKGROUND-GENERATION] Memory usage:', process.memoryUsage());
     
     // Используем относительный URL для внутренних запросов
     const baseUrl = process.env.NODE_ENV === 'production' 
@@ -303,15 +314,22 @@ async function generateDocumentsInBackground(sessionId) {
 
   } catch (error) {
     console.error('❌ [BACKGROUND-GENERATION] Критическая ошибка фоновой генерации:', error);
+    console.error('❌ [BACKGROUND-GENERATION] Stack trace:', error.stack);
+    console.error('❌ [BACKGROUND-GENERATION] SessionId:', sessionId);
     
     // Отмечаем ошибку в БД
-    await supabase
-      .from('primary_test_results')
-      .update({ 
-        documents_generation_completed: false,
-        documents_generation_completed_at: new Date().toISOString()
-      })
-      .eq('session_id', sessionId);
+    try {
+      await supabase
+        .from('primary_test_results')
+        .update({ 
+          documents_generation_completed: false,
+          documents_generation_completed_at: new Date().toISOString()
+        })
+        .eq('session_id', sessionId);
+      console.log('✅ [BACKGROUND-GENERATION] Ошибка записана в БД');
+    } catch (dbError) {
+      console.error('❌ [BACKGROUND-GENERATION] Ошибка при записи ошибки в БД:', dbError);
+    }
   }
 }
 
