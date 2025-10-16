@@ -291,8 +291,7 @@ const DashboardPage: React.FC = () => {
     if (!isAuthenticated || !authData) return;
     
     console.log('🔄 [DASHBOARD] useEffect загрузки данных:', {
-      sessionId: !!authData?.sessionId,
-      sessionIdValue: authData?.sessionId,
+      sessionId: authData?.sessionId,
       sessionIdType: typeof authData?.sessionId,
       personalPlanUnlocked: authData?.personalPlanUnlocked,
       shouldLoadTests: authData?.sessionId && authData?.personalPlanUnlocked === false
@@ -326,7 +325,7 @@ const DashboardPage: React.FC = () => {
 
   // Загружаем результаты тестов после того, как загрузились рекомендованные тесты
   useEffect(() => {
-    if (recommendedTests.length > 0 && authData?.authData?.sessionId && authData?.personalPlanUnlocked === false) {
+    if (recommendedTests.length > 0 && authData?.sessionId && authData?.personalPlanUnlocked === false) {
       console.log('📋 Рекомендованные тесты загружены, загружаем результаты...');
       fetchAdditionalTestResults();
     }
@@ -334,7 +333,7 @@ const DashboardPage: React.FC = () => {
 
   // Проверяем завершенность тестов когда загружены тесты или результаты
   useEffect(() => {
-    if (recommendedTests.length > 0 && authData?.authData?.personalPlanUnlocked === false) {
+    if (recommendedTests.length > 0 && authData?.personalPlanUnlocked === false) {
       const completedCount = Object.keys(testResults).length;
       const isCompleted = completedCount >= recommendedTests.length;
       console.log(`📊 Прогресс тестов: ${completedCount}/${recommendedTests.length}, завершено: ${isCompleted}`);
@@ -344,7 +343,7 @@ const DashboardPage: React.FC = () => {
 
   // Автоматический скролл к кнопке завершения после прохождения всех тестов
   useEffect(() => {
-    if (allTestsCompleted && completionButtonRef.current && authData?.authData?.personalPlanUnlocked === false) {
+    if (allTestsCompleted && completionButtonRef.current && authData?.personalPlanUnlocked === false) {
       // Показываем салют
       showConfetti();
       
@@ -393,7 +392,7 @@ const DashboardPage: React.FC = () => {
   const generateMascotMessage = async () => {
     try {
       // Проверяем, что authData?.sessionId существует
-      if (!authData?.authData?.sessionId || authData?.sessionId.trim() === '') {
+      if (!authData?.sessionId || authData?.sessionId.trim() === '') {
         console.log('❌ SessionId пустой, пропускаем генерацию сообщения маскота');
         setMascotMessage('Привет! На основе твоего теста я рекомендую пройти дополнительные тесты для более точной диагностики.');
         setRecommendedTests(fallbackTests.slice(0, 5));
