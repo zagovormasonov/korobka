@@ -260,4 +260,126 @@ async function generateDocumentsInBackground(sessionId) {
   }
 }
 
+// Скачать готовый персональный план
+router.get('/download/personal-plan/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+    if (!sessionId) {
+      return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
+
+    // Получаем готовый персональный план из БД
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .select('personal_plan')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({ success: false, error: 'Personal plan not found' });
+    }
+
+    if (!data.personal_plan) {
+      return res.status(404).json({ success: false, error: 'Personal plan not generated yet' });
+    }
+
+    // Возвращаем HTML с персональным планом
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Персональный план</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .content { white-space: pre-wrap; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Персональный план</h1>
+          <p>Дата создания: ${new Date().toLocaleDateString('ru-RU')}</p>
+        </div>
+        <div class="content">${data.personal_plan}</div>
+      </body>
+      </html>
+    `;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+
+  } catch (error) {
+    console.error('❌ [DOWNLOAD-PERSONAL-PLAN] Ошибка:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Скачать готовую подготовку к сеансу
+router.get('/download/session-preparation/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+    if (!sessionId) {
+      return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
+
+    // Получаем готовую подготовку к сеансу из БД
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .select('session_preparation_content')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({ success: false, error: 'Session preparation not found' });
+    }
+
+    if (!data.session_preparation_content) {
+      return res.status(404).json({ success: false, error: 'Session preparation not generated yet' });
+    }
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(data.session_preparation_content);
+
+  } catch (error) {
+    console.error('❌ [DOWNLOAD-SESSION-PREPARATION] Ошибка:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Скачать готовый PDF для психолога
+router.get('/download/psychologist-pdf/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+    if (!sessionId) {
+      return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
+
+    // Получаем готовый PDF для психолога из БД
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .select('psychologist_pdf_content')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({ success: false, error: 'Psychologist PDF not found' });
+    }
+
+    if (!data.psychologist_pdf_content) {
+      return res.status(404).json({ success: false, error: 'Psychologist PDF not generated yet' });
+    }
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(data.psychologist_pdf_content);
+
+  } catch (error) {
+    console.error('❌ [DOWNLOAD-PSYCHOLOGIST-PDF] Ошибка:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;

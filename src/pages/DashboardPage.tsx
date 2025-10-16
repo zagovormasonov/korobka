@@ -230,6 +230,47 @@ const DashboardPage: React.FC = () => {
       setGenerationStatus('not_started');
     }
   };
+
+  // Проверка статуса генерации при загрузке страницы
+  const checkGenerationStatusOnLoad = async () => {
+    try {
+      console.log('🔍 [DASHBOARD] Проверяем статус генерации при загрузке страницы');
+      
+      const response = await apiRequest(`api/background-generation/status/${authData?.sessionId}`, {
+        method: 'GET',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📊 [DASHBOARD] Статус генерации при загрузке:', data);
+        
+        if (data.status === 'completed') {
+          console.log('✅ [DASHBOARD] Документы уже готовы, перенаправляем на персональный план');
+          navigate('/personal-plan');
+        } else if (data.status === 'in_progress') {
+          console.log('⏳ [DASHBOARD] Генерация в процессе, показываем анимацию');
+          setIsGenerating(true);
+          setGenerationStep(0);
+          setGenerationStatus('in_progress');
+          
+          // Обновляем текущий шаг на основе готовых документов
+          let currentStep = 0;
+          if (data.documents.personal_plan) currentStep = 1;
+          if (data.documents.session_preparation) currentStep = 2;
+          if (data.documents.psychologist_pdf) currentStep = 3;
+          setGenerationStep(currentStep);
+          
+          // Запускаем мониторинг статуса
+          monitorGenerationStatus();
+        } else {
+          console.log('🚀 [DASHBOARD] Генерация не запущена, запускаем её');
+          await startBackgroundGeneration();
+        }
+      }
+    } catch (error) {
+      console.error('❌ [DASHBOARD] Ошибка проверки статуса при загрузке:', error);
+    }
+  };
   
   const monitorGenerationStatus = async () => {
     const checkStatus = async () => {
@@ -361,6 +402,10 @@ const DashboardPage: React.FC = () => {
       console.log('📥 [DASHBOARD] Загружаем данные тестов');
       generateMascotMessage();
       // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
+    } else if (isValidSessionId && authData?.personalPlanUnlocked === true) {
+      console.log('🔓 [DASHBOARD] Персональный план разблокирован, проверяем статус генерации документов');
+      // Проверяем статус генерации документов
+      checkGenerationStatusOnLoad();
     } else {
       console.log('⏭️ [DASHBOARD] Пропускаем загрузку тестов. authData?.personalPlanUnlocked:', authData?.personalPlanUnlocked);
     }

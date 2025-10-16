@@ -95,24 +95,24 @@ const PersonalPlanPage: React.FC = () => {
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
-      const response = await apiRequest('api/pdf-html/personal-plan', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId: authData?.sessionId }),
+      const response = await apiRequest(`api/background-generation/download/personal-plan/${authData?.sessionId}`, {
+        method: 'GET',
       });
 
       if (response.ok) {
-        const pdfBlob = await response.blob();
-        const url = window.URL.createObjectURL(pdfBlob);
+        const htmlBlob = await response.blob();
+        const url = window.URL.createObjectURL(htmlBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'personal-plan.pdf';
+        link.download = 'personal-plan.html';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        message.success('Персональный план скачан в PDF!');
+        message.success('Персональный план скачан!');
       } else {
-        message.error('Ошибка при генерации персонального плана');
+        const errorData = await response.json();
+        message.error(errorData.error || 'Ошибка при скачивании персонального плана');
       }
     } catch (error) {
       console.error('Error downloading personal plan:', error);
@@ -125,9 +125,8 @@ const PersonalPlanPage: React.FC = () => {
   const downloadSessionPreparation = async (specialistType: 'psychologist' | 'psychiatrist') => {
     setLoadingSessionPreparation(true);
     try {
-      const response = await apiRequest('api/pdf/session-preparation', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId: authData?.sessionId, specialistType }),
+      const response = await apiRequest(`api/background-generation/download/session-preparation/${authData?.sessionId}`, {
+        method: 'GET',
       });
 
       if (response.ok) {
@@ -143,7 +142,8 @@ const PersonalPlanPage: React.FC = () => {
         window.URL.revokeObjectURL(url);
         message.success(`Подготовка к сеансу скачана!`);
       } else {
-        message.error('Ошибка при генерации подготовки к сеансу');
+        const errorData = await response.json();
+        message.error(errorData.error || 'Ошибка при скачивании подготовки к сеансу');
       }
     } catch (error) {
       console.error('Error downloading session preparation:', error);
