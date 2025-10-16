@@ -315,9 +315,11 @@ const DashboardPage: React.FC = () => {
           
           if (data.status === 'completed') {
             setIsGenerating(false);
+            clearInterval(interval); // Останавливаем мониторинг
             message.success('Все документы готовы!');
             // Перенаправляем на страницу персонального плана
             navigate('/personal-plan');
+            return; // Выходим из функции
           }
         }
       } catch (error) {
