@@ -51,6 +51,7 @@ router.post('/start', async (req, res) => {
 
     // Запускаем фоновую генерацию (не ждем завершения)
     console.log('🚀 [BACKGROUND-GENERATION] Запускаем функцию generateDocumentsInBackground...');
+    console.log('🚀 [BACKGROUND-GENERATION] SessionId для генерации:', sessionId);
     generateDocumentsInBackground(sessionId).catch(error => {
       console.error('❌ [BACKGROUND-GENERATION] Ошибка в фоновой генерации:', error);
     });
@@ -167,7 +168,8 @@ async function generateDocumentsInBackground(sessionId) {
 
     if (existingData.documents_generation_started && !existingData.documents_generation_completed) {
       console.log('⚠️ [BACKGROUND-GENERATION] Генерация уже запущена для sessionId:', sessionId);
-      return;
+      console.log('🔄 [BACKGROUND-GENERATION] Продолжаем генерацию с того места, где остановились...');
+      // НЕ выходим из функции, продолжаем генерацию
     }
     
     // 1. Генерируем персональный план (если еще не сгенерирован)
