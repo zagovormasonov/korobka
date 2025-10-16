@@ -30,6 +30,7 @@ const PersonalPlanPage: React.FC = () => {
   // Состояния загрузки для AI операций
   const [loadingPersonalPlan, setLoadingPersonalPlan] = useState(false);
   const [loadingSessionPreparation, setLoadingSessionPreparation] = useState(false);
+  const [loadingPsychologistRecommendations, setLoadingPsychologistRecommendations] = useState(false);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   
   // Состояния для проверки готовности документов
@@ -95,24 +96,24 @@ const PersonalPlanPage: React.FC = () => {
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
-      const response = await apiRequest(`api/background-generation/download/personal-plan/${authData?.sessionId}`, {
-        method: 'GET',
+      const response = await apiRequest('api/pdf/personal-plan', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
       });
 
       if (response.ok) {
-        const htmlBlob = await response.blob();
-        const url = window.URL.createObjectURL(htmlBlob);
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'personal-plan.html';
+        link.download = 'personal-plan.pdf';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        message.success('Персональный план скачан!');
+        message.success('Персональный план скачан в PDF!');
       } else {
-        const errorData = await response.json();
-        message.error(errorData.error || 'Ошибка при скачивании персонального плана');
+        message.error('Ошибка при генерации персонального плана');
       }
     } catch (error) {
       console.error('Error downloading personal plan:', error);
@@ -125,25 +126,24 @@ const PersonalPlanPage: React.FC = () => {
   const downloadSessionPreparation = async (specialistType: 'psychologist' | 'psychiatrist') => {
     setLoadingSessionPreparation(true);
     try {
-      const response = await apiRequest(`api/background-generation/download/session-preparation/${authData?.sessionId}`, {
-        method: 'GET',
+      const response = await apiRequest('api/pdf/session-preparation', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId, specialistType }),
       });
 
       if (response.ok) {
-        const html = await response.text();
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = window.URL.createObjectURL(blob);
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `session-preparation-${specialistType}.html`;
+        link.download = `session-preparation-${specialistType}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        message.success(`Подготовка к сеансу скачана!`);
+        message.success(`Подготовка к сеансу скачана в PDF!`);
       } else {
-        const errorData = await response.json();
-        message.error(errorData.error || 'Ошибка при скачивании подготовки к сеансу');
+        message.error('Ошибка при генерации подготовки к сеансу');
       }
     } catch (error) {
       console.error('Error downloading session preparation:', error);
@@ -172,6 +172,36 @@ const PersonalPlanPage: React.FC = () => {
     } catch (error) {
       console.error('Error sending psychologist request:', error);
       message.error('Произошла ошибка при отправке заявки');
+    }
+  };
+
+  const downloadPsychologistRecommendations = async () => {
+    setLoadingPsychologistRecommendations(true);
+    try {
+      const response = await apiRequest('api/pdf/psychologist-pdf', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
+      });
+
+      if (response.ok) {
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'psychologist-recommendations.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        message.success('Рекомендации для психолога скачаны в PDF!');
+      } else {
+        message.error('Ошибка при генерации рекомендаций для психолога');
+      }
+    } catch (error) {
+      console.error('Error downloading psychologist recommendations:', error);
+      message.error('Произошла ошибка при скачивании рекомендаций для психолога');
+    } finally {
+      setLoadingPsychologistRecommendations(false);
     }
   };
 
@@ -552,6 +582,64 @@ const PersonalPlanPage: React.FC = () => {
             >
               {loadingSessionPreparation ? 'Генерируем...' : 
                documentsStatus.session_preparation ? 'Скачать подготовку' : 'Подготовка готовится...'}
+            </Button>
+          </div>
+
+          {/* Psychologist Recommendations Card */}
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '20px',
+            padding: '30px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              backgroundColor: '#FFF7E6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto'
+            }}>
+              <UserOutlined style={{ fontSize: '24px', color: '#FA8C16' }} />
+            </div>
+            <Title level={4} style={{ 
+              color: '#2C3E50', 
+              marginBottom: '15px',
+              fontSize: '18px',
+              fontWeight: '600'
+            }}>
+              Рекомендации для психолога
+            </Title>
+            <Text style={{ 
+              color: '#7B8794', 
+              fontSize: '14px',
+              display: 'block',
+              marginBottom: '25px',
+              lineHeight: '1.5'
+            }}>
+              Специальный отчет для психолога с рекомендациями
+            </Text>
+            <Button 
+              type="primary"
+              onClick={downloadPsychologistRecommendations}
+              loading={loadingPsychologistRecommendations}
+              disabled={!documentsStatus.psychologist_pdf}
+              style={{
+                width: '100%',
+                height: '45px',
+                borderRadius: '22px',
+                backgroundColor: documentsStatus.psychologist_pdf ? 'rgb(243, 186, 111)' : '#D9D9D9',
+                borderColor: documentsStatus.psychologist_pdf ? 'rgb(243, 186, 111)' : '#D9D9D9',
+                color: '#ffffff',
+                fontSize: '16px',
+                fontWeight: '500'
+              }}
+            >
+              {loadingPsychologistRecommendations ? 'Генерируем...' : 
+               documentsStatus.psychologist_pdf ? 'Скачать рекомендации' : 'Рекомендации готовятся...'}
             </Button>
           </div>
 

@@ -216,7 +216,7 @@ async function generateDocumentsInBackground(sessionId) {
       console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 1:', new Date().toISOString());
       console.log('🌐 [BACKGROUND-GENERATION] Выполняем fetch запрос к:', `${baseUrl}/api/ai/personal-plan`);
       try {
-        const planResponse = await fetch(`${baseUrl}/api/ai/personal-plan`, {
+        const planResponse = await fetch(`${baseUrl}/api/pdf/personal-plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId }),
@@ -227,25 +227,20 @@ async function generateDocumentsInBackground(sessionId) {
         console.log('⏰ [BACKGROUND-GENERATION] Время получения ответа:', new Date().toISOString());
         
         if (planResponse.ok) {
-          const planData = await planResponse.json();
-          if (planData.success) {
-            const { error: updateError } = await supabase
-              .from('primary_test_results')
-              .update({ personal_plan_generated: true })
-              .eq('session_id', sessionId);
-            
-            if (updateError) {
-              console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
-            } else {
-              console.log('✅ [BACKGROUND-GENERATION] БД обновлена: personal_plan_generated = true');
-            }
-            console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован');
-            console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 1:', new Date().toISOString());
-            console.log('🔄 [BACKGROUND-GENERATION] Переходим к этапу 2...');
+          // PDF endpoint возвращает PDF blob, но нам нужно только отметить, что план сгенерирован
+          const { error: updateError } = await supabase
+            .from('primary_test_results')
+            .update({ personal_plan_generated: true })
+            .eq('session_id', sessionId);
+          
+          if (updateError) {
+            console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации персонального плана:', planData.error);
-            return;
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: personal_plan_generated = true');
           }
+          console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован');
+          console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 1:', new Date().toISOString());
+          console.log('🔄 [BACKGROUND-GENERATION] Переходим к этапу 2...');
         } else {
           const errorText = await planResponse.text();
           console.error('❌ [BACKGROUND-GENERATION] HTTP ошибка при генерации персонального плана:', planResponse.status, errorText);
@@ -265,7 +260,7 @@ async function generateDocumentsInBackground(sessionId) {
       console.log('📋 [BACKGROUND-GENERATION] Генерируем подготовку к сеансу на основе персонального плана...');
       console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 2:', new Date().toISOString());
       try {
-        const sessionResponse = await fetch(`${baseUrl}/api/ai/session-preparation`, {
+        const sessionResponse = await fetch(`${baseUrl}/api/pdf/session-preparation`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId, specialistType: 'psychologist' }),
@@ -273,17 +268,24 @@ async function generateDocumentsInBackground(sessionId) {
         });
 
         if (sessionResponse.ok) {
-          const sessionData = await sessionResponse.json();
-          if (sessionData.success) {
-            await supabase
-              .from('primary_test_results')
-              .update({ 
-                session_preparation_generated: true,
-                session_preparation_content: sessionData.content
-              })
-              .eq('session_id', sessionId);
-            console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу сгенерирована');
+          // PDF endpoint возвращает PDF blob, но нам нужно только отметить, что подготовка сгенерирована
+          const { error: updateError } = await supabase
+            .from('primary_test_results')
+            .update({ session_preparation_generated: true })
+            .eq('session_id', sessionId);
+          
+          if (updateError) {
+            console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
+          } else {
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: session_preparation_generated = true');
           }
+          console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу сгенерирована');
+          console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 2:', new Date().toISOString());
+          console.log('🔄 [BACKGROUND-GENERATION] Переходим к этапу 3...');
+        } else {
+          const errorText = await sessionResponse.text();
+          console.error('❌ [BACKGROUND-GENERATION] HTTP ошибка при генерации подготовки к сеансу:', sessionResponse.status, errorText);
+          return;
         }
       } catch (error) {
         console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации подготовки к сеансу:', error);
@@ -299,7 +301,7 @@ async function generateDocumentsInBackground(sessionId) {
       console.log('📄 [BACKGROUND-GENERATION] Генерируем рекомендации для психолога на основе подготовки к сеансу...');
       console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 3:', new Date().toISOString());
       try {
-        const pdfResponse = await fetch(`${baseUrl}/api/ai/psychologist-pdf`, {
+        const pdfResponse = await fetch(`${baseUrl}/api/pdf/psychologist-pdf`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId }),
@@ -309,27 +311,19 @@ async function generateDocumentsInBackground(sessionId) {
         console.log('📥 [BACKGROUND-GENERATION] Получен ответ от psychologist API:', pdfResponse.status, pdfResponse.statusText);
         
         if (pdfResponse.ok) {
-          const pdfData = await pdfResponse.json();
-          if (pdfData.success && pdfData.psychologistPdf) {
-            const { error: updateError } = await supabase
-              .from('primary_test_results')
-              .update({ 
-                psychologist_pdf_generated: true,
-                psychologist_pdf_content: pdfData.psychologistPdf
-              })
-              .eq('session_id', sessionId);
-            
-            if (updateError) {
-              console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
-            } else {
-              console.log('✅ [BACKGROUND-GENERATION] БД обновлена: psychologist_pdf_generated = true');
-            }
-            console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога сгенерированы');
-            console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 3:', new Date().toISOString());
+          // PDF endpoint возвращает PDF blob, но нам нужно только отметить, что рекомендации сгенерированы
+          const { error: updateError } = await supabase
+            .from('primary_test_results')
+            .update({ psychologist_pdf_generated: true })
+            .eq('session_id', sessionId);
+          
+          if (updateError) {
+            console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации рекомендаций для психолога:', pdfData.error);
-            return;
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: psychologist_pdf_generated = true');
           }
+          console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога сгенерированы');
+          console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 3:', new Date().toISOString());
         } else {
           const errorText = await pdfResponse.text();
           console.error('❌ [BACKGROUND-GENERATION] HTTP ошибка при генерации рекомендаций для психолога:', pdfResponse.status, errorText);
