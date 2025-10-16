@@ -122,8 +122,12 @@ router.get('/status/:sessionId', async (req, res) => {
 async function generateDocumentsInBackground(sessionId) {
   try {
     console.log('🔄 [BACKGROUND-GENERATION] Начинаем последовательную генерацию документов для sessionId:', sessionId);
+    console.log('⏰ [BACKGROUND-GENERATION] Время начала:', new Date().toISOString());
     
-    const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
+    // Используем относительный URL для внутренних запросов
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://idenself.com' 
+      : `http://127.0.0.1:${process.env.PORT || 5000}`;
     
     // Проверяем, не запущена ли уже генерация
     const { data: existingData, error: fetchError } = await supabase
@@ -149,23 +153,44 @@ async function generateDocumentsInBackground(sessionId) {
     
     // 1. Генерируем персональный план (если еще не сгенерирован)
     if (!existingData.personal_plan_generated) {
+      console.log('📝 [BACKGROUND-GENERATION] === ЭТАП 1: Генерация персонального плана ===');
       console.log('📝 [BACKGROUND-GENERATION] Генерируем персональный план...');
+      console.log('🔗 [BACKGROUND-GENERATION] URL для запроса:', `${baseUrl}/api/ai/personal-plan`);
+      console.log('📤 [BACKGROUND-GENERATION] Отправляем запрос с sessionId:', sessionId);
+      console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 1:', new Date().toISOString());
       try {
         const planResponse = await fetch(`${baseUrl}/api/ai/personal-plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId }),
+          signal: AbortSignal.timeout(300000), // 5 минут timeout
         });
 
+        console.log('📥 [BACKGROUND-GENERATION] Получен ответ от AI API:', planResponse.status, planResponse.statusText);
+        
         if (planResponse.ok) {
           const planData = await planResponse.json();
           if (planData.success) {
-            await supabase
+            const { error: updateError } = await supabase
               .from('primary_test_results')
               .update({ personal_plan_generated: true })
               .eq('session_id', sessionId);
+            
+            if (updateError) {
+              console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
+            } else {
+              console.log('✅ [BACKGROUND-GENERATION] БД обновлена: personal_plan_generated = true');
+            }
             console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован');
+            console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 1:', new Date().toISOString());
+          } else {
+            console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации персонального плана:', planData.error);
+            return;
           }
+        } else {
+          const errorText = await planResponse.text();
+          console.error('❌ [BACKGROUND-GENERATION] HTTP ошибка при генерации персонального плана:', planResponse.status, errorText);
+          return;
         }
       } catch (error) {
         console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации персонального плана:', error);
@@ -177,12 +202,15 @@ async function generateDocumentsInBackground(sessionId) {
 
     // 2. Генерируем подготовку к сеансу (на основе персонального плана)
     if (!existingData.session_preparation_generated) {
+      console.log('📋 [BACKGROUND-GENERATION] === ЭТАП 2: Генерация подготовки к сеансу ===');
       console.log('📋 [BACKGROUND-GENERATION] Генерируем подготовку к сеансу на основе персонального плана...');
+      console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 2:', new Date().toISOString());
       try {
         const sessionResponse = await fetch(`${baseUrl}/api/ai/session-preparation`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId, specialistType: 'psychologist' }),
+          signal: AbortSignal.timeout(300000), // 5 минут timeout
         });
 
         if (sessionResponse.ok) {
@@ -208,12 +236,15 @@ async function generateDocumentsInBackground(sessionId) {
 
     // 3. Генерируем PDF для психолога (на основе подготовки к сеансу)
     if (!existingData.psychologist_pdf_generated) {
+      console.log('📄 [BACKGROUND-GENERATION] === ЭТАП 3: Генерация PDF для психолога ===');
       console.log('📄 [BACKGROUND-GENERATION] Генерируем PDF для психолога на основе подготовки к сеансу...');
+      console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 3:', new Date().toISOString());
       try {
         const pdfResponse = await fetch(`${baseUrl}/api/pdf/psychologist`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId }),
+          signal: AbortSignal.timeout(300000), // 5 минут timeout
         });
 
         if (pdfResponse.ok) {
