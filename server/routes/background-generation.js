@@ -227,20 +227,23 @@ async function generateDocumentsInBackground(sessionId) {
         console.log('⏰ [BACKGROUND-GENERATION] Время получения ответа:', new Date().toISOString());
         
         if (planResponse.ok) {
-          // Получаем PDF blob и сохраняем в БД
+          // Получаем PDF blob и сохраняем в БД в разных форматах
           const planPdfBuffer = await planResponse.arrayBuffer();
+          const pdfBase64 = Buffer.from(planPdfBuffer).toString('base64');
+          
           const { error: updateError } = await supabase
             .from('primary_test_results')
             .update({ 
               personal_plan_generated: true,
-              personal_plan_pdf: Buffer.from(planPdfBuffer)
+              personal_plan_pdf: Buffer.from(planPdfBuffer),  // BYTEA формат
+              personal_plan_pdf_base64: pdfBase64  // Base64 формат
             })
             .eq('session_id', sessionId);
           
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: personal_plan_generated = true, personal_plan_pdf сохранен');
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: personal_plan_generated = true, PDF сохранен в BYTEA и Base64 форматах');
           }
           console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован и сохранен в БД как PDF');
           console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 1:', new Date().toISOString());
@@ -272,20 +275,23 @@ async function generateDocumentsInBackground(sessionId) {
         });
 
         if (sessionResponse.ok) {
-          // Получаем PDF blob и сохраняем в БД
+          // Получаем PDF blob и сохраняем в БД в разных форматах
           const sessionPdfBuffer = await sessionResponse.arrayBuffer();
+          const pdfBase64 = Buffer.from(sessionPdfBuffer).toString('base64');
+          
           const { error: updateError } = await supabase
             .from('primary_test_results')
             .update({ 
               session_preparation_generated: true,
-              session_preparation_pdf: Buffer.from(sessionPdfBuffer)
+              session_preparation_pdf: Buffer.from(sessionPdfBuffer),  // BYTEA формат
+              session_preparation_pdf_base64: pdfBase64  // Base64 формат
             })
             .eq('session_id', sessionId);
           
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: session_preparation_generated = true, session_preparation_pdf сохранен');
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: session_preparation_generated = true, PDF сохранен в BYTEA и Base64 форматах');
           }
           console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу сгенерирована и сохранена в БД как PDF');
           console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 2:', new Date().toISOString());
@@ -319,20 +325,23 @@ async function generateDocumentsInBackground(sessionId) {
         console.log('📥 [BACKGROUND-GENERATION] Получен ответ от psychologist API:', pdfResponse.status, pdfResponse.statusText);
         
         if (pdfResponse.ok) {
-          // Получаем PDF blob и сохраняем в БД
+          // Получаем PDF blob и сохраняем в БД в разных форматах
           const pdfBuffer = await pdfResponse.arrayBuffer();
+          const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
+          
           const { error: updateError } = await supabase
             .from('primary_test_results')
             .update({ 
               psychologist_pdf_generated: true,
-              psychologist_pdf: Buffer.from(pdfBuffer)
+              psychologist_pdf: Buffer.from(pdfBuffer),  // BYTEA формат
+              psychologist_pdf_base64: pdfBase64  // Base64 формат
             })
             .eq('session_id', sessionId);
           
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: psychologist_pdf_generated = true, psychologist_pdf сохранен');
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: psychologist_pdf_generated = true, PDF сохранен в BYTEA и Base64 форматах');
           }
           console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога сгенерированы и сохранены в БД как PDF');
           console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 3:', new Date().toISOString());
@@ -396,10 +405,10 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
 
-    // Получаем готовый персональный план PDF из БД
+    // Получаем готовый персональный план PDF из БД в разных форматах
     const { data, error } = await supabase
       .from('primary_test_results')
-      .select('personal_plan_pdf')
+      .select('personal_plan_pdf, personal_plan_pdf_base64')
       .eq('session_id', sessionId)
       .single();
 
@@ -407,13 +416,35 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Personal plan not found' });
     }
 
-    if (!data.personal_plan_pdf) {
+    let pdfBuffer = null;
+
+    // Пробуем сначала Base64 формат
+    if (data.personal_plan_pdf_base64) {
+      try {
+        pdfBuffer = Buffer.from(data.personal_plan_pdf_base64, 'base64');
+        console.log('✅ [DOWNLOAD-PERSONAL-PLAN] PDF извлечен из Base64 формата, размер:', pdfBuffer.length);
+      } catch (base64Error) {
+        console.error('❌ [DOWNLOAD-PERSONAL-PLAN] Ошибка извлечения из Base64:', base64Error);
+      }
+    }
+
+    // Если Base64 не сработал, пробуем BYTEA формат
+    if (!pdfBuffer && data.personal_plan_pdf) {
+      try {
+        pdfBuffer = Buffer.from(data.personal_plan_pdf);
+        console.log('✅ [DOWNLOAD-PERSONAL-PLAN] PDF извлечен из BYTEA формата, размер:', pdfBuffer.length);
+      } catch (byteaError) {
+        console.error('❌ [DOWNLOAD-PERSONAL-PLAN] Ошибка извлечения из BYTEA:', byteaError);
+      }
+    }
+
+    if (!pdfBuffer) {
       return res.status(404).json({ success: false, error: 'Personal plan not generated yet' });
     }
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="personal-plan.pdf"');
-    res.send(Buffer.from(data.personal_plan_pdf));
+    res.send(pdfBuffer);
 
   } catch (error) {
     console.error('❌ [DOWNLOAD-PERSONAL-PLAN] Ошибка:', error);
@@ -430,10 +461,10 @@ router.get('/download/session-preparation/:sessionId', async (req, res) => {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
 
-    // Получаем готовую подготовку к сеансу PDF из БД
+    // Получаем готовую подготовку к сеансу PDF из БД в разных форматах
     const { data, error } = await supabase
       .from('primary_test_results')
-      .select('session_preparation_pdf')
+      .select('session_preparation_pdf, session_preparation_pdf_base64')
       .eq('session_id', sessionId)
       .single();
 
@@ -441,13 +472,35 @@ router.get('/download/session-preparation/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session preparation not found' });
     }
 
-    if (!data.session_preparation_pdf) {
+    let pdfBuffer = null;
+
+    // Пробуем сначала Base64 формат
+    if (data.session_preparation_pdf_base64) {
+      try {
+        pdfBuffer = Buffer.from(data.session_preparation_pdf_base64, 'base64');
+        console.log('✅ [DOWNLOAD-SESSION-PREPARATION] PDF извлечен из Base64 формата, размер:', pdfBuffer.length);
+      } catch (base64Error) {
+        console.error('❌ [DOWNLOAD-SESSION-PREPARATION] Ошибка извлечения из Base64:', base64Error);
+      }
+    }
+
+    // Если Base64 не сработал, пробуем BYTEA формат
+    if (!pdfBuffer && data.session_preparation_pdf) {
+      try {
+        pdfBuffer = Buffer.from(data.session_preparation_pdf);
+        console.log('✅ [DOWNLOAD-SESSION-PREPARATION] PDF извлечен из BYTEA формата, размер:', pdfBuffer.length);
+      } catch (byteaError) {
+        console.error('❌ [DOWNLOAD-SESSION-PREPARATION] Ошибка извлечения из BYTEA:', byteaError);
+      }
+    }
+
+    if (!pdfBuffer) {
       return res.status(404).json({ success: false, error: 'Session preparation not generated yet' });
     }
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="session-preparation.pdf"');
-    res.send(Buffer.from(data.session_preparation_pdf));
+    res.send(pdfBuffer);
 
   } catch (error) {
     console.error('❌ [DOWNLOAD-SESSION-PREPARATION] Ошибка:', error);
@@ -464,10 +517,10 @@ router.get('/download/psychologist-pdf/:sessionId', async (req, res) => {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
 
-    // Получаем готовый PDF для психолога из БД
+    // Получаем готовый PDF для психолога из БД в разных форматах
     const { data, error } = await supabase
       .from('primary_test_results')
-      .select('psychologist_pdf')
+      .select('psychologist_pdf, psychologist_pdf_base64')
       .eq('session_id', sessionId)
       .single();
 
@@ -475,13 +528,35 @@ router.get('/download/psychologist-pdf/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Psychologist PDF not found' });
     }
 
-    if (!data.psychologist_pdf) {
+    let pdfBuffer = null;
+
+    // Пробуем сначала Base64 формат
+    if (data.psychologist_pdf_base64) {
+      try {
+        pdfBuffer = Buffer.from(data.psychologist_pdf_base64, 'base64');
+        console.log('✅ [DOWNLOAD-PSYCHOLOGIST-PDF] PDF извлечен из Base64 формата, размер:', pdfBuffer.length);
+      } catch (base64Error) {
+        console.error('❌ [DOWNLOAD-PSYCHOLOGIST-PDF] Ошибка извлечения из Base64:', base64Error);
+      }
+    }
+
+    // Если Base64 не сработал, пробуем BYTEA формат
+    if (!pdfBuffer && data.psychologist_pdf) {
+      try {
+        pdfBuffer = Buffer.from(data.psychologist_pdf);
+        console.log('✅ [DOWNLOAD-PSYCHOLOGIST-PDF] PDF извлечен из BYTEA формата, размер:', pdfBuffer.length);
+      } catch (byteaError) {
+        console.error('❌ [DOWNLOAD-PSYCHOLOGIST-PDF] Ошибка извлечения из BYTEA:', byteaError);
+      }
+    }
+
+    if (!pdfBuffer) {
       return res.status(404).json({ success: false, error: 'Psychologist PDF not generated yet' });
     }
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="psychologist-recommendations.pdf"');
-    res.send(Buffer.from(data.psychologist_pdf));
+    res.send(pdfBuffer);
 
   } catch (error) {
     console.error('❌ [DOWNLOAD-PSYCHOLOGIST-PDF] Ошибка:', error);
