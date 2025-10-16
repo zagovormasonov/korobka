@@ -227,18 +227,22 @@ async function generateDocumentsInBackground(sessionId) {
         console.log('⏰ [BACKGROUND-GENERATION] Время получения ответа:', new Date().toISOString());
         
         if (planResponse.ok) {
-          // PDF endpoint успешно сгенерировал план, отмечаем флаг
+          // Получаем PDF blob и сохраняем в БД
+          const planPdfBuffer = await planResponse.arrayBuffer();
           const { error: updateError } = await supabase
             .from('primary_test_results')
-            .update({ personal_plan_generated: true })
+            .update({ 
+              personal_plan_generated: true,
+              personal_plan_pdf: Buffer.from(planPdfBuffer)
+            })
             .eq('session_id', sessionId);
           
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: personal_plan_generated = true');
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: personal_plan_generated = true, personal_plan_pdf сохранен');
           }
-          console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован');
+          console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован и сохранен в БД как PDF');
           console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 1:', new Date().toISOString());
           console.log('🔄 [BACKGROUND-GENERATION] Переходим к этапу 2...');
         } else {
@@ -268,18 +272,22 @@ async function generateDocumentsInBackground(sessionId) {
         });
 
         if (sessionResponse.ok) {
-          // PDF endpoint успешно сгенерировал подготовку, отмечаем флаг
+          // Получаем PDF blob и сохраняем в БД
+          const sessionPdfBuffer = await sessionResponse.arrayBuffer();
           const { error: updateError } = await supabase
             .from('primary_test_results')
-            .update({ session_preparation_generated: true })
+            .update({ 
+              session_preparation_generated: true,
+              session_preparation_pdf: Buffer.from(sessionPdfBuffer)
+            })
             .eq('session_id', sessionId);
           
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: session_preparation_generated = true');
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: session_preparation_generated = true, session_preparation_pdf сохранен');
           }
-          console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу сгенерирована');
+          console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу сгенерирована и сохранена в БД как PDF');
           console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 2:', new Date().toISOString());
           console.log('🔄 [BACKGROUND-GENERATION] Переходим к этапу 3...');
         } else {
@@ -311,18 +319,22 @@ async function generateDocumentsInBackground(sessionId) {
         console.log('📥 [BACKGROUND-GENERATION] Получен ответ от psychologist API:', pdfResponse.status, pdfResponse.statusText);
         
         if (pdfResponse.ok) {
-          // PDF endpoint успешно сгенерировал рекомендации, отмечаем флаг
+          // Получаем PDF blob и сохраняем в БД
+          const pdfBuffer = await pdfResponse.arrayBuffer();
           const { error: updateError } = await supabase
             .from('primary_test_results')
-            .update({ psychologist_pdf_generated: true })
+            .update({ 
+              psychologist_pdf_generated: true,
+              psychologist_pdf: Buffer.from(pdfBuffer)
+            })
             .eq('session_id', sessionId);
           
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: psychologist_pdf_generated = true');
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: psychologist_pdf_generated = true, psychologist_pdf сохранен');
           }
-          console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога сгенерированы');
+          console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога сгенерированы и сохранены в БД как PDF');
           console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 3:', new Date().toISOString());
         } else {
           const errorText = await pdfResponse.text();
@@ -384,10 +396,10 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
 
-    // Получаем готовый персональный план из БД
+    // Получаем готовый персональный план PDF из БД
     const { data, error } = await supabase
       .from('primary_test_results')
-      .select('personal_plan')
+      .select('personal_plan_pdf')
       .eq('session_id', sessionId)
       .single();
 
@@ -395,12 +407,13 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Personal plan not found' });
     }
 
-    if (!data.personal_plan) {
+    if (!data.personal_plan_pdf) {
       return res.status(404).json({ success: false, error: 'Personal plan not generated yet' });
     }
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(data.personal_plan);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="personal-plan.pdf"');
+    res.send(Buffer.from(data.personal_plan_pdf));
 
   } catch (error) {
     console.error('❌ [DOWNLOAD-PERSONAL-PLAN] Ошибка:', error);
@@ -417,10 +430,10 @@ router.get('/download/session-preparation/:sessionId', async (req, res) => {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
 
-    // Получаем готовую подготовку к сеансу из БД
+    // Получаем готовую подготовку к сеансу PDF из БД
     const { data, error } = await supabase
       .from('primary_test_results')
-      .select('session_preparation_content')
+      .select('session_preparation_pdf')
       .eq('session_id', sessionId)
       .single();
 
@@ -428,12 +441,13 @@ router.get('/download/session-preparation/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session preparation not found' });
     }
 
-    if (!data.session_preparation_content) {
+    if (!data.session_preparation_pdf) {
       return res.status(404).json({ success: false, error: 'Session preparation not generated yet' });
     }
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(data.session_preparation_content);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="session-preparation.pdf"');
+    res.send(Buffer.from(data.session_preparation_pdf));
 
   } catch (error) {
     console.error('❌ [DOWNLOAD-SESSION-PREPARATION] Ошибка:', error);
@@ -453,7 +467,7 @@ router.get('/download/psychologist-pdf/:sessionId', async (req, res) => {
     // Получаем готовый PDF для психолога из БД
     const { data, error } = await supabase
       .from('primary_test_results')
-      .select('psychologist_pdf_content')
+      .select('psychologist_pdf')
       .eq('session_id', sessionId)
       .single();
 
@@ -461,12 +475,13 @@ router.get('/download/psychologist-pdf/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Psychologist PDF not found' });
     }
 
-    if (!data.psychologist_pdf_content) {
+    if (!data.psychologist_pdf) {
       return res.status(404).json({ success: false, error: 'Psychologist PDF not generated yet' });
     }
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(data.psychologist_pdf_content);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="psychologist-recommendations.pdf"');
+    res.send(Buffer.from(data.psychologist_pdf));
 
   } catch (error) {
     console.error('❌ [DOWNLOAD-PSYCHOLOGIST-PDF] Ошибка:', error);

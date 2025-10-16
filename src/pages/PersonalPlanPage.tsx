@@ -96,9 +96,8 @@ const PersonalPlanPage: React.FC = () => {
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
-      const response = await apiRequest('api/pdf/personal-plan', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId: authData?.sessionId }),
+      const response = await apiRequest(`api/background-generation/download/personal-plan/${authData?.sessionId}`, {
+        method: 'GET',
       });
 
       if (response.ok) {
@@ -113,7 +112,8 @@ const PersonalPlanPage: React.FC = () => {
         window.URL.revokeObjectURL(url);
         message.success('Персональный план скачан в PDF!');
       } else {
-        message.error('Ошибка при генерации персонального плана');
+        const errorData = await response.json();
+        message.error(errorData.error || 'Ошибка при скачивании персонального плана');
       }
     } catch (error) {
       console.error('Error downloading personal plan:', error);
@@ -126,9 +126,8 @@ const PersonalPlanPage: React.FC = () => {
   const downloadSessionPreparation = async (specialistType: 'psychologist' | 'psychiatrist') => {
     setLoadingSessionPreparation(true);
     try {
-      const response = await apiRequest('api/pdf/session-preparation', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId: authData?.sessionId, specialistType }),
+      const response = await apiRequest(`api/background-generation/download/session-preparation/${authData?.sessionId}`, {
+        method: 'GET',
       });
 
       if (response.ok) {
@@ -143,7 +142,8 @@ const PersonalPlanPage: React.FC = () => {
         window.URL.revokeObjectURL(url);
         message.success(`Подготовка к сеансу скачана в PDF!`);
       } else {
-        message.error('Ошибка при генерации подготовки к сеансу');
+        const errorData = await response.json();
+        message.error(errorData.error || 'Ошибка при скачивании подготовки к сеансу');
       }
     } catch (error) {
       console.error('Error downloading session preparation:', error);
@@ -178,9 +178,8 @@ const PersonalPlanPage: React.FC = () => {
   const downloadPsychologistRecommendations = async () => {
     setLoadingPsychologistRecommendations(true);
     try {
-      const response = await apiRequest('api/pdf/psychologist-pdf', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId: authData?.sessionId }),
+      const response = await apiRequest(`api/background-generation/download/psychologist-pdf/${authData?.sessionId}`, {
+        method: 'GET',
       });
 
       if (response.ok) {
@@ -195,7 +194,8 @@ const PersonalPlanPage: React.FC = () => {
         window.URL.revokeObjectURL(url);
         message.success('Рекомендации для психолога скачаны в PDF!');
       } else {
-        message.error('Ошибка при генерации рекомендаций для психолога');
+        const errorData = await response.json();
+        message.error(errorData.error || 'Ошибка при скачивании рекомендаций для психолога');
       }
     } catch (error) {
       console.error('Error downloading psychologist recommendations:', error);
