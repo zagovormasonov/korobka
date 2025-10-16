@@ -127,25 +127,24 @@ const PersonalPlanPage: React.FC = () => {
   const downloadSessionPreparation = async (specialistType: 'psychologist' | 'psychiatrist') => {
     setLoadingSessionPreparation(true);
     try {
-      const response = await apiRequest(`api/background-generation/download/session-preparation/${authData?.sessionId}`, {
-        method: 'GET',
+      const response = await apiRequest('api/pdf/session-preparation', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId, specialistType }),
       });
 
       if (response.ok) {
-        const html = await response.text();
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = window.URL.createObjectURL(blob);
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `session-preparation-${specialistType}.html`;
+        link.download = `session-preparation-${specialistType}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        message.success(`Подготовка к сеансу скачана!`);
+        message.success(`Подготовка к сеансу скачана в PDF!`);
       } else {
-        const errorData = await response.json();
-        message.error(errorData.error || 'Ошибка при скачивании подготовки к сеансу');
+        message.error('Ошибка при генерации подготовки к сеансу');
       }
     } catch (error) {
       console.error('Error downloading session preparation:', error);

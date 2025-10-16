@@ -233,7 +233,7 @@ async function generateDocumentsInBackground(sessionId) {
             .from('primary_test_results')
             .update({ 
               personal_plan_generated: true,
-              personal_plan_content: planHtml
+              personal_plan: planHtml
             })
             .eq('session_id', sessionId);
           
@@ -399,7 +399,7 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
     // Получаем готовый персональный план из БД
     const { data, error } = await supabase
       .from('primary_test_results')
-      .select('personal_plan_content')
+      .select('personal_plan')
       .eq('session_id', sessionId)
       .single();
 
@@ -407,12 +407,12 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Personal plan not found' });
     }
 
-    if (!data.personal_plan_content) {
+    if (!data.personal_plan) {
       return res.status(404).json({ success: false, error: 'Personal plan not generated yet' });
     }
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(data.personal_plan_content);
+    res.send(data.personal_plan);
 
   } catch (error) {
     console.error('❌ [DOWNLOAD-PERSONAL-PLAN] Ошибка:', error);
