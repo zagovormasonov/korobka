@@ -121,81 +121,118 @@ router.get('/status/:sessionId', async (req, res) => {
 // Функция для фоновой генерации документов
 async function generateDocumentsInBackground(sessionId) {
   try {
-    console.log('🔄 [BACKGROUND-GENERATION] Начинаем генерацию документов для sessionId:', sessionId);
+    console.log('🔄 [BACKGROUND-GENERATION] Начинаем последовательную генерацию документов для sessionId:', sessionId);
     
     const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
     
-    // 1. Генерируем персональный план
-    console.log('📝 [BACKGROUND-GENERATION] Генерируем персональный план...');
-    try {
-      const planResponse = await fetch(`${baseUrl}/api/ai/personal-plan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-      });
+    // Проверяем, не запущена ли уже генерация
+    const { data: existingData, error: fetchError } = await supabase
+      .from('primary_test_results')
+      .select('documents_generation_started, documents_generation_completed, personal_plan_generated, session_preparation_generated, psychologist_pdf_generated')
+      .eq('session_id', sessionId)
+      .single();
 
-      if (planResponse.ok) {
-        const planData = await planResponse.json();
-        if (planData.success) {
-          await supabase
-            .from('primary_test_results')
-            .update({ personal_plan_generated: true })
-            .eq('session_id', sessionId);
-          console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован');
-        }
-      }
-    } catch (error) {
-      console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации персонального плана:', error);
+    if (fetchError) {
+      console.error('❌ [BACKGROUND-GENERATION] Ошибка при получении данных:', fetchError);
+      return;
     }
 
-    // 2. Генерируем подготовку к сеансу
-    console.log('📋 [BACKGROUND-GENERATION] Генерируем подготовку к сеансу...');
-    try {
-      const sessionResponse = await fetch(`${baseUrl}/api/ai/session-preparation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, specialistType: 'psychologist' }),
-      });
+    if (existingData.documents_generation_completed) {
+      console.log('⚠️ [BACKGROUND-GENERATION] Генерация уже завершена для sessionId:', sessionId);
+      return;
+    }
 
-      if (sessionResponse.ok) {
-        const sessionData = await sessionResponse.json();
-        if (sessionData.success) {
+    if (existingData.documents_generation_started && !existingData.documents_generation_completed) {
+      console.log('⚠️ [BACKGROUND-GENERATION] Генерация уже запущена для sessionId:', sessionId);
+      return;
+    }
+    
+    // 1. Генерируем персональный план (если еще не сгенерирован)
+    if (!existingData.personal_plan_generated) {
+      console.log('📝 [BACKGROUND-GENERATION] Генерируем персональный план...');
+      try {
+        const planResponse = await fetch(`${baseUrl}/api/ai/personal-plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        });
+
+        if (planResponse.ok) {
+          const planData = await planResponse.json();
+          if (planData.success) {
+            await supabase
+              .from('primary_test_results')
+              .update({ personal_plan_generated: true })
+              .eq('session_id', sessionId);
+            console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован');
+          }
+        }
+      } catch (error) {
+        console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации персонального плана:', error);
+        return;
+      }
+    } else {
+      console.log('✅ [BACKGROUND-GENERATION] Персональный план уже сгенерирован');
+    }
+
+    // 2. Генерируем подготовку к сеансу (на основе персонального плана)
+    if (!existingData.session_preparation_generated) {
+      console.log('📋 [BACKGROUND-GENERATION] Генерируем подготовку к сеансу на основе персонального плана...');
+      try {
+        const sessionResponse = await fetch(`${baseUrl}/api/ai/session-preparation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, specialistType: 'psychologist' }),
+        });
+
+        if (sessionResponse.ok) {
+          const sessionData = await sessionResponse.json();
+          if (sessionData.success) {
+            await supabase
+              .from('primary_test_results')
+              .update({ 
+                session_preparation_generated: true,
+                session_preparation_content: sessionData.content
+              })
+              .eq('session_id', sessionId);
+            console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу сгенерирована');
+          }
+        }
+      } catch (error) {
+        console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации подготовки к сеансу:', error);
+        return;
+      }
+    } else {
+      console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу уже сгенерирована');
+    }
+
+    // 3. Генерируем PDF для психолога (на основе подготовки к сеансу)
+    if (!existingData.psychologist_pdf_generated) {
+      console.log('📄 [BACKGROUND-GENERATION] Генерируем PDF для психолога на основе подготовки к сеансу...');
+      try {
+        const pdfResponse = await fetch(`${baseUrl}/api/pdf/psychologist`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        });
+
+        if (pdfResponse.ok) {
+          const pdfContent = await pdfResponse.text();
           await supabase
             .from('primary_test_results')
             .update({ 
-              session_preparation_generated: true,
-              session_preparation_content: sessionData.content
+              psychologist_pdf_generated: true,
+              psychologist_pdf_content: pdfContent
             })
             .eq('session_id', sessionId);
-          console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу сгенерирована');
+          console.log('✅ [BACKGROUND-GENERATION] PDF для психолога сгенерирован');
         }
+      } catch (error) {
+        console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации PDF для психолога:', error);
+        return;
       }
-    } catch (error) {
-      console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации подготовки к сеансу:', error);
-    }
-
-    // 3. Генерируем PDF для психолога
-    console.log('📄 [BACKGROUND-GENERATION] Генерируем PDF для психолога...');
-    try {
-      const pdfResponse = await fetch(`${baseUrl}/api/pdf/psychologist`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-      });
-
-      if (pdfResponse.ok) {
-        const pdfContent = await pdfResponse.text();
-        await supabase
-          .from('primary_test_results')
-          .update({ 
-            psychologist_pdf_generated: true,
-            psychologist_pdf_content: pdfContent
-          })
-          .eq('session_id', sessionId);
-        console.log('✅ [BACKGROUND-GENERATION] PDF для психолога сгенерирован');
-      }
-    } catch (error) {
-      console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации PDF для психолога:', error);
+    } else {
+      console.log('✅ [BACKGROUND-GENERATION] PDF для психолога уже сгенерирован');
     }
 
     // Отмечаем, что генерация завершена

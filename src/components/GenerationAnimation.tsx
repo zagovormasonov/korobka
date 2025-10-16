@@ -181,6 +181,24 @@ const GenerationAnimation: React.FC<GenerationAnimationProps> = ({
             процесс продолжится, и документы будут готовы при следующем входе.
           </Text>
         </div>
+
+        {/* Информация о времени */}
+        <div style={{
+          marginTop: '15px',
+          padding: '15px',
+          backgroundColor: '#E6F7FF',
+          borderRadius: '8px',
+          border: '1px solid #91D5FF'
+        }}>
+          <Text style={{ color: '#1890FF', fontSize: '14px', fontWeight: '500' }}>
+            ⏱️ Генерация может занять до 7 минут
+          </Text>
+          <div style={{ marginTop: '8px' }}>
+            <Text style={{ color: '#1890FF', fontSize: '12px' }}>
+              Каждый документ создается на основе предыдущего для максимальной персонализации
+            </Text>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -168,6 +168,42 @@ const DashboardPage: React.FC = () => {
         return;
       }
       
+      // Сначала проверяем статус генерации
+      const statusResponse = await apiRequest(`api/background-generation/status/${authData?.sessionId}`, {
+        method: 'GET',
+      });
+      
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        console.log('📊 [DASHBOARD] Текущий статус генерации:', statusData);
+        
+        if (statusData.status === 'completed') {
+          console.log('✅ [DASHBOARD] Документы уже сгенерированы, перенаправляем на персональный план');
+          message.success('Документы уже готовы!');
+          navigate('/personal-plan');
+          return;
+        }
+        
+        if (statusData.status === 'in_progress') {
+          console.log('⏳ [DASHBOARD] Генерация уже запущена, показываем анимацию');
+          setIsGenerating(true);
+          setGenerationStep(0);
+          setGenerationStatus('in_progress');
+          
+          // Обновляем текущий шаг на основе готовых документов
+          let currentStep = 0;
+          if (statusData.documents.personal_plan) currentStep = 1;
+          if (statusData.documents.session_preparation) currentStep = 2;
+          if (statusData.documents.psychologist_pdf) currentStep = 3;
+          setGenerationStep(currentStep);
+          
+          // Запускаем мониторинг статуса
+          monitorGenerationStatus();
+          return;
+        }
+      }
+      
+      // Если генерация не запущена, запускаем её
       setIsGenerating(true);
       setGenerationStep(0);
       setGenerationStatus('in_progress');
@@ -229,6 +265,13 @@ const DashboardPage: React.FC = () => {
           
           setGenerationStep(currentStep);
           
+          console.log('📊 [DASHBOARD] Обновлен шаг генерации:', {
+            currentStep,
+            personal_plan: data.documents.personal_plan,
+            session_preparation: data.documents.session_preparation,
+            psychologist_pdf: data.documents.psychologist_pdf
+          });
+          
           if (data.status === 'completed') {
             setIsGenerating(false);
             message.success('Все документы готовы!');
@@ -244,14 +287,14 @@ const DashboardPage: React.FC = () => {
     // Проверяем статус каждые 3 секунды
     const interval = setInterval(checkStatus, 3000);
     
-    // Очищаем интервал через 5 минут (на случай зависания)
+    // Очищаем интервал через 10 минут (на случай зависания)
     setTimeout(() => {
       clearInterval(interval);
       if (isGenerating) {
         setIsGenerating(false);
         message.warning('Генерация документов занимает больше времени, чем ожидалось. Проверьте статус позже.');
       }
-    }, 300000); // 5 минут
+    }, 600000); // 10 минут
   };
   const [psychologistForm] = Form.useForm();
   const [feedbackText, setFeedbackText] = useState('');
