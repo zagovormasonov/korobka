@@ -227,18 +227,22 @@ async function generateDocumentsInBackground(sessionId) {
         console.log('⏰ [BACKGROUND-GENERATION] Время получения ответа:', new Date().toISOString());
         
         if (planResponse.ok) {
-          // PDF endpoint возвращает PDF blob, но нам нужно только отметить, что план сгенерирован
+          // Получаем HTML контент и сохраняем в БД
+          const planHtml = await planResponse.text();
           const { error: updateError } = await supabase
             .from('primary_test_results')
-            .update({ personal_plan_generated: true })
+            .update({ 
+              personal_plan_generated: true,
+              personal_plan_content: planHtml
+            })
             .eq('session_id', sessionId);
           
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: personal_plan_generated = true');
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: personal_plan_generated = true, personal_plan_content сохранен');
           }
-          console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован');
+          console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован и сохранен в БД');
           console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 1:', new Date().toISOString());
           console.log('🔄 [BACKGROUND-GENERATION] Переходим к этапу 2...');
         } else {
@@ -268,18 +272,22 @@ async function generateDocumentsInBackground(sessionId) {
         });
 
         if (sessionResponse.ok) {
-          // PDF endpoint возвращает PDF blob, но нам нужно только отметить, что подготовка сгенерирована
+          // Получаем HTML контент и сохраняем в БД
+          const sessionHtml = await sessionResponse.text();
           const { error: updateError } = await supabase
             .from('primary_test_results')
-            .update({ session_preparation_generated: true })
+            .update({ 
+              session_preparation_generated: true,
+              session_preparation_content: sessionHtml
+            })
             .eq('session_id', sessionId);
           
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: session_preparation_generated = true');
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: session_preparation_generated = true, session_preparation_content сохранен');
           }
-          console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу сгенерирована');
+          console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу сгенерирована и сохранена в БД');
           console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 2:', new Date().toISOString());
           console.log('🔄 [BACKGROUND-GENERATION] Переходим к этапу 3...');
         } else {
@@ -311,18 +319,22 @@ async function generateDocumentsInBackground(sessionId) {
         console.log('📥 [BACKGROUND-GENERATION] Получен ответ от psychologist API:', pdfResponse.status, pdfResponse.statusText);
         
         if (pdfResponse.ok) {
-          // PDF endpoint возвращает PDF blob, но нам нужно только отметить, что рекомендации сгенерированы
+          // Получаем HTML контент и сохраняем в БД
+          const pdfHtml = await pdfResponse.text();
           const { error: updateError } = await supabase
             .from('primary_test_results')
-            .update({ psychologist_pdf_generated: true })
+            .update({ 
+              psychologist_pdf_generated: true,
+              psychologist_pdf_content: pdfHtml
+            })
             .eq('session_id', sessionId);
           
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
-            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: psychologist_pdf_generated = true');
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: psychologist_pdf_generated = true, psychologist_pdf_content сохранен');
           }
-          console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога сгенерированы');
+          console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога сгенерированы и сохранены в БД');
           console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 3:', new Date().toISOString());
         } else {
           const errorText = await pdfResponse.text();
@@ -387,7 +399,7 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
     // Получаем готовый персональный план из БД
     const { data, error } = await supabase
       .from('primary_test_results')
-      .select('personal_plan')
+      .select('personal_plan_content')
       .eq('session_id', sessionId)
       .single();
 
@@ -395,35 +407,12 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Personal plan not found' });
     }
 
-    if (!data.personal_plan) {
+    if (!data.personal_plan_content) {
       return res.status(404).json({ success: false, error: 'Personal plan not generated yet' });
     }
 
-    // Возвращаем HTML с персональным планом
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Персональный план</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .content { white-space: pre-wrap; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>Персональный план</h1>
-          <p>Дата создания: ${new Date().toLocaleDateString('ru-RU')}</p>
-        </div>
-        <div class="content">${data.personal_plan}</div>
-      </body>
-      </html>
-    `;
-
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(html);
+    res.send(data.personal_plan_content);
 
   } catch (error) {
     console.error('❌ [DOWNLOAD-PERSONAL-PLAN] Ошибка:', error);
