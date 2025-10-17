@@ -15,8 +15,6 @@ import OfferPage from './pages/OfferPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ConsentPage from './pages/ConsentPage';
 import ChatPage from './pages/ChatPage';
-import RegistrationPage from './pages/RegistrationPage';
-import ExpertLandingPage from './pages/ExpertLandingPage';
 
 const customTheme = {
   algorithm: theme.defaultAlgorithm,
@@ -92,8 +90,6 @@ function App() {
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/consent" element={<ConsentPage />} />
             <Route path="/chat" element={<ChatPage />} />
-            <Route path="/registration" element={<RegistrationPage />} />
-            <Route path="/expert-landing" element={<ExpertLandingPage />} />
           </Routes>
         </div>
       </Router>
