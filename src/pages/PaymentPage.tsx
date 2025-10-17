@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Typography, Button, Card, Row, Col, Space, message, Checkbox, Spin } from 'antd';
 import { apiRequest } from '../config/api';
 import { useThemeColor } from '../hooks/useThemeColor';
@@ -56,11 +56,13 @@ const benefits = [
 
 const PaymentPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [sessionId] = useState(() => searchParams.get('sessionId') || '');
+  const [userType] = useState(() => searchParams.get('type') || 'client');
+  const [amount] = useState(() => searchParams.get('amount') || '10');
   const [mascotMessage, setMascotMessage] = useState('');
   const [loadingMascotMessage, setLoadingMascotMessage] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
-  const [agreementAccepted, setAgreementAccepted] = useState(false);
   
   // Устанавливаем белый цвет статус-бара
   useThemeColor('#ffffff');
@@ -116,24 +118,23 @@ const PaymentPage: React.FC = () => {
   };
 
   const handlePayment = async () => {
-    if (!sessionId) {
+    if (!sessionId && userType === 'client') {
       message.error('Ошибка: не найден ID сессии');
-      return;
-    }
-
-    if (!agreementAccepted) {
-      message.warning('Необходимо согласиться с условиями для продолжения');
       return;
     }
 
     setPaymentLoading(true);
 
     try {
-      console.log('💳 Начинаем создание платежа для sessionId:', sessionId);
+      console.log('💳 Начинаем создание платежа для sessionId:', sessionId, 'userType:', userType, 'amount:', amount);
       
       const response = await apiRequest('api/payments/create', {
         method: 'POST',
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ 
+          sessionId: sessionId || null,
+          userType,
+          amount: parseInt(amount)
+        }),
       });
 
       console.log('📤 Отправляем запрос на создание платежа...');
@@ -262,39 +263,11 @@ const PaymentPage: React.FC = () => {
       </Row>
 
       <div style={{ textAlign: 'center' }}>
-        <div style={{ marginBottom: '24px', maxWidth: '600px', margin: '0 auto 24px auto', textAlign: 'left' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-            <Checkbox 
-              checked={agreementAccepted}
-              onChange={(e) => setAgreementAccepted(e.target.checked)}
-              style={{ marginTop: '2px' }}
-            />
-            <span style={{ 
-              fontSize: '14px', 
-              lineHeight: '1.5',
-              textAlign: 'left',
-              flex: 1
-            }}>
-              Я согласен(на) с условиями{' '}
-              <Link to="/offer" style={{ color: 'rgb(243, 186, 111)' }}>
-                Публичной оферты
-              </Link>
-              ,{' '}
-              <Link to="/privacy-policy" style={{ color: 'rgb(243, 186, 111)' }}>
-                Политики конфиденциальности
-              </Link>
-              {' '}и даю{' '}
-              <Link to="/consent" style={{ color: 'rgb(243, 186, 111)' }}>
-                Согласие на обработку персональных данных
-              </Link>
-            </span>
-          </div>
-        </div>
         
         <Button 
           type="primary" 
           size="large"
-          onClick={handlePayment}
+          onClick={() => userType === 'expert' ? handlePayment() : navigate('/registration')}
           loading={paymentLoading}
           style={{ 
             width: '100%',
@@ -309,7 +282,7 @@ const PaymentPage: React.FC = () => {
             boxShadow: 'none'
           }}
         >
-          Оплатить 10₽
+          {userType === 'expert' ? `Оплатить ${amount}₽` : 'Зарегистрироваться'}
         </Button>
       </div>
     </div>
