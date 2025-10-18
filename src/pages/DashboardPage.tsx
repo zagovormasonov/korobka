@@ -1721,8 +1721,17 @@ const DashboardPage: React.FC = () => {
           styles={{
             content: {
               borderRadius: '20px',
-              padding: '30px'
+              padding: '30px',
+              maxHeight: '90vh',
+              overflow: 'auto'
+            },
+            body: {
+              maxHeight: 'calc(90vh - 120px)',
+              overflow: 'auto'
             }
+          }}
+          style={{
+            top: '20px'
           }}
         >
           <div style={{ marginTop: '20px' }}>
