@@ -537,17 +537,22 @@ router.post('/personal-plan', async (req, res) => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const promptPath = path.join(__dirname, '../../prompt.txt');
+    const examplePlanPath = path.join(__dirname, '../../example-personal-plan.txt');
     console.log('📝 [PERSONAL-PLAN] Путь к промпту:', promptPath);
+    console.log('📝 [PERSONAL-PLAN] Путь к примеру плана:', examplePlanPath);
     
     try {
       const promptTemplate = fs.readFileSync(promptPath, 'utf8');
+      const examplePlan = fs.readFileSync(examplePlanPath, 'utf8');
       console.log('✅ [PERSONAL-PLAN] Промпт успешно прочитан, длина:', promptTemplate.length);
+      console.log('✅ [PERSONAL-PLAN] Пример плана прочитан, длина:', examplePlan.length);
       
       // Формируем финальный промпт, заменяя переменные
       const prompt = promptTemplate
         .replace('{user_gender}', userGender)
         .replace('{user_answers}', JSON.stringify(primaryAnswers))
-        .replace('{secondary_test_results}', secondaryTestResults);
+        .replace('{secondary_test_results}', secondaryTestResults)
+        .replace('{example_personal_plan}', examplePlan);
 
       console.log('📝 [PERSONAL-PLAN] Финальный промпт сформирован, длина:', prompt.length);
       console.log('🚀 [PERSONAL-PLAN] Вызываем Gemini API...');
