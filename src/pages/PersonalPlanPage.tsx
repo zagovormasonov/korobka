@@ -579,7 +579,7 @@ const PersonalPlanPage: React.FC = () => {
               fontSize: '18px',
               fontWeight: '600'
             }}>
-              Подготовка к сеансу
+              Подготовка к сеансам с психологом и психиатром
             </Title>
             <Text style={{ 
               color: '#7B8794', 
@@ -637,7 +637,7 @@ const PersonalPlanPage: React.FC = () => {
               fontSize: '18px',
               fontWeight: '600'
             }}>
-              Рекомендации для психолога
+              Рекомендации для психолога и психиатра
             </Title>
             <Text style={{ 
               color: '#7B8794', 
@@ -646,7 +646,7 @@ const PersonalPlanPage: React.FC = () => {
               marginBottom: '25px',
               lineHeight: '1.5'
             }}>
-              Специальный отчет для психолога с рекомендациями
+              Специальный отчет для психолога и психиатра с рекомендациями
             </Text>
             <Button 
               type="primary"

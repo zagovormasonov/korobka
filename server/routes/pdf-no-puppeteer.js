@@ -160,7 +160,7 @@ router.post('/session-preparation', async (req, res) => {
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Подготовка к сеансу</title>
+        <title>Подготовка к сеансам с психологом и психиатром</title>
         <style>
           body {
             font-family: Arial, sans-serif;
@@ -223,7 +223,7 @@ router.post('/session-preparation', async (req, res) => {
       <body>
         <div class="content">
           <div class="header">
-            <h1>Подготовка к сеансу с ${specialistName}</h1>
+            <h1>Подготовка к сеансам с психологом и психиатром</h1>
             <p>Руководство по эффективному использованию времени</p>
             <button class="print-button" onclick="window.print()">Печать</button>
           </div>

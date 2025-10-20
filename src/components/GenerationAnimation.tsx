@@ -15,7 +15,7 @@ const GenerationAnimation: React.FC<GenerationAnimationProps> = ({
   isGenerating,
   currentStep = 0,
   totalSteps = 3,
-  stepNames = ['Персональный план', 'Подготовка к сеансу', 'PDF для психолога']
+  stepNames = ['Персональный план', 'Подготовка к сеансам с психологом и психиатром', 'PDF для психолога']
 }) => {
   if (!isGenerating) return null;
 

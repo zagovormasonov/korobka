@@ -452,7 +452,7 @@ router.post('/session-preparation', async (req, res) => {
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Подготовка к сеансу</title>
+        <title>Подготовка к сеансам с психологом и психиатром</title>
         <style>
           * {
             box-sizing: border-box;
@@ -658,7 +658,7 @@ router.post('/session-preparation', async (req, res) => {
       <body>
         <div class="content">
           <div class="header">
-            <h1>Подготовка к сеансу с ${specialistName}</h1>
+            <h1>Подготовка к сеансам с психологом и психиатром</h1>
             <p>Руководство по эффективному использованию времени</p>
             <button class="print-button" onclick="window.print()">Печать</button>
           </div>
@@ -1013,7 +1013,7 @@ router.post('/psychologist', async (req, res) => {
         ` : ''}
 
         <div class="section">
-          <h2>Рекомендации для психолога</h2>
+          <h2>Рекомендации для психолога и психиатра</h2>
           <div class="test-result">
             <p>На основе проведенного тестирования рекомендуется:</p>
             <ul>

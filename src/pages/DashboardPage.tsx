@@ -1173,7 +1173,7 @@ const DashboardPage: React.FC = () => {
                   fontSize: '18px',
                   fontWeight: '600'
                 }}>
-                  Подготовка к сеансу
+                  Подготовка к сеансам с психологом и психиатром
                 </Title>
                 <Text style={{ 
                   color: '#7B8794', 
@@ -1769,7 +1769,7 @@ const DashboardPage: React.FC = () => {
           isGenerating={isGenerating}
           currentStep={generationStep}
           totalSteps={3}
-          stepNames={['Персональный план', 'Подготовка к сеансу', 'PDF для психолога']}
+          stepNames={['Персональный план', 'Подготовка к сеансам с психологом и психиатром', 'PDF для психолога']}
         />
       </div>
     </div>
