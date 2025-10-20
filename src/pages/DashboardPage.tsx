@@ -1415,16 +1415,18 @@ const DashboardPage: React.FC = () => {
         </div>
 
         <div>
-            {/* Section title */}
-            <Title level={3} style={{ 
-              color: '#2C3E50',
-              fontSize: '24px',
-              fontWeight: '600',
-              marginBottom: '40px',
-              textAlign: 'center'
-            }}>
-              Рекомендуемые тесты
-            </Title>
+            {/* Section title - показываем только после загрузки тестов */}
+            {showTests && recommendedTests.length > 0 && (
+              <Title level={3} style={{ 
+                color: '#2C3E50',
+                fontSize: '24px',
+                fontWeight: '600',
+                marginBottom: '40px',
+                textAlign: 'center'
+              }}>
+                Рекомендуемые тесты
+              </Title>
+            )}
 
             {allTestsCompleted && (
               <div 
