@@ -269,7 +269,7 @@ ${JSON.stringify(answers)}
 
 ФОРМАТ ОТВЕТА: Только текст сообщения, без дополнительных объяснений.`;
 
-    const message = await callGeminiAI(prompt, 300);
+    const message = await callGeminiAI(prompt, 1200);
     res.json({ success: true, message });
   } catch (error) {
     console.error('❌ Ошибка генерации сообщения маскота:', {
@@ -398,7 +398,7 @@ router.post('/mascot-message/dashboard', async (req, res) => {
 
     console.log('🚀 Отправляем запрос к Gemini AI для генерации нового сообщения...');
     
-    const message = await callGeminiAI(prompt, 350);
+    const message = await callGeminiAI(prompt, 1400);
     
     // TODO: Раскомментировать после применения миграции для кэширования
     // Сохраняем сгенерированное сообщение в БД
@@ -557,7 +557,7 @@ router.post('/personal-plan', async (req, res) => {
       console.log('📝 [PERSONAL-PLAN] Финальный промпт сформирован, длина:', prompt.length);
       console.log('🚀 [PERSONAL-PLAN] Вызываем Gemini API...');
       
-      const plan = await callGeminiAI(prompt, 4000);
+      const plan = await callGeminiAI(prompt, 16000);
       console.log('✅ [PERSONAL-PLAN] План получен от Gemini, длина:', plan?.length || 0);
     
       // Сохраняем план в БД для будущего использования
@@ -666,7 +666,7 @@ router.post('/session-preparation', async (req, res) => {
       console.log('📝 [SESSION-PREPARATION] Финальный промпт сформирован, длина:', prompt.length);
       console.log('🚀 [SESSION-PREPARATION] Вызываем Gemini API...');
       
-      const preparation = await callGeminiAI(prompt, 4000);
+      const preparation = await callGeminiAI(prompt, 16000);
       console.log('✅ [SESSION-PREPARATION] Подготовка получена от Gemini, длина:', preparation?.length || 0);
       
       res.json({ success: true, preparation });
@@ -767,7 +767,7 @@ router.post('/session-feedback', async (req, res) => {
 
 ФОРМАТ ОТВЕТА: Только текст анализа, без дополнительных объяснений.`;
 
-    const analysis = await callGeminiAI(prompt, 2000);
+    const analysis = await callGeminiAI(prompt, 8000);
     
     // Сохраняем обратную связь в базу
     const { error: insertError } = await supabase
@@ -839,7 +839,7 @@ ${allTests.map((test, index) => `${index + 1}. ${test.name}`).join('\n')}
 
 ФОРМАТ ОТВЕТА: Верни только номера рекомендуемых тестов через запятую (например: 1,3,6,7), максимум 5 тестов.`;
 
-    const recommendedTestNumbers = await callGeminiAI(analysisPrompt, 100);
+    const recommendedTestNumbers = await callGeminiAI(analysisPrompt, 400);
     console.log('🔬 Рекомендации от Gemini:', recommendedTestNumbers);
     
     // Парсим номера тестов
@@ -1004,7 +1004,7 @@ router.post('/psychologist-pdf', async (req, res) => {
       .replace('{example_pdf}', examplePdf);
 
     console.log('🚀 [PSYCHOLOGIST-PDF] Вызываем Gemini API...');
-    const psychologistPdf = await callGeminiAI(prompt, 3000);
+    const psychologistPdf = await callGeminiAI(prompt, 12000);
     console.log('✅ [PSYCHOLOGIST-PDF] PDF для психолога и психиатра получен от Gemini, длина:', psychologistPdf?.length || 0);
 
     res.json({ 
