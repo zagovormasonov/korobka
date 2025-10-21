@@ -5,6 +5,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { constants } from 'crypto';
+import path from 'path';
+import fs from 'fs';
 
 const router = express.Router();
 
