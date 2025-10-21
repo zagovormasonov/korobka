@@ -7,10 +7,12 @@ const router = express.Router();
 // Инициализация Telegram бота
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
 
-// Отправить заявку на подбор психолога в Telegram
+// Отправить заявку на подбор психолога в Telegram с PDF документами
 router.post('/psychologist-request', async (req, res) => {
   try {
     const { sessionId, name, phone, email, telegramUsername } = req.body;
+    
+    console.log('🎯 [TELEGRAM-PSYCHOLOGIST-REQUEST] Начало обработки заявки:', { sessionId, name });
     
     // Сохраняем заявку в базу данных
     const { data, error } = await supabase
@@ -42,9 +44,83 @@ router.post('/psychologist-request', async (req, res) => {
 📧 Email: ${email}
 💬 Telegram: ${formattedTelegramUsername}
 🆔 Session ID: ${sessionId}
-⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
+⏰ Время: ${new Date().toLocaleString('ru-RU')}
+
+📄 Генерирую PDF документы...`;
 
     await bot.sendMessage(chatId, message);
+    
+    // Генерируем и отправляем все 3 PDF документа
+    const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
+    
+    try {
+      // 1. Персональный план
+      console.log('📄 [TELEGRAM] Генерируем персональный план...');
+      const personalPlanResponse = await fetch(`${baseUrl}/api/pdf/personal-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+        signal: AbortSignal.timeout(300000), // 5 минут timeout
+      });
+      
+      if (personalPlanResponse.ok) {
+        const personalPlanBuffer = await personalPlanResponse.arrayBuffer();
+        await bot.sendDocument(chatId, Buffer.from(personalPlanBuffer), {
+          filename: `personal-plan-${sessionId}.pdf`,
+          caption: '📋 Персональный план психологического благополучия'
+        });
+        console.log('✅ [TELEGRAM] Персональный план отправлен');
+      } else {
+        console.error('❌ [TELEGRAM] Ошибка генерации персонального плана:', personalPlanResponse.status);
+      }
+      
+      // 2. Подготовка к сеансам
+      console.log('📄 [TELEGRAM] Генерируем подготовку к сеансам...');
+      const sessionPrepResponse = await fetch(`${baseUrl}/api/pdf/session-preparation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+        signal: AbortSignal.timeout(300000), // 5 минут timeout
+      });
+      
+      if (sessionPrepResponse.ok) {
+        const sessionPrepBuffer = await sessionPrepResponse.arrayBuffer();
+        await bot.sendDocument(chatId, Buffer.from(sessionPrepBuffer), {
+          filename: `session-preparation-${sessionId}.pdf`,
+          caption: '🎯 Подготовка к сеансам с психологом и психиатром'
+        });
+        console.log('✅ [TELEGRAM] Подготовка к сеансам отправлена');
+      } else {
+        console.error('❌ [TELEGRAM] Ошибка генерации подготовки к сеансам:', sessionPrepResponse.status);
+      }
+      
+      // 3. PDF для психолога и психиатра
+      console.log('📄 [TELEGRAM] Генерируем PDF для специалистов...');
+      const psychologistPdfResponse = await fetch(`${baseUrl}/api/pdf/psychologist-pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+        signal: AbortSignal.timeout(300000), // 5 минут timeout
+      });
+      
+      if (psychologistPdfResponse.ok) {
+        const psychologistPdfBuffer = await psychologistPdfResponse.arrayBuffer();
+        await bot.sendDocument(chatId, Buffer.from(psychologistPdfBuffer), {
+          filename: `psychologist-pdf-${sessionId}.pdf`,
+          caption: '👨‍⚕️ Подготовительный документ для психолога и психиатра'
+        });
+        console.log('✅ [TELEGRAM] PDF для специалистов отправлен');
+      } else {
+        console.error('❌ [TELEGRAM] Ошибка генерации PDF для специалистов:', psychologistPdfResponse.status);
+      }
+      
+      // Отправляем финальное сообщение
+      await bot.sendMessage(chatId, `✅ Все документы для заявки ${name} успешно сгенерированы и отправлены!`);
+      
+    } catch (pdfError) {
+      console.error('❌ [TELEGRAM] Ошибка при генерации PDF:', pdfError);
+      await bot.sendMessage(chatId, `⚠️ Ошибка при генерации PDF документов для заявки ${name}: ${pdfError.message}`);
+    }
     
     res.json({ success: true, data });
   } catch (error) {
