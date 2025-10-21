@@ -209,12 +209,7 @@ const PersonalPlanPage: React.FC = () => {
         message.success('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
         psychologistForm.resetFields();
       } else {
-        const errorData = await response.json();
-        if (response.status === 429) {
-          message.error(errorData.error || 'Превышен лимит заявок. Попробуйте позже.');
-        } else {
-          message.error('Ошибка при отправке заявки');
-        }
+        message.error('Ошибка при отправке заявки');
       }
     } catch (error) {
       console.error('Error sending psychologist request:', error);
