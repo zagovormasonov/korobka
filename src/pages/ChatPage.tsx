@@ -5,7 +5,7 @@ import type { UploadFile } from 'antd/es/upload/interface';
 import { API_BASE_URL } from '../config/api';
 
 const { TextArea } = Input;
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 interface Message {
   role: 'user' | 'assistant';
@@ -301,16 +301,18 @@ const ChatPage: React.FC = () => {
                         ))}
                       </div>
                     )}
-                    <Paragraph
+                    <div
                       style={{
                         margin: 0,
                         color: msg.role === 'user' ? '#fff' : '#000',
                         whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word'
+                        wordBreak: 'break-word',
+                        fontSize: '14px',
+                        lineHeight: '1.5'
                       }}
                     >
                       {msg.content}
-                    </Paragraph>
+                    </div>
                   </div>
                 </div>
               ))}
