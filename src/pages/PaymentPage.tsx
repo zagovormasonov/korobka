@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Typography, Button, Card, Row, Col, Space, message, Checkbox, Spin } from 'antd';
+import { Typography, Button, Card, Row, Col, message, Checkbox, Spin } from 'antd';
 import { apiRequest } from '../config/api';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { 
@@ -9,7 +9,7 @@ import {
 
 const { Title, Paragraph } = Typography;
 
-const iconColor = 'rgb(243, 186, 111)';
+// const iconColor = 'rgb(243, 186, 111)';
 
 const benefits = [
   {
@@ -47,7 +47,7 @@ const benefits = [
     ]
   },
   {
-    title: 'Ты сможешь поделиться с нами, что было на сеансе, и мы дадим обратную связь',
+    title: 'Ты сможешь поделиться с нами тем, что было на сеансе, и мы дадим обратную связь',
     subtitle: 'Поддержим тебя на каждом этапе',
     icon: <img src="/chat.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: []

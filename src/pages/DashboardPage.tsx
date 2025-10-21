@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   Typography, 
   Button, 
@@ -154,7 +154,7 @@ const DashboardPage: React.FC = () => {
       console.log('🚀 [DASHBOARD] Запуск фоновой генерации документов');
       
       // Проверяем валидность sessionId
-      if (!authData?.sessionId || authData?.sessionId === true || authData?.sessionId.trim() === '') {
+      if (!authData?.sessionId || authData?.sessionId === 'true' || authData?.sessionId.trim() === '') {
         console.error('❌ [DASHBOARD] SessionId невалидный для фоновой генерации:', authData?.sessionId);
         message.error('Ошибка: невалидный идентификатор сессии');
         return;
@@ -188,7 +188,7 @@ const DashboardPage: React.FC = () => {
           console.log('⏳ [DASHBOARD] Генерация уже запущена, показываем анимацию');
           setIsGenerating(true);
           setGenerationStep(0);
-          setGenerationStatus('in_progress');
+          // setGenerationStatus('in_progress');
           
           // Обновляем текущий шаг на основе готовых документов
           let currentStep = 0;
@@ -206,7 +206,7 @@ const DashboardPage: React.FC = () => {
       // Если генерация не запущена, запускаем её
       setIsGenerating(true);
       setGenerationStep(0);
-      setGenerationStatus('in_progress');
+      // setGenerationStatus('in_progress');
       
       const response = await apiRequest('api/background-generation/start', {
         method: 'POST',
@@ -227,7 +227,7 @@ const DashboardPage: React.FC = () => {
       console.error('❌ [DASHBOARD] Ошибка запуска фоновой генерации:', error);
       message.error('Ошибка при запуске генерации документов');
       setIsGenerating(false);
-      setGenerationStatus('not_started');
+      // setGenerationStatus('not_started');
     }
   };
 
@@ -251,7 +251,7 @@ const DashboardPage: React.FC = () => {
           console.log('⏳ [DASHBOARD] Генерация в процессе, показываем анимацию');
           setIsGenerating(true);
           setGenerationStep(0);
-          setGenerationStatus('in_progress');
+          // setGenerationStatus('in_progress');
           
           // Обновляем текущий шаг на основе готовых документов
           let currentStep = 0;
@@ -276,7 +276,7 @@ const DashboardPage: React.FC = () => {
     const checkStatus = async () => {
       try {
         // Проверяем валидность sessionId перед запросом
-        if (!authData?.sessionId || authData?.sessionId === true || authData?.sessionId.trim() === '') {
+        if (!authData?.sessionId || authData?.sessionId === 'true' || authData?.sessionId.trim() === '') {
           console.error('❌ [DASHBOARD] SessionId невалидный для мониторинга:', authData?.sessionId);
           return;
         }
@@ -296,7 +296,7 @@ const DashboardPage: React.FC = () => {
           const data = await response.json();
           console.log('📊 [DASHBOARD] Статус генерации:', data);
           
-          setGenerationStatus(data.status);
+          // setGenerationStatus(data.status);
           
           // Обновляем текущий шаг на основе готовых документов
           let currentStep = 0;
@@ -361,7 +361,7 @@ const DashboardPage: React.FC = () => {
   // Состояния для фоновой генерации
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
-  const [generationStatus, setGenerationStatus] = useState<'not_started' | 'in_progress' | 'completed'>('not_started');
+  // const [generationStatus, // setGenerationStatus] = useState<'not_started' | 'in_progress' | 'completed'>('not_started');
 
   // Проверяем авторизацию и редиректим если не авторизован
   useEffect(() => {
@@ -385,7 +385,7 @@ const DashboardPage: React.FC = () => {
     
     // Проверяем валидность sessionId
     const isValidSessionId = authData?.sessionId && 
-      authData.sessionId !== true && 
+      authData.sessionId !== 'true' && 
       typeof authData.sessionId === 'string' && 
       authData.sessionId.trim() !== '';
     
@@ -628,7 +628,7 @@ const DashboardPage: React.FC = () => {
       setLoadingTestResults(true);
       
       // Проверяем, что authData?.sessionId существует и является валидным UUID
-      if (!authData?.sessionId || authData?.sessionId === true || authData?.sessionId.trim() === '') {
+      if (!authData?.sessionId || authData?.sessionId === 'true' || authData?.sessionId.trim() === '') {
         console.log('❌ SessionId пустой или невалидный, пропускаем загрузку результатов');
         console.log('❌ SessionId значение:', authData?.sessionId);
         console.log('❌ SessionId тип:', typeof authData?.sessionId);
@@ -659,10 +659,8 @@ const DashboardPage: React.FC = () => {
       console.log('📧 Email пользователя для загрузки результатов:', userEmail || 'не указан');
       console.log('👤 Никнейм пользователя:', nickname || 'не указан');
       
-      // Устанавливаем никнейм
-      if (nickname) {
-        setUserNickname(nickname);
-      }
+      // Никнейм уже сохранен в authData через useAuth
+      console.log('👤 Никнейм сохранен в authData:', nickname);
       
       // Загружаем результаты дополнительных тестов по authData?.sessionId
       const response = await apiRequest(`api/tests/additional/results/${authData?.sessionId}`);
@@ -1528,7 +1526,7 @@ const DashboardPage: React.FC = () => {
                 <Spin size="large" />
                 <div style={{ marginTop: '20px' }}>
                   <Text style={{ color: '#7B8794', fontSize: '16px' }}>
-                    Загружаем результаты тестов...
+                    Уточняем, какие тесты нужны...
                   </Text>
                 </div>
               </div>

@@ -1,18 +1,18 @@
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Typography, Button, Card, Row, Col } from 'antd';
 import { useThemeColor } from '../hooks/useThemeColor';
-import { 
-  FileTextOutlined, 
-  UserOutlined, 
-  CalendarOutlined, 
-  FilePdfOutlined, 
-  MessageOutlined
-} from '@ant-design/icons';
+// import { 
+//   FileTextOutlined, 
+//   UserOutlined, 
+//   CalendarOutlined, 
+//   FilePdfOutlined, 
+//   MessageOutlined
+// } from '@ant-design/icons';
 
 const { Title, Paragraph } = Typography;
 
-const iconColor = 'rgb(243, 186, 111)';
+// const iconColor = 'rgb(243, 186, 111)';
 
 const benefits = [
   {
@@ -50,7 +50,7 @@ const benefits = [
     ]
   },
   {
-    title: 'Ты сможешь поделиться с нами, что было на сеансе, и мы дадим обратную связь',
+    title: 'Ты сможешь поделиться с нами тем, что было на сеансе, и мы дадим обратную связь',
     subtitle: 'Поддержим тебя на каждом этапе',
     icon: <img src="/chat.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: []
