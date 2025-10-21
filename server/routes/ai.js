@@ -923,7 +923,7 @@ function getFallbackRecommendations(answers, allTests) {
   return uniqueTests.slice(0, 5); // Максимум 5 тестов
 }
 
-// PDF для психолога - краткая выжимка результатов тестирования
+// PDF для психолога и психиатра - подготовительный документ для консультации
 router.post('/psychologist-pdf', async (req, res) => {
   try {
     console.log('🎯 [PSYCHOLOGIST-PDF] Начало обработки запроса');
@@ -939,7 +939,7 @@ router.post('/psychologist-pdf', async (req, res) => {
     console.log('🔍 [PSYCHOLOGIST-PDF] Получаем данные из БД...');
     const { data: primaryTest, error: primaryError } = await supabase
       .from('primary_test_results')
-      .select('answers, email, nickname')
+      .select('answers, email, nickname, personal_plan')
       .eq('session_id', sessionId)
       .maybeSingle();
 
@@ -951,6 +951,7 @@ router.post('/psychologist-pdf', async (req, res) => {
     const primaryAnswers = primaryTest.answers;
     const userEmail = primaryTest.email;
     const userNickname = primaryTest.nickname;
+    const personalPlan = primaryTest.personal_plan;
 
     // Получаем результаты дополнительных тестов по sessionId
     const { data: additionalTests, error: additionalError } = await supabase
@@ -966,58 +967,45 @@ router.post('/psychologist-pdf', async (req, res) => {
       ).join('\n');
     }
 
-    const prompt = `Создай краткую выжимку результатов тестирования для психолога.
+    // Определяем пол пользователя из ответов
+    let userGender = 'неизвестен';
+    if (primaryAnswers && Array.isArray(primaryAnswers)) {
+      const genderAnswer = primaryAnswers.find(answer => 
+        answer.questionId === 1 && answer.answer
+      );
+      if (genderAnswer) {
+        userGender = genderAnswer.answer.toLowerCase().includes('женский') ? 'женский' : 'мужской';
+      }
+    }
 
-ИССЛЕДОВАТЕЛЬСКАЯ ЗАДАЧА:
-Проанализируй результаты всех пройденных тестов и создай структурированную выжимку для психолога, которая поможет ему быстро понять основные проблемы и особенности клиента.
+    console.log('📊 [PSYCHOLOGIST-PDF] Данные получены:', {
+      userGender,
+      primaryAnswersCount: primaryAnswers?.length || 0,
+      additionalTestsCount: additionalTests?.length || 0,
+      hasPersonalPlan: !!personalPlan
+    });
 
-ДАННЫЕ ДЛЯ АНАЛИЗА:
-Результаты основного теста: ${JSON.stringify(primaryAnswers)}
-Результаты дополнительных тестов:
-${additionalTestResults}
+    // Читаем промпт и пример
+    const promptPath = path.join(__dirname, '../../prompt-3.txt');
+    const examplePath = path.join(__dirname, '../../example-pdf-for-psy.txt');
+    
+    console.log('📖 [PSYCHOLOGIST-PDF] Читаем промпт из файла:', promptPath);
+    const promptTemplate = fs.readFileSync(promptPath, 'utf8');
+    
+    console.log('📖 [PSYCHOLOGIST-PDF] Читаем пример из файла:', examplePath);
+    const examplePdf = fs.readFileSync(examplePath, 'utf8');
 
-ТРЕБОВАНИЯ К ВЫЖИМКЕ:
-Создай структурированную выжимку, которая включает:
-
-1. КРАТКАЯ ИНФОРМАЦИЯ О КЛИЕНТЕ
-   - Основные жалобы и проблемы
-   - Ключевые симптомы
-   - Уровень выраженности проблем
-
-2. РЕЗУЛЬТАТЫ ТЕСТИРОВАНИЯ
-   - Основные показатели основного теста
-   - Результаты дополнительных тестов
-   - Выявленные паттерны и особенности
-
-3. ПСИХОЛОГИЧЕСКИЙ ПРОФИЛЬ
-   - Эмоциональное состояние
-   - Поведенческие особенности
-   - Копинг-стратегии
-   - Социальное функционирование
-
-4. РЕКОМЕНДАЦИИ ДЛЯ ПСИХОЛОГА
-   - Приоритетные направления работы
-   - Рекомендуемые методы терапии
-   - Особенности взаимодействия с клиентом
-   - Потенциальные риски и ограничения
-
-5. ПЛАН РАБОТЫ
-   - Краткосрочные цели (1-3 сессии)
-   - Среднесрочные цели (1-3 месяца)
-   - Долгосрочные цели (3-6 месяцев)
-
-ТРЕБОВАНИЯ К СТИЛЮ:
-- Профессиональный медицинский стиль
-- Конкретный и структурированный
-- Краткий, но информативный
-- На русском языке
-- Без лишних деталей, только ключевая информация
-
-ФОРМАТ ОТВЕТА: Только текст выжимки, без дополнительных объяснений.`;
+    // Формируем финальный промпт
+    const prompt = promptTemplate
+      .replace('{user_gender}', userGender)
+      .replace('{user_answers}', JSON.stringify(primaryAnswers))
+      .replace('{secondary_test_results}', additionalTestResults)
+      .replace('{personal_plan}', personalPlan || 'Персональный план не найден')
+      .replace('{example_pdf}', examplePdf);
 
     console.log('🚀 [PSYCHOLOGIST-PDF] Вызываем Gemini API...');
-    const psychologistPdf = await callGeminiAI(prompt, 2000);
-    console.log('✅ [PSYCHOLOGIST-PDF] PDF для психолога получен от Gemini, длина:', psychologistPdf?.length || 0);
+    const psychologistPdf = await callGeminiAI(prompt, 3000);
+    console.log('✅ [PSYCHOLOGIST-PDF] PDF для психолога и психиатра получен от Gemini, длина:', psychologistPdf?.length || 0);
 
     res.json({ 
       success: true, 
