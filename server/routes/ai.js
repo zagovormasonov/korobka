@@ -7,6 +7,11 @@ import { SocksProxyAgent } from 'socks-proxy-agent';
 import { constants } from 'crypto';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+// Получаем __dirname для ES модулей
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -631,7 +636,7 @@ router.post('/session-preparation', async (req, res) => {
         `${test.test_type}: ${test.answers}`
       ).join('; ');
     }
-
+    
     console.log('📋 [SESSION-PREPARATION] Результаты доп. тестов:', secondaryTestResults.substring(0, 100) + '...');
 
     // Определяем пол пользователя из ответов
@@ -671,7 +676,7 @@ router.post('/session-preparation', async (req, res) => {
       const preparation = await callGeminiAI(prompt, 16000);
       console.log('✅ [SESSION-PREPARATION] Подготовка получена от Gemini, длина:', preparation?.length || 0);
       
-      res.json({ success: true, preparation });
+    res.json({ success: true, preparation });
     } catch (fileError) {
       console.error('❌ [SESSION-PREPARATION] Ошибка чтения файлов:', fileError);
       res.status(500).json({ success: false, error: 'Failed to read prompt files' });
