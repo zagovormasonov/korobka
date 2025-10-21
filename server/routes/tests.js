@@ -682,6 +682,28 @@ router.post('/additional/save-result', async (req, res) => {
     }
 
     console.log('✅ Результат теста сохранен в БД');
+    
+    // Перегенерируем персональный план с учетом новых результатов тестов
+    console.log('🔄 [REGENERATE-PLAN] Запускаем перегенерацию персонального плана...');
+    try {
+      const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
+      const regenerateResponse = await fetch(`${baseUrl}/api/ai/regenerate-personal-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+        signal: AbortSignal.timeout(120000), // 2 минуты timeout
+      });
+      
+      if (regenerateResponse.ok) {
+        console.log('✅ [REGENERATE-PLAN] Персональный план успешно перегенерирован');
+      } else {
+        console.error('⚠️ [REGENERATE-PLAN] Ошибка перегенерации плана:', regenerateResponse.status);
+      }
+    } catch (regenerateError) {
+      console.error('⚠️ [REGENERATE-PLAN] Ошибка при перегенерации плана:', regenerateError.message);
+      // Не прерываем основной процесс, так как результат теста уже сохранен
+    }
+    
     res.json({ success: true, data: result.data });
   } catch (error) {
     console.error('❌ Ошибка при сохранении результата теста:', error);

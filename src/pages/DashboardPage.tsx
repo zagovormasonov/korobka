@@ -835,7 +835,34 @@ const DashboardPage: React.FC = () => {
       });
 
       if (response.ok) {
-        message.success('Результат теста сохранен!');
+        message.success({
+          content: (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              fontSize: '16px',
+              fontWeight: '500'
+            }}>
+              <CheckOutlined style={{ color: '#52c41a', fontSize: '20px' }} />
+              <div>
+                <div style={{ color: '#52c41a', fontWeight: '600' }}>
+                  Результат теста сохранен!
+                </div>
+                <div style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
+                  Персональный план обновлен с учетом новых данных
+                </div>
+              </div>
+            </div>
+          ),
+          duration: 4,
+          style: {
+            marginTop: '20px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            border: '1px solid #52c41a'
+          }
+        });
         // Обновляем локальное состояние немедленно
         setTestResults(prev => ({ ...prev, [testId]: result.trim() }));
         // Больше не нужно перезагружать с сервера, так как мы уже обновили состояние

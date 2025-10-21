@@ -1030,4 +1030,129 @@ router.post('/psychologist-pdf', async (req, res) => {
   }
 });
 
+// Перегенерировать персональный план после прохождения дополнительных тестов
+router.post('/regenerate-personal-plan', async (req, res) => {
+  try {
+    console.log('🔄 [REGENERATE-PERSONAL-PLAN] Начало перегенерации персонального плана');
+    const { sessionId } = req.body;
+    console.log('🔄 [REGENERATE-PERSONAL-PLAN] SessionId:', sessionId);
+    
+    if (!sessionId) {
+      console.error('❌ [REGENERATE-PERSONAL-PLAN] SessionId не передан');
+      return res.status(400).json({ success: false, error: 'SessionId is required' });
+    }
+    
+    // Получаем результаты первичного теста
+    console.log('🔍 [REGENERATE-PERSONAL-PLAN] Получаем данные из БД...');
+    const { data: primaryTest, error: primaryError } = await supabase
+      .from('primary_test_results')
+      .select('answers, email, personal_plan')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (primaryError || !primaryTest) {
+      console.error('❌ [REGENERATE-PERSONAL-PLAN] Результаты теста не найдены:', primaryError);
+      return res.status(404).json({ success: false, error: 'Primary test results not found' });
+    }
+
+    // Проверяем наличие ответов теста
+    if (!primaryTest.answers || (Array.isArray(primaryTest.answers) && primaryTest.answers.length === 0)) {
+      console.error('❌ [REGENERATE-PERSONAL-PLAN] Ответы теста отсутствуют для sessionId:', sessionId);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Primary test not completed',
+        message: 'Пожалуйста, сначала пройдите первичный тест на главной странице'
+      });
+    }
+
+    console.log('🔄 [REGENERATE-PERSONAL-PLAN] Принудительно перегенерируем персональный план');
+    console.log('🔑 [REGENERATE-PERSONAL-PLAN] GEMINI_API_KEY установлен:', process.env.GEMINI_API_KEY ? 'ДА' : 'НЕТ');
+
+    const primaryAnswers = primaryTest.answers;
+    const userEmail = primaryTest.email;
+    console.log('📧 [REGENERATE-PERSONAL-PLAN] Email пользователя:', userEmail || 'не указан');
+
+    // Получаем результаты дополнительных тестов по email
+    console.log('🔍 [REGENERATE-PERSONAL-PLAN] Получаем дополнительные тесты из БД...');
+    const { data: additionalTests, error: additionalError } = await supabase
+      .from('additional_test_results')
+      .select('test_type, answers')
+      .eq('email', userEmail);
+
+    if (additionalError) {
+      console.error('❌ [REGENERATE-PERSONAL-PLAN] Ошибка получения дополнительных тестов:', additionalError);
+      return res.status(500).json({ success: false, error: 'Failed to get additional test results' });
+    }
+
+    console.log('📊 [REGENERATE-PERSONAL-PLAN] Найдено дополнительных тестов:', additionalTests?.length || 0);
+    console.log('📊 [REGENERATE-PERSONAL-PLAN] Типы тестов:', additionalTests?.map(t => t.test_type) || []);
+
+    // Формируем результаты дополнительных тестов для промпта
+    let secondaryTestResults = 'Дополнительные тесты не пройдены';
+    if (additionalTests && additionalTests.length > 0) {
+      secondaryTestResults = additionalTests.map(test => {
+        return `Тип теста: ${test.test_type}\nРезультаты: ${JSON.stringify(test.answers, null, 2)}`;
+      }).join('\n\n');
+    }
+
+    console.log('📝 [REGENERATE-PERSONAL-PLAN] Результаты дополнительных тестов:', secondaryTestResults);
+
+    // Определяем пол пользователя
+    const genderAnswer = primaryAnswers.find(a => a.questionId === 1);
+    const userGender = genderAnswer ? (genderAnswer.answer === 'male' ? 'мужской' : 'женский') : 'неопределен';
+    console.log('👤 [REGENERATE-PERSONAL-PLAN] Пол пользователя:', userGender);
+
+    // Читаем промпт и пример
+    const promptPath = path.join(__dirname, '../../prompt.txt');
+    const examplePlanPath = path.join(__dirname, '../../example-personal-plan.txt');
+    
+    try {
+      const promptTemplate = fs.readFileSync(promptPath, 'utf8');
+      const examplePlan = fs.readFileSync(examplePlanPath, 'utf8');
+      console.log('✅ [REGENERATE-PERSONAL-PLAN] Промпт успешно прочитан, длина:', promptTemplate.length);
+      console.log('✅ [REGENERATE-PERSONAL-PLAN] Пример плана прочитан, длина:', examplePlan.length);
+      
+      // Формируем финальный промпт, заменяя переменные
+      const prompt = promptTemplate
+        .replace('{user_gender}', userGender)
+        .replace('{user_answers}', JSON.stringify(primaryAnswers))
+        .replace('{secondary_test_results}', secondaryTestResults)
+        .replace('{example_personal_plan}', examplePlan);
+
+      console.log('📝 [REGENERATE-PERSONAL-PLAN] Финальный промпт сформирован, длина:', prompt.length);
+      console.log('🚀 [REGENERATE-PERSONAL-PLAN] Вызываем Gemini API...');
+      
+      const plan = await callGeminiAI(prompt, 16000);
+      console.log('✅ [REGENERATE-PERSONAL-PLAN] План получен от Gemini, длина:', plan?.length || 0);
+    
+      // Сохраняем обновленный план в БД
+      console.log('💾 [REGENERATE-PERSONAL-PLAN] Сохраняем обновленный план в БД...');
+      const { error: updateError } = await supabase
+        .from('primary_test_results')
+        .update({ personal_plan: plan })
+        .eq('session_id', sessionId);
+
+      if (updateError) {
+        console.error('⚠️ [REGENERATE-PERSONAL-PLAN] Ошибка при сохранении плана в БД:', updateError);
+        return res.status(500).json({ success: false, error: 'Failed to save updated plan' });
+      } else {
+        console.log('✅ [REGENERATE-PERSONAL-PLAN] Обновленный персональный план сохранён в БД');
+      }
+      
+      console.log('🎉 [REGENERATE-PERSONAL-PLAN] Отправляем успешный ответ клиенту');
+      res.json({ success: true, plan, regenerated: true });
+      
+    } catch (promptError) {
+      console.error('❌ [REGENERATE-PERSONAL-PLAN] Ошибка при чтении/обработке промпта:', promptError);
+      throw promptError;
+    }
+  } catch (error) {
+    console.error('❌ [REGENERATE-PERSONAL-PLAN] Критическая ошибка:', {
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
