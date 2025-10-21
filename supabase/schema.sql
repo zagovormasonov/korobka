@@ -59,6 +59,12 @@ CREATE TABLE IF NOT EXISTS psychologist_requests (
     phone VARCHAR(20),
     telegram_username VARCHAR(100),
     message TEXT,
+    request_number VARCHAR(50),
+    utm_source VARCHAR(255),
+    utm_medium VARCHAR(255),
+    utm_campaign VARCHAR(255),
+    utm_term VARCHAR(255),
+    utm_content VARCHAR(255),
     status VARCHAR(50) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     FOREIGN KEY (session_id) REFERENCES primary_test_results(session_id) ON DELETE CASCADE
@@ -82,6 +88,9 @@ CREATE INDEX IF NOT EXISTS idx_payments_payment_id ON payments(payment_id);
 CREATE INDEX IF NOT EXISTS idx_dashboard_tokens_token ON dashboard_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_dashboard_tokens_session_id ON dashboard_tokens(session_id);
 CREATE INDEX IF NOT EXISTS idx_psychologist_requests_session_id ON psychologist_requests(session_id);
+CREATE INDEX IF NOT EXISTS idx_psychologist_requests_request_number ON psychologist_requests(request_number);
+CREATE INDEX IF NOT EXISTS idx_psychologist_requests_utm_source ON psychologist_requests(utm_source);
+CREATE INDEX IF NOT EXISTS idx_psychologist_requests_utm_campaign ON psychologist_requests(utm_campaign);
 CREATE INDEX IF NOT EXISTS idx_session_feedback_session_id ON session_feedback(session_id);
 
 -- Создаем функцию для автоматического обновления updated_at
