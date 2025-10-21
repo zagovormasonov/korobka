@@ -10,9 +10,38 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
 // Отправить заявку на подбор психолога в Telegram с PDF документами
 router.post('/psychologist-request', async (req, res) => {
   try {
-    const { sessionId, name, phone, email, telegramUsername } = req.body;
+    const { sessionId, name, phone, email, telegramUsername, utmSource, utmMedium, utmCampaign, utmTerm, utmContent } = req.body;
     
     console.log('🎯 [TELEGRAM-PSYCHOLOGIST-REQUEST] Начало обработки заявки:', { sessionId, name });
+    
+    // Проверяем лимит заявок (3 раза в час)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const { data: recentRequests, error: limitError } = await supabase
+      .from('psychologist_requests')
+      .select('id')
+      .eq('session_id', sessionId)
+      .gte('created_at', oneHourAgo.toISOString());
+    
+    if (limitError) {
+      console.error('❌ [TELEGRAM] Ошибка проверки лимита:', limitError);
+      return res.status(500).json({ success: false, error: 'Failed to check request limit' });
+    }
+    
+    if (recentRequests && recentRequests.length >= 3) {
+      console.log('⚠️ [TELEGRAM] Превышен лимит заявок:', recentRequests.length);
+      return res.status(429).json({ 
+        success: false, 
+        error: 'Превышен лимит заявок. Можно отправлять не более 3 заявок в час.',
+        limit: 3,
+        remaining: 0
+      });
+    }
+    
+    console.log('✅ [TELEGRAM] Лимит не превышен, заявок за последний час:', recentRequests?.length || 0);
+    
+    // Генерируем номер заявки
+    const requestNumber = `REQ-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    console.log('📋 [TELEGRAM] Номер заявки:', requestNumber);
     
     // Сохраняем заявку в базу данных
     const { data, error } = await supabase
@@ -22,7 +51,13 @@ router.post('/psychologist-request', async (req, res) => {
         name: name,
         phone: phone,
         email: email,
-        telegram_username: telegramUsername
+        telegram_username: telegramUsername,
+        request_number: requestNumber,
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
+        utm_term: utmTerm,
+        utm_content: utmContent
       })
       .select()
       .single();
@@ -37,14 +72,23 @@ router.post('/psychologist-request', async (req, res) => {
       ? (telegramUsername.startsWith('@') ? telegramUsername : `@${telegramUsername}`)
       : 'Не указан';
     
+    const utmInfo = utmSource || utmMedium || utmCampaign ? `
+📊 UTM-метки:
+${utmSource ? `🔗 Источник: ${utmSource}` : ''}
+${utmMedium ? `📱 Канал: ${utmMedium}` : ''}
+${utmCampaign ? `🎯 Кампания: ${utmCampaign}` : ''}
+${utmTerm ? `🔍 Ключевое слово: ${utmTerm}` : ''}
+${utmContent ? `📝 Контент: ${utmContent}` : ''}` : '';
+
     const message = `🔔 Новая заявка на подбор психолога!
 
+📋 Номер заявки: ${requestNumber}
 👤 Имя: ${name}
 📞 Телефон: ${phone}
 📧 Email: ${email}
 💬 Telegram: ${formattedTelegramUsername}
 🆔 Session ID: ${sessionId}
-⏰ Время: ${new Date().toLocaleString('ru-RU')}
+⏰ Время: ${new Date().toLocaleString('ru-RU')}${utmInfo}
 
 📄 Генерирую PDF документы...`;
 
@@ -66,8 +110,8 @@ router.post('/psychologist-request', async (req, res) => {
       if (personalPlanResponse.ok) {
         const personalPlanBuffer = await personalPlanResponse.arrayBuffer();
         await bot.sendDocument(chatId, Buffer.from(personalPlanBuffer), {
-          filename: `personal-plan-${sessionId}.pdf`,
-          caption: '📋 Персональный план психологического благополучия'
+          filename: `personal-plan-${requestNumber}.pdf`,
+          caption: `📋 Персональный план психологического благополучия\n📋 Заявка: ${requestNumber}`
         });
         console.log('✅ [TELEGRAM] Персональный план отправлен');
       } else {
@@ -86,8 +130,8 @@ router.post('/psychologist-request', async (req, res) => {
       if (sessionPrepResponse.ok) {
         const sessionPrepBuffer = await sessionPrepResponse.arrayBuffer();
         await bot.sendDocument(chatId, Buffer.from(sessionPrepBuffer), {
-          filename: `session-preparation-${sessionId}.pdf`,
-          caption: '🎯 Подготовка к сеансам с психологом и психиатром'
+          filename: `session-preparation-${requestNumber}.pdf`,
+          caption: `🎯 Подготовка к сеансам с психологом и психиатром\n📋 Заявка: ${requestNumber}`
         });
         console.log('✅ [TELEGRAM] Подготовка к сеансам отправлена');
       } else {
@@ -106,8 +150,8 @@ router.post('/psychologist-request', async (req, res) => {
       if (psychologistPdfResponse.ok) {
         const psychologistPdfBuffer = await psychologistPdfResponse.arrayBuffer();
         await bot.sendDocument(chatId, Buffer.from(psychologistPdfBuffer), {
-          filename: `psychologist-pdf-${sessionId}.pdf`,
-          caption: '👨‍⚕️ Подготовительный документ для психолога и психиатра'
+          filename: `psychologist-pdf-${requestNumber}.pdf`,
+          caption: `👨‍⚕️ Подготовительный документ для психолога и психиатра\n📋 Заявка: ${requestNumber}`
         });
         console.log('✅ [TELEGRAM] PDF для специалистов отправлен');
       } else {

@@ -522,7 +522,7 @@ router.post('/personal-plan', async (req, res) => {
     });
 
     // Определяем пол пользователя из ответов
-    const genderAnswer = primaryAnswers.find(a => a.questionId === 'Q2');
+    const genderAnswer = primaryAnswers.find(a => a.questionId === 1);
     const userGender = genderAnswer ? genderAnswer.answer : 'неопределен';
     console.log('👤 [PERSONAL-PLAN] Пол пользователя:', userGender);
 
@@ -640,7 +640,8 @@ router.post('/session-preparation', async (req, res) => {
     console.log('📋 [SESSION-PREPARATION] Результаты доп. тестов:', secondaryTestResults.substring(0, 100) + '...');
 
     // Определяем пол пользователя из ответов
-    const userGender = primaryAnswers?.Q1 === 'male' ? 'мужской' : 'женский';
+    const genderAnswer = primaryAnswers.find(a => a.questionId === 1);
+    const userGender = genderAnswer ? (genderAnswer.answer === 'male' ? 'мужской' : 'женский') : 'неопределен';
     console.log('👤 [SESSION-PREPARATION] Пол пользователя:', userGender);
 
     // Читаем промпт и пример из файлов
@@ -981,7 +982,7 @@ router.post('/psychologist-pdf', async (req, res) => {
         answer.questionId === 1 && answer.answer
       );
       if (genderAnswer) {
-        userGender = genderAnswer.answer.toLowerCase().includes('женский') ? 'женский' : 'мужской';
+        userGender = genderAnswer.answer === 'male' ? 'мужской' : 'женский';
       }
     }
 

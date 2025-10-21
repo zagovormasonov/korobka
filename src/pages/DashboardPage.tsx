@@ -554,19 +554,35 @@ const DashboardPage: React.FC = () => {
 
   const handlePsychologistRequest = async (values: any) => {
     try {
+      // Получаем UTM-метки из URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const utmData = {
+        utmSource: urlParams.get('utm_source'),
+        utmMedium: urlParams.get('utm_medium'),
+        utmCampaign: urlParams.get('utm_campaign'),
+        utmTerm: urlParams.get('utm_term'),
+        utmContent: urlParams.get('utm_content')
+      };
+
       const response = await apiRequest('api/telegram/psychologist-request', {
         method: 'POST',
-          body: JSON.stringify({
-            sessionId: authData?.sessionId,
-            ...values
-          }),
+        body: JSON.stringify({
+          sessionId: authData?.sessionId,
+          ...values,
+          ...utmData
+        }),
       });
 
       if (response.ok) {
         message.success('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
         psychologistForm.resetFields();
       } else {
-        message.error('Ошибка при отправке заявки');
+        const errorData = await response.json();
+        if (response.status === 429) {
+          message.error(errorData.error || 'Превышен лимит заявок. Попробуйте позже.');
+        } else {
+          message.error('Ошибка при отправке заявки');
+        }
       }
     } catch (error) {
       console.error('Error sending psychologist request:', error);
