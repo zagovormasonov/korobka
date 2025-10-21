@@ -595,96 +595,87 @@ router.post('/session-preparation', async (req, res) => {
   try {
     const { sessionId } = req.body;
     
+    console.log('📝 [SESSION-PREPARATION] Начинаем генерацию подготовки к сеансу для sessionId:', sessionId);
+    
     // Получаем результаты первичного теста
     const { data: primaryTest, error: primaryError } = await supabase
       .from('primary_test_results')
-      .select('answers, email')
+      .select('answers, email, personal_plan')
       .eq('session_id', sessionId)
       .single();
 
     if (primaryError || !primaryTest) {
+      console.error('❌ [SESSION-PREPARATION] Ошибка получения данных первичного теста:', primaryError);
       return res.status(404).json({ success: false, error: 'Primary test results not found' });
     }
 
     const primaryAnswers = primaryTest.answers;
     const userEmail = primaryTest.email;
+    const personalPlan = primaryTest.personal_plan;
 
-    // Получаем результаты дополнительных тестов по email
+    console.log('📊 [SESSION-PREPARATION] Получены данные первичного теста, email:', userEmail);
+    console.log('📋 [SESSION-PREPARATION] Персональный план найден:', !!personalPlan);
+
+    // Получаем результаты дополнительных тестов по sessionId
     const { data: additionalTests, error: additionalError } = await supabase
       .from('additional_test_results')
       .select('test_type, answers')
-      .eq('email', userEmail);
+      .eq('session_id', sessionId);
 
     // Формируем результаты дополнительных тестов
-    let testResults = 'Дополнительные тесты не пройдены';
+    let secondaryTestResults = 'Дополнительные тесты не пройдены';
     if (additionalTests && additionalTests.length > 0) {
-      testResults = additionalTests.map(test => 
-        `${test.test_name}: ${test.test_result}`
+      secondaryTestResults = additionalTests.map(test => 
+        `${test.test_type}: ${test.answers}`
       ).join('; ');
     }
+
+    console.log('📋 [SESSION-PREPARATION] Результаты доп. тестов:', secondaryTestResults.substring(0, 100) + '...');
+
+    // Определяем пол пользователя из ответов
+    const userGender = primaryAnswers?.Q1 === 'male' ? 'мужской' : 'женский';
+    console.log('👤 [SESSION-PREPARATION] Пол пользователя:', userGender);
+
+    // Читаем промпт и пример из файлов
+    console.log('📝 [SESSION-PREPARATION] Читаем шаблон промпта...');
+    const fs = await import('fs');
+    const path = await import('path');
+    const { fileURLToPath } = await import('url');
     
-    const prompt = `Создай детальное руководство по подготовке к сеансу с психологом и психиатром.
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const promptPath = path.join(__dirname, '../../prompt-2.txt');
+    const examplePath = path.join(__dirname, '../../example-podgotovka.txt');
+    console.log('📝 [SESSION-PREPARATION] Путь к промпту:', promptPath);
+    console.log('📝 [SESSION-PREPARATION] Путь к примеру:', examplePath);
+    
+    try {
+      const promptTemplate = fs.readFileSync(promptPath, 'utf8');
+      const examplePreparation = fs.readFileSync(examplePath, 'utf8');
+      console.log('✅ [SESSION-PREPARATION] Промпт успешно прочитан, длина:', promptTemplate.length);
+      console.log('✅ [SESSION-PREPARATION] Пример прочитан, длина:', examplePreparation.length);
+      
+      // Формируем финальный промпт, заменяя переменные
+      const prompt = promptTemplate
+        .replace('{user_gender}', userGender)
+        .replace('{user_answers}', JSON.stringify(primaryAnswers))
+        .replace('{secondary_test_results}', secondaryTestResults)
+        .replace('{personal_plan}', personalPlan || 'Персональный план не найден')
+        .replace('{example_preparation}', examplePreparation);
 
-ИССЛЕДОВАТЕЛЬСКАЯ ЗАДАЧА:
-Проанализируй результаты тестов и создай персонализированное руководство для максимально эффективного использования времени на сеансе.
-
-ДАННЫЕ ДЛЯ АНАЛИЗА:
-Результаты первичного теста: ${JSON.stringify(primaryAnswers)}
-Результаты дополнительных тестов: ${testResults}
-
-ТРЕБОВАНИЯ К РУКОВОДСТВУ:
-Создай структурированное руководство, которое включает:
-
-1. ЧТО ГОВОРИТЬ ПСИХОЛОГУ
-   - Ключевые эмоциональные проблемы
-   - Поведенческие паттерны
-   - Отношения и социальные трудности
-   - Цели психотерапии
-
-2. ЧТО ГОВОРИТЬ ПСИХИАТРУ
-   - Симптомы и их выраженность
-   - История развития состояния
-   - Влияние на повседневную жизнь
-   - Предыдущий опыт медикаментозного лечения
-
-3. ВОПРОСЫ ДЛЯ ПСИХОЛОГА
-   - О методах терапии
-   - О длительности лечения
-   - О домашних заданиях
-   - О работе с конкретными проблемами
-
-4. ВОПРОСЫ ДЛЯ ПСИХИАТРА
-   - О диагнозе и прогнозе
-   - О медикаментах и побочных эффектах
-   - О совместимости с другими препаратами
-   - О контроле эффективности лечения
-
-5. ЦЕЛИ СЕАНСОВ
-   - Краткосрочные цели (1-3 месяца)
-   - Долгосрочные цели (6-12 месяцев)
-   - Критерии улучшения состояния
-
-6. ЧТО ВЗЯТЬ С СОБОЙ
-   - К психологу: дневники настроения, записи о проблемах
-   - К психиатру: ОБЯЗАТЕЛЬНО историю назначений и приёма препаратов, как влияли разные сочетания/дозировки препаратов, результаты анализов
-   - Список текущих медикаментов
-   - Медицинскую карту
-
-ТРЕБОВАНИЯ К СТИЛЮ:
-- Практичный и конкретный
-- Персонализированный под результаты тестов
-- Понятный и структурированный
-- На русском языке
-- Мотивирующий тон
-
-ОСОБОЕ ВНИМАНИЕ: Подчеркни важность взять с собой к психиатру историю назначений и приёма препаратов и как влияли разные сочетания/дозировки препаратов.
-
-ФОРМАТ ОТВЕТА: Только текст руководства, без дополнительных объяснений.`;
-
-    const preparation = await callGeminiAI(prompt, 2000);
-    res.json({ success: true, preparation });
+      console.log('📝 [SESSION-PREPARATION] Финальный промпт сформирован, длина:', prompt.length);
+      console.log('🚀 [SESSION-PREPARATION] Вызываем Gemini API...');
+      
+      const preparation = await callGeminiAI(prompt, 4000);
+      console.log('✅ [SESSION-PREPARATION] Подготовка получена от Gemini, длина:', preparation?.length || 0);
+      
+      res.json({ success: true, preparation });
+    } catch (fileError) {
+      console.error('❌ [SESSION-PREPARATION] Ошибка чтения файлов:', fileError);
+      res.status(500).json({ success: false, error: 'Failed to read prompt files' });
+    }
   } catch (error) {
-    console.error('Error generating session preparation:', error);
+    console.error('❌ [SESSION-PREPARATION] Ошибка генерации подготовки к сеансу:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
