@@ -24,6 +24,29 @@ const ChatPage: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Загружаем историю чата из localStorage при инициализации
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('chatHistory');
+    if (savedMessages) {
+      try {
+        const parsedMessages = JSON.parse(savedMessages);
+        setMessages(parsedMessages);
+        console.log('📚 История чата восстановлена из localStorage:', parsedMessages.length, 'сообщений');
+      } catch (error) {
+        console.error('❌ Ошибка при восстановлении истории чата:', error);
+        localStorage.removeItem('chatHistory');
+      }
+    }
+  }, []);
+
+  // Сохраняем историю чата в localStorage при каждом изменении
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('chatHistory', JSON.stringify(messages));
+      console.log('💾 История чата сохранена в localStorage:', messages.length, 'сообщений');
+    }
+  }, [messages]);
+
   useEffect(() => {
     console.log('🔄 Messages обновлены:', messages.length, 'сообщений');
     scrollToBottom();
@@ -184,6 +207,8 @@ const ChatPage: React.FC = () => {
     setMessages([]);
     setFileList([]);
     setInputValue('');
+    localStorage.removeItem('chatHistory');
+    console.log('🗑️ История чата очищена из localStorage');
     antMessage.success('Чат очищен');
   };
 
