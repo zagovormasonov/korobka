@@ -683,24 +683,24 @@ router.post('/additional/save-result', async (req, res) => {
 
     console.log('✅ Результат теста сохранен в БД');
     
-    // Генерируем персональный план впервые с учетом всех результатов тестов
-    console.log('🔄 [GENERATE-PLAN] Запускаем генерацию персонального плана...');
+    // Запускаем фоновую генерацию всех документов после прохождения тестов
+    console.log('🔄 [BACKGROUND-GENERATION] Запускаем фоновую генерацию всех документов...');
     try {
       const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
-      const generateResponse = await fetch(`${baseUrl}/api/ai/personal-plan`, {
+      const backgroundResponse = await fetch(`${baseUrl}/api/background-generation/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId }),
-        signal: AbortSignal.timeout(120000), // 2 минуты timeout
+        signal: AbortSignal.timeout(10000), // 10 секунд timeout для запуска
       });
       
-      if (generateResponse.ok) {
-        console.log('✅ [GENERATE-PLAN] Персональный план успешно сгенерирован');
+      if (backgroundResponse.ok) {
+        console.log('✅ [BACKGROUND-GENERATION] Фоновая генерация успешно запущена');
       } else {
-        console.error('⚠️ [GENERATE-PLAN] Ошибка генерации плана:', generateResponse.status);
+        console.error('⚠️ [BACKGROUND-GENERATION] Ошибка запуска фоновой генерации:', backgroundResponse.status);
       }
-    } catch (generateError) {
-      console.error('⚠️ [GENERATE-PLAN] Ошибка при генерации плана:', generateError.message);
+    } catch (backgroundError) {
+      console.error('⚠️ [BACKGROUND-GENERATION] Ошибка при запуске фоновой генерации:', backgroundError.message);
       // Не прерываем основной процесс, так как результат теста уже сохранен
     }
     

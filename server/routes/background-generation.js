@@ -207,14 +207,156 @@ async function generateDocumentsInBackground(sessionId) {
       // НЕ выходим из функции, продолжаем генерацию
     }
     
-    // 1. ПЕРСОНАЛЬНЫЙ ПЛАН НЕ ГЕНЕРИРУЕМ СРАЗУ - только после прохождения всех тестов
-    console.log('⏭️ [BACKGROUND-GENERATION] Персональный план будет сгенерирован после прохождения всех дополнительных тестов');
+    // 1. Генерируем персональный план (если еще не сгенерирован)
+    if (!existingData.personal_plan_generated) {
+      console.log('📝 [BACKGROUND-GENERATION] === ЭТАП 1: Генерация персонального плана ===');
+      console.log('📝 [BACKGROUND-GENERATION] Генерируем персональный план...');
+      console.log('🔗 [BACKGROUND-GENERATION] URL для запроса:', `${baseUrl}/api/ai/personal-plan`);
+      console.log('📤 [BACKGROUND-GENERATION] Отправляем запрос с sessionId:', sessionId);
+      console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 1:', new Date().toISOString());
+      console.log('🌐 [BACKGROUND-GENERATION] Выполняем fetch запрос к:', `${baseUrl}/api/ai/personal-plan`);
+      try {
+        const planResponse = await fetch(`${baseUrl}/api/pdf/personal-plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+          signal: AbortSignal.timeout(300000), // 5 минут timeout
+        });
 
-    // 2. ПОДГОТОВКА К СЕАНСУ НЕ ГЕНЕРИРУЕМ СРАЗУ - только после прохождения всех тестов
-    console.log('⏭️ [BACKGROUND-GENERATION] Подготовка к сеансу будет сгенерирована после прохождения всех дополнительных тестов');
+        console.log('📥 [BACKGROUND-GENERATION] Получен ответ от AI API:', planResponse.status, planResponse.statusText);
+        console.log('⏰ [BACKGROUND-GENERATION] Время получения ответа:', new Date().toISOString());
+        
+        if (planResponse.ok) {
+          // Получаем PDF blob и сохраняем в БД в разных форматах
+          const planPdfBuffer = await planResponse.arrayBuffer();
+          const pdfBase64 = Buffer.from(planPdfBuffer).toString('base64');
+          
+          const { error: updateError } = await supabase
+            .from('primary_test_results')
+            .update({ 
+              personal_plan_generated: true,
+              personal_plan_pdf: Buffer.from(planPdfBuffer),  // BYTEA формат
+              personal_plan_pdf_base64: pdfBase64  // Base64 формат
+            })
+            .eq('session_id', sessionId);
+          
+          if (updateError) {
+            console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
+          } else {
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: personal_plan_generated = true, PDF сохранен в BYTEA и Base64 форматах');
+          }
+          console.log('✅ [BACKGROUND-GENERATION] Персональный план сгенерирован и сохранен в БД как PDF');
+          console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 1:', new Date().toISOString());
+          console.log('🔄 [BACKGROUND-GENERATION] Переходим к этапу 2...');
+        } else {
+          const errorText = await planResponse.text();
+          console.error('❌ [BACKGROUND-GENERATION] HTTP ошибка при генерации персонального плана:', planResponse.status, errorText);
+          return;
+        }
+      } catch (error) {
+        console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации персонального плана:', error);
+        return;
+      }
+    } else {
+      console.log('✅ [BACKGROUND-GENERATION] Персональный план уже сгенерирован');
+    }
 
-    // 3. PDF ДЛЯ ПСИХОЛОГА НЕ ГЕНЕРИРУЕМ СРАЗУ - только после прохождения всех тестов
-    console.log('⏭️ [BACKGROUND-GENERATION] PDF для психолога будет сгенерирован после прохождения всех дополнительных тестов');
+    // 2. Генерируем подготовку к сеансу (на основе персонального плана)
+    if (!existingData.session_preparation_generated) {
+      console.log('📋 [BACKGROUND-GENERATION] === ЭТАП 2: Генерация подготовки к сеансу ===');
+      console.log('📋 [BACKGROUND-GENERATION] Генерируем подготовку к сеансу на основе персонального плана...');
+      console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 2:', new Date().toISOString());
+      try {
+        const sessionResponse = await fetch(`${baseUrl}/api/pdf/session-preparation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, specialistType: 'psychologist' }),
+          signal: AbortSignal.timeout(300000), // 5 минут timeout
+        });
+
+        if (sessionResponse.ok) {
+          // Получаем PDF blob и сохраняем в БД в разных форматах
+          const sessionPdfBuffer = await sessionResponse.arrayBuffer();
+          const pdfBase64 = Buffer.from(sessionPdfBuffer).toString('base64');
+          
+          const { error: updateError } = await supabase
+            .from('primary_test_results')
+            .update({ 
+              session_preparation_generated: true,
+              session_preparation_pdf: Buffer.from(sessionPdfBuffer),  // BYTEA формат
+              session_preparation_pdf_base64: pdfBase64  // Base64 формат
+            })
+            .eq('session_id', sessionId);
+          
+          if (updateError) {
+            console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
+          } else {
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: session_preparation_generated = true, PDF сохранен в BYTEA и Base64 форматах');
+          }
+          console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу сгенерирована и сохранена в БД как PDF');
+          console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 2:', new Date().toISOString());
+          console.log('🔄 [BACKGROUND-GENERATION] Переходим к этапу 3...');
+        } else {
+          const errorText = await sessionResponse.text();
+          console.error('❌ [BACKGROUND-GENERATION] HTTP ошибка при генерации подготовки к сеансу:', sessionResponse.status, errorText);
+          return;
+        }
+      } catch (error) {
+        console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации подготовки к сеансу:', error);
+        return;
+      }
+    } else {
+      console.log('✅ [BACKGROUND-GENERATION] Подготовка к сеансу уже сгенерирована');
+    }
+
+    // 3. Генерируем рекомендации для психолога (на основе подготовки к сеансу)
+    if (!existingData.psychologist_pdf_generated) {
+      console.log('📄 [BACKGROUND-GENERATION] === ЭТАП 3: Генерация рекомендаций для психолога ===');
+      console.log('📄 [BACKGROUND-GENERATION] Генерируем рекомендации для психолога на основе подготовки к сеансу...');
+      console.log('⏰ [BACKGROUND-GENERATION] Время начала этапа 3:', new Date().toISOString());
+      try {
+        const pdfResponse = await fetch(`${baseUrl}/api/pdf/psychologist-pdf`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+          signal: AbortSignal.timeout(300000), // 5 минут timeout
+        });
+
+        console.log('📥 [BACKGROUND-GENERATION] Получен ответ от psychologist API:', pdfResponse.status, pdfResponse.statusText);
+        
+        if (pdfResponse.ok) {
+          // Получаем PDF blob и сохраняем в БД в разных форматах
+          const pdfBuffer = await pdfResponse.arrayBuffer();
+          const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
+          
+          const { error: updateError } = await supabase
+            .from('primary_test_results')
+            .update({ 
+              psychologist_pdf_generated: true,
+              psychologist_pdf: Buffer.from(pdfBuffer),  // BYTEA формат
+              psychologist_pdf_base64: pdfBase64  // Base64 формат
+            })
+            .eq('session_id', sessionId);
+          
+          if (updateError) {
+            console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
+          } else {
+            console.log('✅ [BACKGROUND-GENERATION] БД обновлена: psychologist_pdf_generated = true, PDF сохранен в BYTEA и Base64 форматах');
+          }
+          console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога сгенерированы и сохранены в БД как PDF');
+          console.log('⏰ [BACKGROUND-GENERATION] Время завершения этапа 3:', new Date().toISOString());
+        } else {
+          const errorText = await pdfResponse.text();
+          console.error('❌ [BACKGROUND-GENERATION] HTTP ошибка при генерации рекомендаций для психолога:', pdfResponse.status, errorText);
+          return;
+        }
+      } catch (error) {
+        console.error('❌ [BACKGROUND-GENERATION] Ошибка генерации рекомендаций для психолога:', error);
+        return;
+      }
+    } else {
+      console.log('✅ [BACKGROUND-GENERATION] Рекомендации для психолога уже сгенерированы');
+    }
 
     // Отмечаем, что генерация завершена
     await supabase
