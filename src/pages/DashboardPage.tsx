@@ -352,6 +352,7 @@ const DashboardPage: React.FC = () => {
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [loadingPsychologistPdf, setLoadingPsychologistPdf] = useState(false);
   const [loadingTestResults, setLoadingTestResults] = useState(true); // Загрузка результатов тестов
+  const [psychologistRequestSent, setPsychologistRequestSent] = useState(false); // Анимация отправки заявки
   
   // Состояния для модального окна
   const [modalVisible, setModalVisible] = useState(false);
@@ -574,6 +575,9 @@ const DashboardPage: React.FC = () => {
       });
 
       if (response.ok) {
+        // Запускаем анимацию успешной отправки
+        setPsychologistRequestSent(true);
+        
         // Показываем всплывающее уведомление с анимацией
         message.success({
           content: (
@@ -603,7 +607,14 @@ const DashboardPage: React.FC = () => {
             border: '1px solid #52c41a'
           }
         });
+        
+        // Очищаем форму
         psychologistForm.resetFields();
+        
+        // Сбрасываем анимацию через 3 секунды
+        setTimeout(() => {
+          setPsychologistRequestSent(false);
+        }, 3000);
       } else {
         message.error({
           content: (
@@ -1226,14 +1237,17 @@ const DashboardPage: React.FC = () => {
                       width: '100%',
                       height: '45px',
                       borderRadius: '22px',
-                      backgroundColor: 'rgb(243, 186, 111)',
-                      borderColor: 'rgb(243, 186, 111)',
+                      backgroundColor: psychologistRequestSent ? '#52c41a' : 'rgb(243, 186, 111)',
+                      borderColor: psychologistRequestSent ? '#52c41a' : 'rgb(243, 186, 111)',
                       color: '#ffffff',
                       fontSize: '16px',
-                      fontWeight: '500'
+                      fontWeight: '500',
+                      transition: 'all 0.3s ease',
+                      transform: psychologistRequestSent ? 'scale(0.95)' : 'scale(1)'
                     }}
+                    icon={psychologistRequestSent ? <CheckOutlined /> : null}
                   >
-                    Оставить заявку
+                    {psychologistRequestSent ? 'Заявка отправлена!' : 'Оставить заявку'}
                   </Button>
                 </Form>
               </div>
