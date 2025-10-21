@@ -13,7 +13,8 @@ import {
   DownloadOutlined, 
   UserOutlined, 
   FileTextOutlined, 
-  MessageOutlined
+  MessageOutlined,
+  CheckOutlined
 } from '@ant-design/icons';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
@@ -206,14 +207,84 @@ const PersonalPlanPage: React.FC = () => {
       });
 
       if (response.ok) {
-        message.success('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
+        // Показываем всплывающее уведомление с анимацией
+        message.success({
+          content: (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              fontSize: '16px',
+              fontWeight: '500'
+            }}>
+              <CheckOutlined style={{ color: '#52c41a', fontSize: '20px' }} />
+              <div>
+                <div style={{ color: '#52c41a', fontWeight: '600' }}>
+                  Заявка успешно отправлена!
+                </div>
+                <div style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
+                  Мы свяжемся с вами в ближайшее время
+                </div>
+              </div>
+            </div>
+          ),
+          duration: 5,
+          style: {
+            marginTop: '20px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            border: '1px solid #52c41a'
+          }
+        });
         psychologistForm.resetFields();
       } else {
-        message.error('Ошибка при отправке заявки');
+        message.error({
+          content: (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              fontSize: '16px',
+              fontWeight: '500'
+            }}>
+              <div style={{ color: '#ff4d4f' }}>
+                ❌ Ошибка при отправке заявки
+              </div>
+            </div>
+          ),
+          duration: 4,
+          style: {
+            marginTop: '20px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            border: '1px solid #ff4d4f'
+          }
+        });
       }
     } catch (error) {
       console.error('Error sending psychologist request:', error);
-      message.error('Произошла ошибка при отправке заявки');
+      message.error({
+        content: (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px',
+            fontSize: '16px',
+            fontWeight: '500'
+          }}>
+            <div style={{ color: '#ff4d4f' }}>
+              ❌ Произошла ошибка при отправке заявки
+            </div>
+          </div>
+        ),
+        duration: 4,
+        style: {
+          marginTop: '20px',
+          borderRadius: '12px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+          border: '1px solid #ff4d4f'
+        }
+      });
     }
   };
 
