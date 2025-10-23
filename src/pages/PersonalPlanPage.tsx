@@ -187,6 +187,7 @@ const PersonalPlanPage: React.FC = () => {
   };
 
   const handlePsychologistRequest = async (values: any) => {
+    console.log('🚀 [PERSONAL-PLAN] Начинаем отправку заявки:', values);
     try {
       // Получаем UTM-метки из URL
       const urlParams = new URLSearchParams(window.location.search);
@@ -198,6 +199,7 @@ const PersonalPlanPage: React.FC = () => {
         utmContent: urlParams.get('utm_content')
       };
 
+      console.log('📤 [PERSONAL-PLAN] Отправляем запрос на сервер...');
       const response = await apiRequest('api/telegram/psychologist-request', {
         method: 'POST',
         body: JSON.stringify({
@@ -206,6 +208,7 @@ const PersonalPlanPage: React.FC = () => {
           ...utmData
         }),
       });
+      console.log('📥 [PERSONAL-PLAN] Получен ответ от сервера:', response.status);
 
       if (response.ok) {
         // Запускаем анимацию успешной отправки
@@ -275,7 +278,8 @@ const PersonalPlanPage: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error sending psychologist request:', error);
+      console.error('❌ [PERSONAL-PLAN] Ошибка при отправке заявки:', error);
+      console.error('❌ [PERSONAL-PLAN] Детали ошибки:', error.message, error.stack);
       message.error({
         content: (
           <div style={{ 
