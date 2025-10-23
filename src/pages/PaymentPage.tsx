@@ -9,7 +9,7 @@ import {
 
 const { Title, Paragraph } = Typography;
 
-// const iconColor = '#60CDEA';
+// const iconColor = '#4F958B';
 
 const benefits = [
   {
@@ -276,15 +276,15 @@ const PaymentPage: React.FC = () => {
               flex: 1
             }}>
               Я согласен(на) с условиями{' '}
-              <Link to="/offer" style={{ color: '#60CDEA' }}>
+              <Link to="/offer" style={{ color: '#4F958B' }}>
                 Публичной оферты
               </Link>
               ,{' '}
-              <Link to="/privacy-policy" style={{ color: '#60CDEA' }}>
+              <Link to="/privacy-policy" style={{ color: '#4F958B' }}>
                 Политики конфиденциальности
               </Link>
               {' '}и даю{' '}
-              <Link to="/consent" style={{ color: '#60CDEA' }}>
+              <Link to="/consent" style={{ color: '#4F958B' }}>
                 Согласие на обработку персональных данных
               </Link>
             </span>
@@ -302,8 +302,8 @@ const PaymentPage: React.FC = () => {
             height: '56px',
             fontSize: '18px',
             fontWeight: '600',
-            backgroundColor: '#60CDEA',
-            borderColor: '#60CDEA',
+            backgroundColor: '#4F958B',
+            borderColor: '#4F958B',
             border: 'none',
             borderRadius: '28px',
             boxShadow: 'none'

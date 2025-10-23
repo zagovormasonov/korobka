@@ -1021,7 +1021,7 @@ const DashboardPage: React.FC = () => {
               width: '40px',
               height: '40px',
               borderRadius: '50%',
-              backgroundColor: '#60CDEA',
+              backgroundColor: '#4F958B',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
@@ -1046,8 +1046,8 @@ const DashboardPage: React.FC = () => {
           type="primary"
           onClick={handleLogout}
           style={{ 
-            backgroundColor: '#60CDEA',
-            borderColor: '#60CDEA',
+            backgroundColor: '#4F958B',
+            borderColor: '#4F958B',
             color: '#ffffff',
             fontSize: '16px',
             fontWeight: '500',
@@ -1132,8 +1132,8 @@ const DashboardPage: React.FC = () => {
                     width: '100%',
                     height: '45px',
                     borderRadius: '22px',
-                    backgroundColor: '#60CDEA',
-                    borderColor: '#60CDEA',
+                    backgroundColor: '#4F958B',
+                    borderColor: '#4F958B',
                     color: '#ffffff',
                     fontSize: '16px',
                     fontWeight: '500'
@@ -1239,8 +1239,8 @@ const DashboardPage: React.FC = () => {
                       width: '100%',
                       height: '45px',
                       borderRadius: '22px',
-                      backgroundColor: psychologistRequestSent ? '#52c41a' : '#60CDEA',
-                      borderColor: psychologistRequestSent ? '#52c41a' : '#60CDEA',
+                      backgroundColor: psychologistRequestSent ? '#52c41a' : '#4F958B',
+                      borderColor: psychologistRequestSent ? '#52c41a' : '#4F958B',
                       color: '#ffffff',
                       fontSize: '16px',
                       fontWeight: '500',
@@ -1299,8 +1299,8 @@ const DashboardPage: React.FC = () => {
                     width: '100%',
                     height: '45px',
                     borderRadius: '22px',
-                    backgroundColor: '#60CDEA',
-                    borderColor: '#60CDEA',
+                    backgroundColor: '#4F958B',
+                    borderColor: '#4F958B',
                     color: '#ffffff',
                     fontSize: '16px',
                     fontWeight: '500'
@@ -1355,8 +1355,8 @@ const DashboardPage: React.FC = () => {
                     width: '100%',
                     height: '45px',
                     borderRadius: '22px',
-                    backgroundColor: '#60CDEA',
-                    borderColor: '#60CDEA',
+                    backgroundColor: '#4F958B',
+                    borderColor: '#4F958B',
                     color: '#ffffff',
                     fontSize: '16px',
                     fontWeight: '500'
@@ -1415,8 +1415,8 @@ const DashboardPage: React.FC = () => {
                       width: '100%',
                       height: '45px',
                       borderRadius: '22px',
-                      backgroundColor: '#60CDEA',
-                      borderColor: '#60CDEA',
+                      backgroundColor: '#4F958B',
+                      borderColor: '#4F958B',
                       color: '#ffffff',
                       fontSize: '16px',
                       fontWeight: '500'
@@ -1602,8 +1602,8 @@ const DashboardPage: React.FC = () => {
                     padding: '0 30px',
                     marginTop: '20px',
                     borderRadius: '25px',
-                    backgroundColor: '#60CDEA',
-                    borderColor: '#60CDEA',
+                    backgroundColor: '#4F958B',
+                    borderColor: '#4F958B',
                     color: '#ffffff'
                   }}
                 >
@@ -1684,7 +1684,7 @@ const DashboardPage: React.FC = () => {
                             width: '20px',
                             height: '20px',
                             borderRadius: '50%',
-                            backgroundColor: testResults[test.id] ? '#60CDEA' : '#E8E8E8',
+                            backgroundColor: testResults[test.id] ? '#4F958B' : '#E8E8E8',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -1765,8 +1765,8 @@ const DashboardPage: React.FC = () => {
                             flex: 1,
                             height: '40px',
                             borderRadius: '20px',
-                            backgroundColor: '#60CDEA',
-                            borderColor: '#60CDEA',
+                            backgroundColor: '#4F958B',
+                            borderColor: '#4F958B',
                             color: '#ffffff',
                             fontWeight: '500'
                           }}
@@ -1816,8 +1816,8 @@ const DashboardPage: React.FC = () => {
               style={{
                 borderRadius: '20px',
                 height: '40px',
-                backgroundColor: '#60CDEA',
-                borderColor: '#60CDEA',
+                backgroundColor: '#4F958B',
+                borderColor: '#4F958B',
                 color: '#ffffff',
                 fontWeight: '500'
               }}

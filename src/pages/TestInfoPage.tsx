@@ -12,7 +12,7 @@ import { useThemeColor } from '../hooks/useThemeColor';
 
 const { Title, Paragraph } = Typography;
 
-// const iconColor = '#60CDEA';
+// const iconColor = '#4F958B';
 
 const benefits = [
   {
@@ -133,8 +133,8 @@ const TestInfoPage: React.FC = () => {
             height: '56px',
             fontSize: '18px',
             fontWeight: '600',
-            backgroundColor: '#60CDEA',
-            borderColor: '#60CDEA',
+            backgroundColor: '#4F958B',
+            borderColor: '#4F958B',
             border: 'none',
             borderRadius: '28px',
             boxShadow: 'none'

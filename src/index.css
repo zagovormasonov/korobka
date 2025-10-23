@@ -283,7 +283,7 @@ code {
 .ant-input-password input:hover,
 .ant-input-number:hover,
 .ant-input-textarea textarea:hover {
-  border-color: #60CDEA !important;
+  border-color: #4F958B !important;
 }
 
 .ant-input:focus,
@@ -294,7 +294,7 @@ code {
 .ant-input-number-focused,
 .ant-input-textarea textarea:focus,
 .ant-input-textarea-focused textarea {
-  border-color: #60CDEA !important;
+  border-color: #4F958B !important;
   box-shadow: 0 0 0 2px rgba(243, 186, 111, 0.1) !important;
 }
 
@@ -311,7 +311,7 @@ code {
 .ant-input-password:hover,
 .ant-input-number-wrapper:hover,
 .ant-input-textarea:hover {
-  border-color: #60CDEA !important;
+  border-color: #4F958B !important;
 }
 
 .ant-input-affix-wrapper:focus,
@@ -322,7 +322,7 @@ code {
 .ant-input-number-wrapper-focused,
 .ant-input-textarea:focus,
 .ant-input-textarea-focused {
-  border-color: #60CDEA !important;
+  border-color: #4F958B !important;
   box-shadow: 0 0 0 2px rgba(243, 186, 111, 0.1) !important;
 }
 
