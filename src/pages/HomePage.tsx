@@ -108,8 +108,8 @@ const HomePage: React.FC = () => {
         <Silk
           speed={8.7}
           scale={0.5}
-          color="#ffe59e"
-          darkColor="#e8722a"
+          color="#FFED82"
+          darkColor="#60CDEA"
           noiseIntensity={1.5}
           rotation={0}
         />
