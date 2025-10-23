@@ -69,10 +69,20 @@ ${utmContent ? `📝 Контент: ${utmContent}` : ''}` : '';
 
     await bot.sendMessage(chatId, message);
     
-    // Генерируем и отправляем все 3 PDF документа
+    // СНАЧАЛА ОТВЕЧАЕМ ПОЛЬЗОВАТЕЛЮ, ПОТОМ ГЕНЕРИРУЕМ PDF
+    res.json({ success: true, requestNumber });
+    
+    // Генерируем и отправляем все 3 PDF документа АСИНХРОННО
     const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
     
-    try {
+    // Запускаем генерацию PDF в фоне
+    generateAndSendPDFs(chatId, sessionId, requestNumber, baseUrl);
+    
+    return; // Выходим из функции
+    
+    // Функция для асинхронной генерации PDF
+    async function generateAndSendPDFs(chatId, sessionId, requestNumber, baseUrl) {
+      try {
       // 1. Персональный план
       console.log('📄 [TELEGRAM] Генерируем персональный план...');
       const personalPlanResponse = await fetch(`${baseUrl}/api/pdf/personal-plan`, {
@@ -137,11 +147,10 @@ ${utmContent ? `📝 Контент: ${utmContent}` : ''}` : '';
       await bot.sendMessage(chatId, `✅ Все документы для заявки ${name} успешно сгенерированы и отправлены!`);
       
     } catch (pdfError) {
-      console.error('❌ [TELEGRAM] Ошибка при генерации PDF:', pdfError);
-      await bot.sendMessage(chatId, `⚠️ Ошибка при генерации PDF документов для заявки ${name}: ${pdfError.message}`);
+        console.error('❌ [TELEGRAM] Ошибка при генерации PDF:', pdfError);
+        await bot.sendMessage(chatId, `⚠️ Ошибка при генерации PDF документов для заявки ${requestNumber}: ${pdfError.message}`);
+      }
     }
-    
-    res.json({ success: true, data });
   } catch (error) {
     console.error('Error sending psychologist request:', error);
     res.status(500).json({ success: false, error: error.message });
