@@ -226,8 +226,8 @@ const DashboardLoginPage: React.FC = () => {
                 borderRadius: '28px',
                 fontSize: '16px',
                 fontWeight: '500',
-                backgroundColor: '#f3ba6f',
-                borderColor: '#f3ba6f',
+                backgroundColor: '#60CDEA',
+                borderColor: '#60CDEA',
                 border: 'none',
                 boxShadow: 'none'
               }}

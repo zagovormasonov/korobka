@@ -362,7 +362,7 @@ const BpdTestPage: React.FC = () => {
         <div style={{ marginBottom: '30px' }}>
           <Progress 
             percent={Math.round(progress)} 
-            strokeColor="rgb(243, 186, 111)"
+            strokeColor="#60CDEA"
             showInfo={false}
             style={{ marginBottom: '20px' }}
           />
@@ -499,7 +499,7 @@ const BpdTestPage: React.FC = () => {
                     tooltip={{ formatter: null }}
                   />
                   <div style={{ textAlign: 'center' }}>
-                  <Text style={{ fontSize: '32px', fontWeight: 'bold', color: 'rgb(243, 186, 111)' }}>
+                  <Text style={{ fontSize: '32px', fontWeight: 'bold', color: '#60CDEA' }}>
                     {sliderValue}
                   </Text>
                   </div>
@@ -565,7 +565,7 @@ const BpdTestPage: React.FC = () => {
                 tooltip={{ formatter: null }}
               />
               <div style={{ textAlign: 'center' }}>
-                  <Text style={{ fontSize: '32px', fontWeight: 'bold', color: 'rgb(243, 186, 111)' }}>
+                  <Text style={{ fontSize: '32px', fontWeight: 'bold', color: '#60CDEA' }}>
                     {sliderValue}
                   </Text>
               </div>
@@ -648,8 +648,8 @@ const BpdTestPage: React.FC = () => {
               padding: '0 24px',
               height: '48px',
               ...(currentAnswer && {
-                backgroundColor: 'rgb(243, 186, 111)',
-                borderColor: 'rgb(243, 186, 111)',
+                backgroundColor: '#60CDEA',
+                borderColor: '#60CDEA',
                 color: '#ffffff'
               })
             }}

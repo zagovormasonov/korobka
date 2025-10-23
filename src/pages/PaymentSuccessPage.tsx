@@ -206,8 +206,8 @@ const PaymentSuccessPage: React.FC = () => {
             type="primary" 
             onClick={() => navigate('/')}
             style={{
-              backgroundColor: '#f3ba6f',
-              borderColor: '#f3ba6f',
+              backgroundColor: '#60CDEA',
+              borderColor: '#60CDEA',
               borderRadius: '28px',
               height: '48px'
             }}
@@ -374,7 +374,7 @@ const PaymentSuccessPage: React.FC = () => {
                   borderRadius: '28px',
                   fontSize: '16px',
                   fontWeight: '600',
-                  backgroundColor: '#e8a049',
+                  backgroundColor: '#60CDEA',
                   borderColor: 'rgba(255, 255, 255, 0.4)',
                   border: '2px solid rgba(255, 255, 255, 0.4)',
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
@@ -472,7 +472,7 @@ const PaymentSuccessPage: React.FC = () => {
                 borderRadius: '28px',
                 fontSize: '16px',
                 fontWeight: '600',
-                backgroundColor: '#e8a049',
+                backgroundColor: '#60CDEA',
                 borderColor: 'rgba(255, 255, 255, 0.4)',
                 border: '2px solid rgba(255, 255, 255, 0.4)',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',

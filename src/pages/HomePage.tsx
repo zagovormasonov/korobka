@@ -296,7 +296,7 @@ const HomePage: React.FC = () => {
                 borderRadius: '28px',
                 fontSize: '16px',
                 fontWeight: '600',
-                background: 'radial-gradient(circle at center, #FFED82 0%, #60CDEA 100%)',
+                backgroundColor: '#60CDEA',
                 borderColor: 'rgba(255, 255, 255, 0.4)',
                 border: '2px solid rgba(255, 255, 255, 0.4)',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
