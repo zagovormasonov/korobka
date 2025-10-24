@@ -604,7 +604,6 @@ const DashboardPage: React.FC = () => {
           style: {
             marginTop: '20px',
             borderRadius: '12px',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
           }
         });
         
@@ -635,7 +634,6 @@ const DashboardPage: React.FC = () => {
           style: {
             marginTop: '20px',
             borderRadius: '12px',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             border: '1px solid #ff4d4f'
           }
         });
@@ -871,7 +869,6 @@ const DashboardPage: React.FC = () => {
           style: {
             marginTop: '20px',
             borderRadius: '12px',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
           }
         });
         // Обновляем локальное состояние немедленно
