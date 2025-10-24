@@ -29,7 +29,7 @@ const benefits = [
   {
     title: 'Подберём психолога под твой случай',
     subtitle: 'Найдём специалиста, который понимает твои особенности',
-    icon: <img src="/podbor.svg" alt="Chat" style={{ width: '100px', height: '100px' }} />,
+    icon: <img src="/podbor.svg" alt="Chat" style={{ width: '134px', height: '100px' }} />,
     items: []
   },
   {
