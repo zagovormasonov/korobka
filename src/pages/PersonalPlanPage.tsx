@@ -241,9 +241,6 @@ const PersonalPlanPage: React.FC = () => {
             marginTop: '20px',
             borderRadius: '12px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #4F958B',
-            width: 'fit-content',
-            padding: '12px 16px'
           }
         });
         

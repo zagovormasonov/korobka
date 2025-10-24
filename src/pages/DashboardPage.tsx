@@ -567,11 +567,11 @@ const DashboardPage: React.FC = () => {
 
       const response = await apiRequest('api/telegram/psychologist-request', {
         method: 'POST',
-          body: JSON.stringify({
-            sessionId: authData?.sessionId,
+        body: JSON.stringify({
+          sessionId: authData?.sessionId,
           ...values,
           ...utmData
-          }),
+        }),
       });
 
       if (response.ok) {
@@ -605,9 +605,6 @@ const DashboardPage: React.FC = () => {
             marginTop: '20px',
             borderRadius: '12px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #4F958B',
-            width: 'fit-content',
-            padding: '12px 16px'
           }
         });
         
@@ -875,9 +872,6 @@ const DashboardPage: React.FC = () => {
             marginTop: '20px',
             borderRadius: '12px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #4F958B',
-            width: 'fit-content',
-            padding: '12px 16px'
           }
         });
         // Обновляем локальное состояние немедленно
@@ -1103,7 +1097,7 @@ const DashboardPage: React.FC = () => {
                   width: '60px',
                   height: '60px',
                   borderRadius: '50%',
-                  backgroundColor: '#E8F5F3',
+                  backgroundColor: '#E8F4FD',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1159,7 +1153,7 @@ const DashboardPage: React.FC = () => {
                     width: '60px',
                     height: '60px',
                     borderRadius: '50%',
-                    backgroundColor: '#E8F5F3',
+                    backgroundColor: '#FFF2E8',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1270,7 +1264,7 @@ const DashboardPage: React.FC = () => {
                   width: '60px',
                   height: '60px',
                   borderRadius: '50%',
-                  backgroundColor: '#E8F5F3',
+                  backgroundColor: '#F6FFED',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1326,7 +1320,7 @@ const DashboardPage: React.FC = () => {
                   width: '60px',
                   height: '60px',
                   borderRadius: '50%',
-                  backgroundColor: '#E8F5F3',
+                  backgroundColor: '#F0F9FF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1382,7 +1376,7 @@ const DashboardPage: React.FC = () => {
                     width: '60px',
                     height: '60px',
                     borderRadius: '50%',
-                    backgroundColor: '#E8F5F3',
+                    backgroundColor: '#FFF0F6',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1528,15 +1522,15 @@ const DashboardPage: React.FC = () => {
         <div>
             {/* Section title - показываем только после загрузки тестов */}
             {showTests && recommendedTests.length > 0 && (
-            <Title level={3} style={{ 
-              color: '#2C3E50',
-              fontSize: '24px',
-              fontWeight: '600',
-              marginBottom: '40px',
-              textAlign: 'center'
-            }}>
-              Рекомендуемые тесты
-            </Title>
+              <Title level={3} style={{ 
+                color: '#2C3E50',
+                fontSize: '24px',
+                fontWeight: '600',
+                marginBottom: '40px',
+                textAlign: 'center'
+              }}>
+                Рекомендуемые тесты
+              </Title>
             )}
 
             {allTestsCompleted && (
@@ -1754,8 +1748,8 @@ const DashboardPage: React.FC = () => {
                             flex: 1,
                             height: '40px',
                             borderRadius: '20px',
-                            backgroundColor: '#E8F5F3',
-                            borderColor: '#E8F5F3',
+                            backgroundColor: '#E8F4FD',
+                            borderColor: '#E8F4FD',
                             color: '#1890FF',
                             fontWeight: '500'
                           }}
