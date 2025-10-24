@@ -18,7 +18,7 @@ const benefits = [
   {
     title: 'Персональный план, что делать именно в твоём случае',
     subtitle: 'Индивидуальный подход к твоей ситуации',
-    icon: <img src="/plan.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
+    icon: <img src="/plan.svg" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Конкретные действия',
       'Какие тесты ещё пройти в твоём случае',
