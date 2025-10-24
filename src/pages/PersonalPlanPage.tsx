@@ -240,7 +240,7 @@ const PersonalPlanPage: React.FC = () => {
           style: {
             marginTop: '20px',
             borderRadius: '12px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             border: '1px solid #52c41a'
           }
         });
@@ -272,7 +272,7 @@ const PersonalPlanPage: React.FC = () => {
           style: {
             marginTop: '20px',
             borderRadius: '12px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             border: '1px solid #ff4d4f'
           }
         });
@@ -504,7 +504,7 @@ const PersonalPlanPage: React.FC = () => {
               justifyContent: 'center',
               margin: '0 auto 20px auto'
             }}>
-              <DownloadOutlined style={{ fontSize: '24px', color: '#1890FF' }} />
+              <DownloadOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
             </div>
             <Title level={4} style={{ 
               color: '#2C3E50', 
@@ -562,7 +562,7 @@ const PersonalPlanPage: React.FC = () => {
                 justifyContent: 'center',
                 margin: '0 auto 20px auto'
               }}>
-                <UserOutlined style={{ fontSize: '24px', color: '#FA8C16' }} />
+                <UserOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
               </div>
               <Title level={4} style={{ 
                 color: '#2C3E50', 
@@ -731,7 +731,7 @@ const PersonalPlanPage: React.FC = () => {
               justifyContent: 'center',
               margin: '0 auto 20px auto'
             }}>
-              <UserOutlined style={{ fontSize: '24px', color: '#FA8C16' }} />
+              <UserOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
             </div>
             <Title level={4} style={{ 
               color: '#2C3E50', 
@@ -789,7 +789,7 @@ const PersonalPlanPage: React.FC = () => {
                 justifyContent: 'center',
                 margin: '0 auto 20px auto'
               }}>
-                <MessageOutlined style={{ fontSize: '24px', color: '#EB2F96' }} />
+                <MessageOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
               </div>
               <Title level={4} style={{ 
                 color: '#2C3E50', 

@@ -604,7 +604,7 @@ const DashboardPage: React.FC = () => {
           style: {
             marginTop: '20px',
             borderRadius: '12px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             border: '1px solid #52c41a'
           }
         });
@@ -636,7 +636,7 @@ const DashboardPage: React.FC = () => {
           style: {
             marginTop: '20px',
             borderRadius: '12px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             border: '1px solid #ff4d4f'
           }
         });
@@ -872,7 +872,7 @@ const DashboardPage: React.FC = () => {
           style: {
             marginTop: '20px',
             borderRadius: '12px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
             border: '1px solid #52c41a'
           }
         });
@@ -1328,7 +1328,7 @@ const DashboardPage: React.FC = () => {
                   justifyContent: 'center',
                   margin: '0 auto 20px auto'
                 }}>
-                  <FileTextOutlined style={{ fontSize: '24px', color: '#3B82F6' }} />
+                  <FileTextOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
                 </div>
                 <Title level={4} style={{ 
                   color: '#2C3E50', 
