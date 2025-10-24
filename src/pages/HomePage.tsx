@@ -16,7 +16,7 @@ const HomePage: React.FC = () => {
   const { isAuthenticated, isLoading, checkAuth } = useAuth();
   
   // Устанавливаем цвет статус-бара для градиентного фона
-  useThemeColor('#f5b878');
+  useThemeColor('#FFED82');
 
   // Проверяем авторизацию при загрузке страницы
   useEffect(() => {
