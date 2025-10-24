@@ -351,22 +351,17 @@ router.post('/mascot-message/dashboard', async (req, res) => {
       });
     }
 
-    // TODO: Раскомментировать после применения миграции для кэширования сообщений
-    // Проверяем, есть ли уже сохраненное сообщение
-    // if (primaryTest.lumi_dashboard_message) {
-    //   console.log('💾 Найдено сохраненное сообщение Луми, возвращаем его');
-    //   
-    //   // Всё равно генерируем список рекомендованных тестов
-    //   const answers = primaryTest.answers;
-    //   const recommendedTests = await analyzeAndRecommendTests(answers);
-    //   
-    //   return res.json({ 
-    //     success: true, 
-    //     message: primaryTest.lumi_dashboard_message,
-    //     recommendedTests,
-    //     cached: true 
-    //   });
-    // }
+    // Проверяем, есть ли уже сохраненное сообщение и список тестов
+    if (primaryTest.lumi_dashboard_message && primaryTest.recommended_tests) {
+      console.log('💾 Найдено сохраненное сообщение Луми и список тестов, возвращаем их');
+      
+      return res.json({ 
+        success: true, 
+        message: primaryTest.lumi_dashboard_message,
+        recommendedTests: primaryTest.recommended_tests,
+        cached: true 
+      });
+    }
 
     const answers = primaryTest.answers;
     const email = primaryTest.email;
@@ -407,20 +402,22 @@ router.post('/mascot-message/dashboard', async (req, res) => {
     
     const message = await callGeminiAI(prompt, 1400);
     
-    // TODO: Раскомментировать после применения миграции для кэширования
-    // Сохраняем сгенерированное сообщение в БД
-    // console.log('💾 Сохраняем сообщение Луми в БД...');
-    // const { error: updateError } = await supabase
-    //   .from('primary_test_results')
-    //   .update({ lumi_dashboard_message: message })
-    //   .eq('session_id', sessionId);
-    //
-    // if (updateError) {
-    //   console.error('⚠️ Ошибка при сохранении сообщения:', updateError);
-    //   // Не останавливаем выполнение, просто логируем
-    // } else {
-    //   console.log('✅ Сообщение Луми успешно сохранено в БД');
-    // }
+    // Сохраняем сгенерированное сообщение и список тестов в БД
+    console.log('💾 Сохраняем сообщение Луми и список тестов в БД...');
+    const { error: updateError } = await supabase
+      .from('primary_test_results')
+      .update({ 
+        lumi_dashboard_message: message,
+        recommended_tests: recommendedTests
+      })
+      .eq('session_id', sessionId);
+
+    if (updateError) {
+      console.error('⚠️ Ошибка при сохранении сообщения и тестов:', updateError);
+      // Не останавливаем выполнение, просто логируем
+    } else {
+      console.log('✅ Сообщение Луми и список тестов успешно сохранены в БД');
+    }
     
     res.json({ success: true, message, recommendedTests, cached: false });
   } catch (error) {
@@ -451,7 +448,7 @@ router.post('/personal-plan', async (req, res) => {
     // Используем maybeSingle() вместо single() чтобы избежать ошибок
     const { data: primaryTest, error: primaryError } = await supabase
       .from('primary_test_results')
-      .select('answers, email, personal_plan')
+      .select('answers, email, personal_plan, lumi_dashboard_message, recommended_tests')
       .eq('session_id', sessionId)
       .maybeSingle();
 
@@ -523,7 +520,9 @@ router.post('/personal-plan', async (req, res) => {
 
     // Определяем пол пользователя из ответов
     const genderAnswer = primaryAnswers.find(a => a.questionId === 1);
-    const userGender = genderAnswer ? genderAnswer.answer : 'неопределен';
+    const userGender = genderAnswer 
+      ? (genderAnswer.answer === 'male' ? 'мужской' : 'женский') 
+      : 'неопределен';
     console.log('👤 [PERSONAL-PLAN] Пол пользователя:', userGender);
 
     // Формируем результаты дополнительных тестов
@@ -817,7 +816,8 @@ async function analyzeAndRecommendTests(answers) {
     { id: 15, name: "Тест на дисморфофобию (телесное дисморфическое расстройство)", url: "https://psytests.org/beauty/bddq.html" },
     { id: 16, name: "Тест на суицидальные тенденции", url: "https://psytests.org/psyclinical/osr.html" },
     { id: 17, name: "Тест на детскую травму", url: "https://psytests.org/trauma/ctq.html" },
-    { id: 18, name: "Тест на шизотипическое расстройство личности", url: "https://psytests.org/diag/spq.html" }
+    { id: 18, name: "Тест на шизотипическое расстройство личности", url: "https://psytests.org/diag/spq.html" },
+    { id: 19, name: "Тест на выгорание", url: "https://psytests.org/stress/maslach.html" }
   ];
 
   try {
@@ -859,6 +859,13 @@ ${allTests.map((test, index) => `${index + 1}. ${test.name}`).join('\n')}
     if (recommendedTests.length === 0) {
       console.log('⚠️ Gemini не дал рекомендаций, используем fallback логику');
       return getFallbackRecommendations(answers, allTests);
+    }
+    
+    // Убедимся, что тест на ПРЛ (id=1) всегда в списке рекомендованных
+    const bpdTest = allTests.find(test => test.id === 1);
+    if (bpdTest && !recommendedTests.find(test => test.id === 1)) {
+      console.log('🔒 Добавляем тест на ПРЛ в обязательные рекомендации');
+      recommendedTests.unshift(bpdTest); // Добавляем в начало
     }
     
     return recommendedTests.slice(0, 5);
@@ -927,6 +934,13 @@ function getFallbackRecommendations(answers, allTests) {
   const uniqueTests = recommendedTests.filter((test, index, self) => 
     index === self.findIndex(t => t.id === test.id)
   );
+
+  // Убедимся, что тест на ПРЛ (id=1) всегда в списке рекомендованных
+  const bpdTest = allTests.find(test => test.id === 1);
+  if (bpdTest && !uniqueTests.find(test => test.id === 1)) {
+    console.log('🔒 Добавляем тест на ПРЛ в обязательные рекомендации (fallback)');
+    uniqueTests.unshift(bpdTest); // Добавляем в начало
+  }
 
   return uniqueTests.slice(0, 5); // Максимум 5 тестов
 }

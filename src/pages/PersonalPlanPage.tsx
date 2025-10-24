@@ -104,36 +104,22 @@ const PersonalPlanPage: React.FC = () => {
 
   // Утилитарная функция для открытия PDF
   const openPdf = (url: string, filename: string, successMessage: string) => {
-    if (isMobileSafari()) {
-      // Для мобильного Safari используем скачивание
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      message.success(`${successMessage} скачан!`);
-    } else {
-      // Для десктопных браузеров открываем в новой вкладке
-      const newWindow = window.open(url, '_blank');
-      if (newWindow) {
-        message.success(`${successMessage} открыт в новой вкладке!`);
-      } else {
-        // Fallback: если popup заблокирован, скачиваем
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        message.success(`${successMessage} скачан!`);
-      }
-    }
+    // Универсальный подход для всех браузеров, включая iPhone Safari
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     
-    // Очищаем URL через 5 секунд
-    setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+    // Очищаем URL через некоторое время
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+    
+    message.success(`${successMessage} открыт в новой вкладке!`);
   };
 
   const downloadPersonalPlan = async () => {

@@ -134,7 +134,10 @@ const DashboardLoginPage: React.FC = () => {
         maxWidth: '400px', 
         borderRadius: '24px',
         boxShadow: 'none',
-        backgroundColor: '#f1f1f1',
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255, 255, 255, 0.6)',
         padding: '40px 24px'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -172,7 +175,8 @@ const DashboardLoginPage: React.FC = () => {
               style={{ 
                 borderRadius: '12px',
                 border: 'none',
-                backgroundColor: 'white',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(5px)',
                 height: '48px',
                 fontSize: '16px',
                 outline: 'none'
@@ -204,7 +208,8 @@ const DashboardLoginPage: React.FC = () => {
               style={{ 
                 borderRadius: '12px',
                 border: 'none',
-                backgroundColor: 'white',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(5px)',
                 height: '48px',
                 fontSize: '16px',
                 outline: 'none'

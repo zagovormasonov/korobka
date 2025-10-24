@@ -134,6 +134,12 @@ const fallbackTests = [
     name: 'Тест на шизотипическое расстройство личности',
     url: 'https://psytests.org/diag/spq.html',
     description: 'Опросник шизотипических черт личности SPQ для диагностики признаков шизотипического расстройства'
+  },
+  {
+    id: 19,
+    name: 'Тест на выгорание',
+    url: 'https://psytests.org/stress/maslach.html',
+    description: 'Опросник выгорания Маслач (MBI) для оценки эмоционального истощения и профессионального выгорания'
   }
 ];
 
@@ -923,8 +929,15 @@ const DashboardPage: React.FC = () => {
       if (response.ok) {
         const pdfBlob = await response.blob();
         const url = window.URL.createObjectURL(pdfBlob);
-        // Открываем PDF в новой вкладке
-        window.open(url, '_blank');
+        // Открываем PDF в новой вкладке (совместимость с iPhone Safari)
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
         message.success('Персональный план открыт в новой вкладке!');
       } else {
         message.error('Ошибка при генерации персонального плана');
@@ -949,8 +962,15 @@ const DashboardPage: React.FC = () => {
         const html = await response.text();
         const blob = new Blob([html], { type: 'text/html' });
         const url = window.URL.createObjectURL(blob);
-        // Открываем HTML в новой вкладке
-        window.open(url, '_blank');
+        // Открываем HTML в новой вкладке (совместимость с iPhone Safari)
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
         message.success('Подготовка к сеансу открыта в новой вкладке!');
       } else {
         message.error('Ошибка при генерации подготовки к сеансу');
@@ -974,8 +994,15 @@ const DashboardPage: React.FC = () => {
       if (response.ok) {
         const pdfBlob = await response.blob();
         const url = window.URL.createObjectURL(pdfBlob);
-        // Открываем PDF в новой вкладке
-        window.open(url, '_blank');
+        // Открываем PDF в новой вкладке (совместимость с iPhone Safari)
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
         message.success('PDF для психолога открыт в новой вкладке!');
       } else {
         message.error('Ошибка при генерации PDF для психолога');
@@ -1653,7 +1680,7 @@ const DashboardPage: React.FC = () => {
             )}
 
             {/* Tests grid */}
-            {!allTestsCompleted && showTests && !loadingTestResults && (
+            {showTests && !loadingTestResults && (
               <>
                 <div style={{ 
                   marginBottom: '30px', 
