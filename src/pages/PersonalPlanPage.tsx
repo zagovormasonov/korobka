@@ -241,7 +241,7 @@ const PersonalPlanPage: React.FC = () => {
             marginTop: '20px',
             borderRadius: '12px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #52c41a'
+            border: '1px solid #4F958B'
           }
         });
         
@@ -498,7 +498,7 @@ const PersonalPlanPage: React.FC = () => {
               width: '60px',
               height: '60px',
               borderRadius: '50%',
-              backgroundColor: '#E8F4FD',
+              backgroundColor: '#E8F5F3',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -556,7 +556,7 @@ const PersonalPlanPage: React.FC = () => {
                 width: '60px',
                 height: '60px',
                 borderRadius: '50%',
-                backgroundColor: '#FFF2E8',
+                backgroundColor: '#E8F5F3',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -667,7 +667,7 @@ const PersonalPlanPage: React.FC = () => {
               width: '60px',
               height: '60px',
               borderRadius: '50%',
-              backgroundColor: '#F6FFED',
+              backgroundColor: '#E8F5F3',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -725,7 +725,7 @@ const PersonalPlanPage: React.FC = () => {
               width: '60px',
               height: '60px',
               borderRadius: '50%',
-              backgroundColor: '#FFF7E6',
+              backgroundColor: '#E8F5F3',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -783,7 +783,7 @@ const PersonalPlanPage: React.FC = () => {
                 width: '60px',
                 height: '60px',
                 borderRadius: '50%',
-                backgroundColor: '#FFF0F6',
+                backgroundColor: '#E8F5F3',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

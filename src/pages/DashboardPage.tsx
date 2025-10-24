@@ -605,7 +605,7 @@ const DashboardPage: React.FC = () => {
             marginTop: '20px',
             borderRadius: '12px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #52c41a'
+            border: '1px solid #4F958B'
           }
         });
         
@@ -873,7 +873,7 @@ const DashboardPage: React.FC = () => {
             marginTop: '20px',
             borderRadius: '12px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #52c41a'
+            border: '1px solid #4F958B'
           }
         });
         // Обновляем локальное состояние немедленно
@@ -1099,7 +1099,7 @@ const DashboardPage: React.FC = () => {
                   width: '60px',
                   height: '60px',
                   borderRadius: '50%',
-                  backgroundColor: '#E8F4FD',
+                  backgroundColor: '#E8F5F3',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1155,7 +1155,7 @@ const DashboardPage: React.FC = () => {
                     width: '60px',
                     height: '60px',
                     borderRadius: '50%',
-                    backgroundColor: '#FFF2E8',
+                    backgroundColor: '#E8F5F3',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1266,7 +1266,7 @@ const DashboardPage: React.FC = () => {
                   width: '60px',
                   height: '60px',
                   borderRadius: '50%',
-                  backgroundColor: '#F6FFED',
+                  backgroundColor: '#E8F5F3',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1322,7 +1322,7 @@ const DashboardPage: React.FC = () => {
                   width: '60px',
                   height: '60px',
                   borderRadius: '50%',
-                  backgroundColor: '#F0F9FF',
+                  backgroundColor: '#E8F5F3',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1378,7 +1378,7 @@ const DashboardPage: React.FC = () => {
                     width: '60px',
                     height: '60px',
                     borderRadius: '50%',
-                    backgroundColor: '#FFF0F6',
+                    backgroundColor: '#E8F5F3',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1750,8 +1750,8 @@ const DashboardPage: React.FC = () => {
                             flex: 1,
                             height: '40px',
                             borderRadius: '20px',
-                            backgroundColor: '#E8F4FD',
-                            borderColor: '#E8F4FD',
+                            backgroundColor: '#E8F5F3',
+                            borderColor: '#E8F5F3',
                             color: '#1890FF',
                             fontWeight: '500'
                           }}
