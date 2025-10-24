@@ -468,7 +468,7 @@ router.post('/personal-plan', async (req, res) => {
     }
     
     // Получаем результаты первичного теста
-    console.log('🔍 [PERSONAL-PLAN] Получаем данные из БД...');
+    console.log('🔍 [MASCOT-MESSAGE] Получаем данные из БД для sessionId:', sessionId);
     // Используем maybeSingle() вместо single() чтобы избежать ошибок
     const { data: primaryTest, error: primaryError } = await supabase
       .from('primary_test_results')
@@ -476,10 +476,14 @@ router.post('/personal-plan', async (req, res) => {
       .eq('session_id', sessionId)
       .maybeSingle();
 
-    console.log('📊 [PERSONAL-PLAN] Результат запроса к БД:', {
+    console.log('📊 [MASCOT-MESSAGE] Результат запроса к БД:', {
       hasData: !!primaryTest,
       hasError: !!primaryError,
-      errorMessage: primaryError?.message
+      errorMessage: primaryError?.message,
+      hasLumiMessage: !!primaryTest?.lumi_dashboard_message,
+      hasRecommendedTests: !!primaryTest?.recommended_tests,
+      lumiMessageLength: primaryTest?.lumi_dashboard_message?.length || 0,
+      testsCount: primaryTest?.recommended_tests?.length || 0
     });
     console.log('📊 [PERSONAL-PLAN] Полные данные primaryTest:', primaryTest);
     console.log('📊 [PERSONAL-PLAN] Детали ошибки:', {
