@@ -29,13 +29,13 @@ const benefits = [
   {
     title: 'Подберём психолога под твой случай',
     subtitle: 'Найдём специалиста, который понимает твои особенности',
-    icon: <img src="/podbor.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
+    icon: <img src="/podbor.svg" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: []
   },
   {
     title: 'Подготовим к сеансу с психологом и психиатром',
     subtitle: 'Поможем максимально эффективно использовать время',
-    icon: <img src="/podgot.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
+    icon: <img src="/podgot.svg" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Что сказать специалисту в твоём случае',
       'Как на первом сеансе определить, что он, скорее всего, тебе подходит'
@@ -44,7 +44,7 @@ const benefits = [
   {
     title: 'Подготовим PDF для психолога и психиатра',
     subtitle: 'Документ, который поможет специалисту лучше понять тебя',
-    icon: <img src="/file.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
+    icon: <img src="/file.svg" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: [
       'Даёшь его специалисту, и он понимает, что делать в твоём случае'
     ]
@@ -52,7 +52,7 @@ const benefits = [
   {
     title: 'Ты сможешь поделиться с нами тем, что было на сеансе, и мы дадим обратную связь',
     subtitle: 'Поддержим тебя на каждом этапе',
-    icon: <img src="/chat.png" alt="Chat" style={{ width: '100px', height: '100px' }} />,
+    icon: <img src="/chat.svg" alt="Chat" style={{ width: '100px', height: '100px' }} />,
     items: []
   }
 ];
