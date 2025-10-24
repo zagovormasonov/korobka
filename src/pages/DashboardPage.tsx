@@ -567,11 +567,11 @@ const DashboardPage: React.FC = () => {
 
       const response = await apiRequest('api/telegram/psychologist-request', {
         method: 'POST',
-        body: JSON.stringify({
-          sessionId: authData?.sessionId,
+          body: JSON.stringify({
+            sessionId: authData?.sessionId,
           ...values,
           ...utmData
-        }),
+          }),
       });
 
       if (response.ok) {
@@ -605,7 +605,9 @@ const DashboardPage: React.FC = () => {
             marginTop: '20px',
             borderRadius: '12px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #4F958B'
+            border: '1px solid #4F958B',
+            maxWidth: '500px',
+            padding: '16px 20px'
           }
         });
         
@@ -873,7 +875,9 @@ const DashboardPage: React.FC = () => {
             marginTop: '20px',
             borderRadius: '12px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #4F958B'
+            border: '1px solid #4F958B',
+            maxWidth: '500px',
+            padding: '16px 20px'
           }
         });
         // Обновляем локальное состояние немедленно
@@ -1524,15 +1528,15 @@ const DashboardPage: React.FC = () => {
         <div>
             {/* Section title - показываем только после загрузки тестов */}
             {showTests && recommendedTests.length > 0 && (
-              <Title level={3} style={{ 
-                color: '#2C3E50',
-                fontSize: '24px',
-                fontWeight: '600',
-                marginBottom: '40px',
-                textAlign: 'center'
-              }}>
-                Рекомендуемые тесты
-              </Title>
+            <Title level={3} style={{ 
+              color: '#2C3E50',
+              fontSize: '24px',
+              fontWeight: '600',
+              marginBottom: '40px',
+              textAlign: 'center'
+            }}>
+              Рекомендуемые тесты
+            </Title>
             )}
 
             {allTestsCompleted && (

@@ -202,11 +202,11 @@ const PersonalPlanPage: React.FC = () => {
       console.log('📤 [PERSONAL-PLAN] Отправляем запрос на сервер...');
       const response = await apiRequest('api/telegram/psychologist-request', {
         method: 'POST',
-        body: JSON.stringify({
-          sessionId: authData?.sessionId,
+          body: JSON.stringify({
+            sessionId: authData?.sessionId,
           ...values,
           ...utmData
-        }),
+          }),
       });
       console.log('📥 [PERSONAL-PLAN] Получен ответ от сервера:', response.status);
 
@@ -241,7 +241,9 @@ const PersonalPlanPage: React.FC = () => {
             marginTop: '20px',
             borderRadius: '12px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #4F958B'
+            border: '1px solid #4F958B',
+            maxWidth: '500px',
+            padding: '16px 20px'
           }
         });
         
