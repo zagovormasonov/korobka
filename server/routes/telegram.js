@@ -14,6 +14,31 @@ router.post('/psychologist-request', async (req, res) => {
     
     console.log('🎯 [TELEGRAM-PSYCHOLOGIST-REQUEST] Начало обработки заявки:', { sessionId, name });
     
+    // Проверяем лимит заявок в час (максимум 3 заявки)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const { data: recentRequests, error: countError } = await supabase
+      .from('psychologist_requests')
+      .select('id')
+      .eq('session_id', sessionId)
+      .gte('created_at', oneHourAgo.toISOString());
+    
+    if (countError) {
+      console.error('❌ [TELEGRAM] Ошибка проверки лимита заявок:', countError);
+      return res.status(500).json({ success: false, error: 'Ошибка проверки лимита заявок' });
+    }
+    
+    if (recentRequests && recentRequests.length >= 3) {
+      console.log('⚠️ [TELEGRAM] Превышен лимит заявок:', { sessionId, count: recentRequests.length });
+      return res.status(429).json({ 
+        success: false, 
+        error: 'Превышен лимит заявок',
+        message: 'Вы уже отправили максимальное количество заявок (3) за последний час. Следующую заявку можно будет отправить через час.',
+        retryAfter: 3600 // секунды до следующей возможности
+      });
+    }
+    
+    console.log('✅ [TELEGRAM] Лимит заявок не превышен:', { sessionId, count: recentRequests?.length || 0 });
+    
     // Генерируем номер заявки
     const requestNumber = `REQ-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     console.log('📋 [TELEGRAM] Номер заявки:', requestNumber);

@@ -616,27 +616,54 @@ const DashboardPage: React.FC = () => {
           setPsychologistRequestSent(false);
         }, 3000);
       } else {
-        message.error({
-          content: (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '12px',
-              fontSize: '16px',
-              fontWeight: '500'
-            }}>
-              <div style={{ color: '#ff4d4f' }}>
-                ❌ Ошибка при отправке заявки
+        // Проверяем, если это ошибка превышения лимита заявок
+        if (response.status === 429) {
+          const errorData = await response.json();
+          message.error({
+            content: (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px',
+                fontSize: '16px',
+                fontWeight: '500'
+              }}>
+                <div style={{ color: '#ff4d4f' }}>
+                  ⏰ Слишком много заявок
+                </div>
+                <div style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
+                  {errorData.message || 'Вы уже отправили максимальное количество заявок за последний час. Попробуйте позже.'}
+                </div>
               </div>
-            </div>
-          ),
-          duration: 4,
-          style: {
-            marginTop: '20px',
-            borderRadius: '12px',
-            border: '1px solid #ff4d4f'
-          }
-        });
+            ),
+            duration: 6,
+            style: {
+              marginTop: '20px',
+              borderRadius: '12px'
+            }
+          });
+        } else {
+          message.error({
+            content: (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px',
+                fontSize: '16px',
+                fontWeight: '500'
+              }}>
+                <div style={{ color: '#ff4d4f' }}>
+                  ❌ Ошибка при отправке заявки
+                </div>
+              </div>
+            ),
+            duration: 4,
+            style: {
+              marginTop: '20px',
+              borderRadius: '12px'
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('Error sending psychologist request:', error);
