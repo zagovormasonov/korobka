@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Spin } from 'antd';
 import Silk from '../components/Silk';
 import { apiRequest } from '../config/api';
+import { useThemeColor } from '../hooks/useThemeColor';
 
 const { Text } = Typography;
 
@@ -11,6 +12,9 @@ const DashboardTokenPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Устанавливаем цвет статус-бара для градиентного фона
+  useThemeColor('#FFED82');
 
   useEffect(() => {
     if (token) {
@@ -71,8 +75,8 @@ const DashboardTokenPage: React.FC = () => {
           <Silk
             speed={8.7}
             scale={0.5}
-            color="#ffe59e"
-            darkColor="#e8722a"
+            color="#FFED82"
+            darkColor="#4F958B"
             noiseIntensity={1.5}
             rotation={0}
           />
@@ -109,8 +113,8 @@ const DashboardTokenPage: React.FC = () => {
           <Silk
             speed={8.7}
             scale={0.5}
-            color="#ffe59e"
-            darkColor="#e8722a"
+            color="#FFED82"
+            darkColor="#4F958B"
             noiseIntensity={1.5}
             rotation={0}
           />

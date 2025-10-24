@@ -4,6 +4,7 @@ import { Typography, Card, Input, Button, Form, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import Silk from '../components/Silk';
 import { apiRequest } from '../config/api';
+import { useThemeColor } from '../hooks/useThemeColor';
 
 const { Title } = Typography;
 
@@ -11,6 +12,9 @@ const DashboardLoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [verifying, setVerifying] = useState(false);
   const [form] = Form.useForm();
+  
+  // Устанавливаем цвет статус-бара для градиентного фона
+  useThemeColor('#FFED82');
 
   // Проверяем доступность API при загрузке страницы
   useEffect(() => {
@@ -119,8 +123,8 @@ const DashboardLoginPage: React.FC = () => {
         <Silk
           speed={8.7}
           scale={0.5}
-          color="#ffe59e"
-          darkColor="#e8722a"
+          color="#FFED82"
+          darkColor="#4F958B"
           noiseIntensity={1.5}
           rotation={0}
         />

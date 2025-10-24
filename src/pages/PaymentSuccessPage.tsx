@@ -23,7 +23,7 @@ const PaymentSuccessPage: React.FC = () => {
   const sessionId = searchParams.get('sessionId');
   
   // Устанавливаем цвет статус-бара для градиентного фона
-  useThemeColor('#f5b878');
+  useThemeColor('#FFED82');
 
   useEffect(() => {
     if (sessionId) {
@@ -239,8 +239,8 @@ const PaymentSuccessPage: React.FC = () => {
         <Silk 
           speed={8.7}
           scale={0.5}
-          color="#ffe59e"
-          darkColor="#e8722a"
+          color="#FFED82"
+          darkColor="#4F958B"
           noiseIntensity={1.5}
           rotation={0}
         />
