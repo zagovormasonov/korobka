@@ -363,6 +363,30 @@ router.post('/mascot-message/dashboard', async (req, res) => {
       });
     }
 
+    // Если есть только сообщение, но нет тестов - генерируем тесты заново
+    if (primaryTest.lumi_dashboard_message && !primaryTest.recommended_tests) {
+      console.log('💾 Найдено сообщение Луми, но нет тестов - генерируем тесты');
+      const answers = primaryTest.answers;
+      const recommendedTests = await analyzeAndRecommendTests(answers);
+      
+      // Сохраняем тесты в БД
+      const { error: updateError } = await supabase
+        .from('primary_test_results')
+        .update({ recommended_tests: recommendedTests })
+        .eq('session_id', sessionId);
+      
+      if (updateError) {
+        console.error('⚠️ Ошибка при сохранении тестов:', updateError);
+      }
+      
+      return res.json({ 
+        success: true, 
+        message: primaryTest.lumi_dashboard_message,
+        recommendedTests: recommendedTests,
+        cached: true 
+      });
+    }
+
     const answers = primaryTest.answers;
     const email = primaryTest.email;
     
