@@ -277,7 +277,24 @@ ${JSON.stringify(answers)}
 ФОРМАТ ОТВЕТА: Только текст сообщения, без дополнительных объяснений.`;
 
     const message = await callGeminiAI(prompt, 1200);
-    res.json({ success: true, message });
+    
+    // Сохраняем сгенерированное сообщение и список тестов в БД
+    console.log('💾 [MASCOT-MESSAGE] Сохраняем сообщение Луми и список тестов в БД...');
+    const { error: updateError } = await supabase
+      .from('primary_test_results')
+      .update({ 
+        lumi_dashboard_message: message,
+        recommended_tests: recommendedTests
+      })
+      .eq('session_id', sessionId);
+
+    if (updateError) {
+      console.error('⚠️ [MASCOT-MESSAGE] Ошибка при сохранении сообщения и тестов:', updateError);
+    } else {
+      console.log('✅ [MASCOT-MESSAGE] Сообщение Луми и список тестов успешно сохранены в БД');
+    }
+    
+    res.json({ success: true, message, recommendedTests, cached: false });
   } catch (error) {
     console.error('❌ Ошибка генерации сообщения маскота:', {
       message: error.message,
@@ -302,13 +319,22 @@ router.post('/mascot-message/dashboard', async (req, res) => {
     }
     
     // Получаем результаты первичного теста
-    // Используем maybeSingle() вместо single() чтобы избежать ошибок
-    // TODO: Добавить lumi_dashboard_message после применения миграции
+    console.log('🔍 [MASCOT-MESSAGE] Получаем данные из БД для sessionId:', sessionId);
     const { data: primaryTest, error } = await supabase
       .from('primary_test_results')
-      .select('answers, email')
+      .select('answers, email, lumi_dashboard_message, recommended_tests')
       .eq('session_id', sessionId)
       .maybeSingle();
+
+    console.log('📊 [MASCOT-MESSAGE] Результат запроса к БД:', {
+      hasData: !!primaryTest,
+      hasError: !!error,
+      errorMessage: error?.message,
+      hasLumiMessage: !!primaryTest?.lumi_dashboard_message,
+      hasRecommendedTests: !!primaryTest?.recommended_tests,
+      lumiMessageLength: primaryTest?.lumi_dashboard_message?.length || 0,
+      testsCount: primaryTest?.recommended_tests?.length || 0
+    });
 
     console.log('🔍 Результаты теста из БД:', primaryTest);
     console.log('🔍 Есть ли ответы (answers)?', !!primaryTest?.answers);
@@ -321,18 +347,43 @@ router.post('/mascot-message/dashboard', async (req, res) => {
       console.log('❌ Сообщение ошибки:', error?.message);
       console.log('❌ Детали ошибки:', error?.details);
       
-      // Попробуем получить запись со всеми полями для отладки
-      console.log('🔍 Пробуем получить запись со всеми полями...');
-      const { data: fullRecord, error: fullError } = await supabase
-        .from('primary_test_results')
-        .select('*')
-        .eq('session_id', sessionId)
-        .maybeSingle();
-      
-      console.log('🔍 Полная запись:', fullRecord);
-      console.log('🔍 Ошибка при получении полной записи:', fullError);
-      
       return res.status(404).json({ success: false, error: 'Test results not found' });
+    }
+
+    // Проверяем кэш - есть ли уже сохраненное сообщение и список тестов
+    if (primaryTest.lumi_dashboard_message && primaryTest.recommended_tests) {
+      console.log('💾 [MASCOT-MESSAGE] Найдено сохраненное сообщение Луми и список тестов, возвращаем их');
+      
+      return res.json({ 
+        success: true, 
+        message: primaryTest.lumi_dashboard_message,
+        recommendedTests: primaryTest.recommended_tests,
+        cached: true 
+      });
+    }
+
+    // Если есть только сообщение, но нет тестов - генерируем тесты заново
+    if (primaryTest.lumi_dashboard_message && !primaryTest.recommended_tests) {
+      console.log('💾 [MASCOT-MESSAGE] Найдено сообщение Луми, но нет тестов - генерируем тесты');
+      const answers = primaryTest.answers;
+      const recommendedTests = await analyzeAndRecommendTests(answers);
+      
+      // Сохраняем тесты в БД
+      const { error: updateError } = await supabase
+        .from('primary_test_results')
+        .update({ recommended_tests: recommendedTests })
+        .eq('session_id', sessionId);
+      
+      if (updateError) {
+        console.error('⚠️ [MASCOT-MESSAGE] Ошибка при сохранении тестов:', updateError);
+      }
+      
+      return res.json({ 
+        success: true, 
+        message: primaryTest.lumi_dashboard_message,
+        recommendedTests: recommendedTests,
+        cached: true 
+      });
     }
 
     // Проверяем наличие ответов теста
