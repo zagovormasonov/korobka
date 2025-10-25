@@ -21,6 +21,7 @@ import {
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
 import GenerationAnimation from '../components/GenerationAnimation';
+import { openPdf } from '../utils/pdfUtils';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -913,8 +914,8 @@ const DashboardPage: React.FC = () => {
       if (response.ok) {
         const pdfBlob = await response.blob();
         const url = window.URL.createObjectURL(pdfBlob);
-        window.open(url, '_blank');
-        message.success('Персональный план открыт в новой вкладке!');
+        
+        openPdf(url, 'personal-plan.pdf', 'Персональный план', message.success);
       } else {
         message.error('Ошибка при генерации персонального плана');
       }
@@ -938,8 +939,8 @@ const DashboardPage: React.FC = () => {
         const html = await response.text();
         const blob = new Blob([html], { type: 'text/html' });
         const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        message.success('Подготовка к сеансу открыта в новой вкладке!');
+        
+        openPdf(url, `session-preparation-${specialistType}.html`, 'Подготовка к сеансу', message.success);
       } else {
         message.error('Ошибка при генерации подготовки к сеансу');
       }
@@ -962,8 +963,8 @@ const DashboardPage: React.FC = () => {
       if (response.ok) {
         const pdfBlob = await response.blob();
         const url = window.URL.createObjectURL(pdfBlob);
-        window.open(url, '_blank');
-        message.success('PDF для психолога открыт в новой вкладке!');
+        
+        openPdf(url, 'psychologist-pdf.pdf', 'PDF для психолога', message.success);
       } else {
         message.error('Ошибка при генерации PDF для психолога');
       }

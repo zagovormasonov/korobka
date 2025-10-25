@@ -18,6 +18,7 @@ import {
 } from '@ant-design/icons';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
+import { openPdf } from '../utils/pdfUtils';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -103,9 +104,8 @@ const PersonalPlanPage: React.FC = () => {
   };
 
   // Утилитарная функция для открытия PDF
-  const openPdf = (url: string, filename: string, successMessage: string) => {
-    window.open(url, '_blank');
-    message.success(`${successMessage} открыт в новой вкладке!`);
+  const handleOpenPdf = (url: string, filename: string, successMessage: string) => {
+    openPdf(url, filename, successMessage, message.success);
   };
 
   const downloadPersonalPlan = async () => {
@@ -120,7 +120,7 @@ const PersonalPlanPage: React.FC = () => {
         const url = window.URL.createObjectURL(pdfBlob);
         
         // Используем утилитарную функцию для открытия PDF
-        openPdf(url, 'personal-plan.pdf', 'Персональный план');
+        handleOpenPdf(url, 'personal-plan.pdf', 'Персональный план');
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании персонального плана');
@@ -145,7 +145,7 @@ const PersonalPlanPage: React.FC = () => {
         const url = window.URL.createObjectURL(pdfBlob);
         
         // Используем утилитарную функцию для открытия PDF
-        openPdf(url, `session-preparation-${specialistType}.pdf`, 'Подготовка к сеансу');
+        handleOpenPdf(url, `session-preparation-${specialistType}.pdf`, 'Подготовка к сеансу');
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании подготовки к сеансу');
