@@ -104,21 +104,7 @@ const PersonalPlanPage: React.FC = () => {
 
   // Утилитарная функция для открытия PDF
   const openPdf = (url: string, filename: string, successMessage: string) => {
-    // Универсальный подход для всех браузеров, включая iPhone Safari
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Очищаем URL через некоторое время
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 1000);
-    
+    window.open(url, '_blank');
     message.success(`${successMessage} открыт в новой вкладке!`);
   };
 
