@@ -209,26 +209,10 @@ const DashboardPage: React.FC = () => {
         }
       }
       
-      // Если генерация не запущена, запускаем её
-      setIsGenerating(true);
-      setGenerationStep(0);
-      // setGenerationStatus('in_progress');
-      
-      const response = await apiRequest('api/background-generation/start', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId: authData?.sessionId }),
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ [DASHBOARD] Фоновая генерация запущена:', data);
-        message.success('Генерация документов запущена!');
-        
-        // Запускаем мониторинг статуса
-        monitorGenerationStatus();
-      } else {
-        throw new Error('Failed to start background generation');
-      }
+      // Генерация НЕ запускается автоматически!
+      // Она запускается только после прохождения дополнительных тестов
+      // или при нажатии кнопки "Перейти к персональному плану"
+      console.log('ℹ️ [DASHBOARD] Генерация не запущена - ждем прохождения тестов или нажатия кнопки');
     } catch (error) {
       console.error('❌ [DASHBOARD] Ошибка запуска фоновой генерации:', error);
       message.error('Ошибка при запуске генерации документов');
