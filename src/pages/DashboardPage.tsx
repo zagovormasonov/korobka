@@ -921,7 +921,10 @@ const DashboardPage: React.FC = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Очищаем URL через некоторое время
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
         message.success('Персональный план открыт в новой вкладке!');
       } else {
         message.error('Ошибка при генерации персонального плана');
@@ -954,7 +957,10 @@ const DashboardPage: React.FC = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Очищаем URL через некоторое время
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
         message.success('Подготовка к сеансу открыта в новой вкладке!');
       } else {
         message.error('Ошибка при генерации подготовки к сеансу');
@@ -986,7 +992,10 @@ const DashboardPage: React.FC = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Очищаем URL через некоторое время
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
         message.success('PDF для психолога открыт в новой вкладке!');
       } else {
         message.error('Ошибка при генерации PDF для психолога');
