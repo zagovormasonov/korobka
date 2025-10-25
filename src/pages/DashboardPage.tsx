@@ -912,14 +912,17 @@ const DashboardPage: React.FC = () => {
 
       if (response.ok) {
         const pdfBlob = await response.blob();
-        // Конвертируем в base64 Data URL (работает в Safari приватном режиме)
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          window.open(dataUrl, '_blank');
-          message.success('Персональный план открыт в новой вкладке!');
-        };
-        reader.readAsDataURL(pdfBlob);
+        const url = window.URL.createObjectURL(pdfBlob);
+        // Открываем PDF в новой вкладке (совместимость с iPhone Safari)
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        message.success('Персональный план открыт в новой вкладке!');
       } else {
         message.error('Ошибка при генерации персонального плана');
       }
@@ -942,14 +945,17 @@ const DashboardPage: React.FC = () => {
       if (response.ok) {
         const html = await response.text();
         const blob = new Blob([html], { type: 'text/html' });
-        // Конвертируем в base64 Data URL (работает в Safari приватном режиме)
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          window.open(dataUrl, '_blank');
-          message.success('Подготовка к сеансу открыта в новой вкладке!');
-        };
-        reader.readAsDataURL(blob);
+        const url = window.URL.createObjectURL(blob);
+        // Открываем HTML в новой вкладке (совместимость с iPhone Safari)
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        message.success('Подготовка к сеансу открыта в новой вкладке!');
       } else {
         message.error('Ошибка при генерации подготовки к сеансу');
       }
@@ -971,14 +977,17 @@ const DashboardPage: React.FC = () => {
 
       if (response.ok) {
         const pdfBlob = await response.blob();
-        // Конвертируем в base64 Data URL (работает в Safari приватном режиме)
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          window.open(dataUrl, '_blank');
-          message.success('PDF для психолога открыт в новой вкладке!');
-        };
-        reader.readAsDataURL(pdfBlob);
+        const url = window.URL.createObjectURL(pdfBlob);
+        // Открываем PDF в новой вкладке (совместимость с iPhone Safari)
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        message.success('PDF для психолога открыт в новой вкладке!');
       } else {
         message.error('Ошибка при генерации PDF для психолога');
       }

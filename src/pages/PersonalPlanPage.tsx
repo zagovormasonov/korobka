@@ -104,9 +104,22 @@ const PersonalPlanPage: React.FC = () => {
 
   // Утилитарная функция для открытия PDF
   const openPdf = (url: string, filename: string, successMessage: string) => {
-    // Открываем через прямой URL (работает в Safari приватном режиме)
-    window.open(url, '_blank');
-        message.success(`${successMessage} открыт в новой вкладке!`);
+    // Универсальный подход для всех браузеров, включая iPhone Safari
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Очищаем URL через некоторое время
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+    
+    message.success(`${successMessage} открыт в новой вкладке!`);
   };
 
   const downloadPersonalPlan = async () => {
@@ -118,13 +131,10 @@ const PersonalPlanPage: React.FC = () => {
 
       if (response.ok) {
         const pdfBlob = await response.blob();
-        // Конвертируем в base64 Data URL (работает в Safari приватном режиме)
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          openPdf(dataUrl, 'personal-plan.pdf', 'Персональный план');
-        };
-        reader.readAsDataURL(pdfBlob);
+        const url = window.URL.createObjectURL(pdfBlob);
+        
+        // Используем утилитарную функцию для открытия PDF
+        openPdf(url, 'personal-plan.pdf', 'Персональный план');
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании персонального плана');
@@ -146,13 +156,10 @@ const PersonalPlanPage: React.FC = () => {
 
       if (response.ok) {
         const pdfBlob = await response.blob();
-        // Конвертируем в base64 Data URL (работает в Safari приватном режиме)
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          openPdf(dataUrl, `session-preparation-${specialistType}.pdf`, 'Подготовка к сеансу');
-        };
-        reader.readAsDataURL(pdfBlob);
+        const url = window.URL.createObjectURL(pdfBlob);
+        
+        // Используем утилитарную функцию для открытия PDF
+        openPdf(url, `session-preparation-${specialistType}.pdf`, 'Подготовка к сеансу');
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании подготовки к сеансу');
@@ -317,13 +324,10 @@ const PersonalPlanPage: React.FC = () => {
 
       if (response.ok) {
         const pdfBlob = await response.blob();
-        // Конвертируем в base64 Data URL (работает в Safari приватном режиме)
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          openPdf(dataUrl, 'psychologist-recommendations.pdf', 'Рекомендации для психолога');
-        };
-        reader.readAsDataURL(pdfBlob);
+        const url = window.URL.createObjectURL(pdfBlob);
+        
+        // Используем утилитарную функцию для открытия PDF
+        openPdf(url, 'psychologist-recommendations.pdf', 'Рекомендации для психолога');
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании рекомендаций для психолога');
