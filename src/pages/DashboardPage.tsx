@@ -557,11 +557,11 @@ const DashboardPage: React.FC = () => {
 
       const response = await apiRequest('api/telegram/psychologist-request', {
         method: 'POST',
-        body: JSON.stringify({
-          sessionId: authData?.sessionId,
+          body: JSON.stringify({
+            sessionId: authData?.sessionId,
           ...values,
           ...utmData
-        }),
+          }),
       });
 
       if (response.ok) {
@@ -905,28 +905,57 @@ const DashboardPage: React.FC = () => {
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
-      // Открываем PDF через прямой URL (работает в Safari приватном режиме)
-      const url = `${process.env.REACT_APP_API_URL || 'https://idenself.com'}/api/pdf/view/personal-plan/${authData?.sessionId}`;
-      window.open(url, '_blank');
-      message.success('Персональный план открыт в новой вкладке!');
+      const response = await apiRequest('api/pdf-html/personal-plan', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
+      });
+
+      if (response.ok) {
+        const pdfBlob = await response.blob();
+        // Конвертируем в base64 Data URL (работает в Safari приватном режиме)
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          window.open(dataUrl, '_blank');
+          message.success('Персональный план открыт в новой вкладке!');
+        };
+        reader.readAsDataURL(pdfBlob);
+      } else {
+        message.error('Ошибка при генерации персонального плана');
+      }
     } catch (error) {
-      console.error('Error opening personal plan:', error);
-      message.error('Произошла ошибка при открытии персонального плана');
+      console.error('Error downloading personal plan:', error);
+      message.error('Произошла ошибка при скачивании персонального плана');
     } finally {
       setLoadingPersonalPlan(false);
     }
   };
 
-  const downloadSessionPreparation = async (_specialistType: 'psychologist' | 'psychiatrist') => {
+  const downloadSessionPreparation = async (specialistType: 'psychologist' | 'psychiatrist') => {
     setLoadingSessionPreparation(true);
     try {
-      // Открываем PDF через прямой URL (работает в Safari приватном режиме)
-      const url = `${process.env.REACT_APP_API_URL || 'https://idenself.com'}/api/pdf/view/session-preparation/${authData?.sessionId}`;
-      window.open(url, '_blank');
-      message.success('Подготовка к сеансу открыта в новой вкладке!');
+      const response = await apiRequest('api/pdf/session-preparation', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId, specialistType }),
+      });
+
+      if (response.ok) {
+        const html = await response.text();
+        const blob = new Blob([html], { type: 'text/html' });
+        // Конвертируем в base64 Data URL (работает в Safari приватном режиме)
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          window.open(dataUrl, '_blank');
+          message.success('Подготовка к сеансу открыта в новой вкладке!');
+        };
+        reader.readAsDataURL(blob);
+      } else {
+        message.error('Ошибка при генерации подготовки к сеансу');
+      }
     } catch (error) {
-      console.error('Error opening session preparation:', error);
-      message.error('Произошла ошибка при открытии подготовки к сеансу');
+      console.error('Error downloading session preparation:', error);
+      message.error('Произошла ошибка при скачивании подготовки к сеансу');
     } finally {
       setLoadingSessionPreparation(false);
     }
@@ -935,13 +964,27 @@ const DashboardPage: React.FC = () => {
   const downloadPsychologistPdf = async () => {
     setLoadingPsychologistPdf(true);
     try {
-      // Открываем PDF через прямой URL (работает в Safari приватном режиме)
-      const url = `${process.env.REACT_APP_API_URL || 'https://idenself.com'}/api/pdf/view/psychologist-pdf/${authData?.sessionId}`;
-      window.open(url, '_blank');
-      message.success('PDF для психолога открыт в новой вкладке!');
+      const response = await apiRequest('api/pdf/psychologist-pdf', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
+      });
+
+      if (response.ok) {
+        const pdfBlob = await response.blob();
+        // Конвертируем в base64 Data URL (работает в Safari приватном режиме)
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          window.open(dataUrl, '_blank');
+          message.success('PDF для психолога открыт в новой вкладке!');
+        };
+        reader.readAsDataURL(pdfBlob);
+      } else {
+        message.error('Ошибка при генерации PDF для психолога');
+      }
     } catch (error) {
-      console.error('Error opening psychologist PDF:', error);
-      message.error('Произошла ошибка при открытии PDF для психолога');
+      console.error('Error downloading psychologist PDF:', error);
+      message.error('Произошла ошибка при скачивании PDF для психолога');
     } finally {
       setLoadingPsychologistPdf(false);
     }
@@ -1505,15 +1548,15 @@ const DashboardPage: React.FC = () => {
         <div>
             {/* Section title - показываем только после загрузки тестов */}
             {showTests && recommendedTests.length > 0 && (
-              <Title level={3} style={{ 
-                color: '#2C3E50',
-                fontSize: '24px',
-                fontWeight: '600',
-                marginBottom: '40px',
-                textAlign: 'center'
-              }}>
-                Рекомендуемые тесты
-              </Title>
+            <Title level={3} style={{ 
+              color: '#2C3E50',
+              fontSize: '24px',
+              fontWeight: '600',
+              marginBottom: '40px',
+              textAlign: 'center'
+            }}>
+              Рекомендуемые тесты
+            </Title>
             )}
 
             {allTestsCompleted && (
