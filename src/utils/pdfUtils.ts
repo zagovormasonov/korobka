@@ -17,49 +17,79 @@ export const openPdf = (
   onSuccess?: (message: string) => void
 ): void => {
   try {
-    // Принудительно открываем в новой вкладке с помощью window.open
-    const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+    // Создаем iframe для отображения PDF в новой вкладке
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.style.width = '100%';
+    iframe.style.height = '100vh';
+    iframe.style.border = 'none';
+    iframe.style.position = 'fixed';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.zIndex = '9999';
+    iframe.style.backgroundColor = 'white';
     
-    if (newWindow) {
-      // Устанавливаем заголовок новой вкладки
-      newWindow.document.title = filename;
-      
-      // Показываем сообщение об успехе
-      const message = `${successMessage} открыт в новой вкладке! Вы можете скачать его, нажав Ctrl+S (Cmd+S на Mac) или через меню браузера.`;
-      if (onSuccess) {
-        onSuccess(message);
-      }
-    } else {
-      // Если popup заблокирован, используем fallback с ссылкой
+    // Добавляем кнопку закрытия
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '✕ Закрыть';
+    closeButton.style.position = 'fixed';
+    closeButton.style.top = '10px';
+    closeButton.style.right = '10px';
+    closeButton.style.zIndex = '10000';
+    closeButton.style.padding = '10px 15px';
+    closeButton.style.backgroundColor = '#ff4444';
+    closeButton.style.color = 'white';
+    closeButton.style.border = 'none';
+    closeButton.style.borderRadius = '5px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontSize = '14px';
+    
+    // Добавляем кнопку скачивания
+    const downloadButton = document.createElement('button');
+    downloadButton.innerHTML = '📥 Скачать';
+    downloadButton.style.position = 'fixed';
+    downloadButton.style.top = '10px';
+    downloadButton.style.right = '120px';
+    downloadButton.style.zIndex = '10000';
+    downloadButton.style.padding = '10px 15px';
+    downloadButton.style.backgroundColor = '#4F958B';
+    downloadButton.style.color = 'white';
+    downloadButton.style.border = 'none';
+    downloadButton.style.borderRadius = '5px';
+    downloadButton.style.cursor = 'pointer';
+    downloadButton.style.fontSize = '14px';
+    
+    closeButton.onclick = () => {
+      document.body.removeChild(iframe);
+      document.body.removeChild(closeButton);
+      document.body.removeChild(downloadButton);
+    };
+    
+    downloadButton.onclick = () => {
+      // Создаем ссылку для скачивания
       const link = document.createElement('a');
       link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
       link.download = filename;
+      link.style.display = 'none';
       
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      const message = `${successMessage} открыт в новой вкладке! Вы можете скачать его, нажав Ctrl+S (Cmd+S на Mac) или через меню браузера.`;
-      if (onSuccess) {
-        onSuccess(message);
-      }
+    };
+    
+    document.body.appendChild(iframe);
+    document.body.appendChild(closeButton);
+    document.body.appendChild(downloadButton);
+    
+    // Показываем сообщение об успехе
+    const message = `${successMessage} открыт в новой вкладке!`;
+    if (onSuccess) {
+      onSuccess(message);
     }
   } catch (error) {
     console.error('Error opening PDF:', error);
-    // Fallback к window.open если что-то пошло не так
-    try {
-      window.open(url, '_blank');
-      const message = `${successMessage} открыт в новой вкладке! Вы можете скачать его, нажав Ctrl+S (Cmd+S на Mac) или через меню браузера.`;
-      if (onSuccess) {
-        onSuccess(message);
-      }
-    } catch (fallbackError) {
-      console.error('Fallback also failed:', fallbackError);
-      if (onSuccess) {
-        onSuccess('Ошибка при открытии PDF файла');
-      }
+    if (onSuccess) {
+      onSuccess('Ошибка при открытии PDF файла');
     }
   }
 };
@@ -84,6 +114,10 @@ export const downloadPdf = (
     link.download = filename;
     link.style.display = 'none';
     
+    // Добавляем атрибуты для принудительного скачивания
+    link.setAttribute('download', filename);
+    link.setAttribute('target', '_blank');
+    
     // Добавляем ссылку в DOM, кликаем и удаляем
     document.body.appendChild(link);
     link.click();
@@ -96,8 +130,18 @@ export const downloadPdf = (
     }
   } catch (error) {
     console.error('Error downloading PDF:', error);
-    if (onSuccess) {
-      onSuccess('Ошибка при скачивании PDF файла');
+    // Fallback: попробуем открыть в новой вкладке для ручного скачивания
+    try {
+      window.open(url, '_blank');
+      const message = `${successMessage} открыт в новой вкладке для скачивания!`;
+      if (onSuccess) {
+        onSuccess(message);
+      }
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError);
+      if (onSuccess) {
+        onSuccess('Ошибка при скачивании PDF файла');
+      }
     }
   }
 };
