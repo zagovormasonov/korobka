@@ -1065,4 +1065,140 @@ router.post('/psychologist', async (req, res) => {
   }
 });
 
+// GET endpoints для открытия PDF в новой вкладке (Safari приватный режим)
+router.get('/view/personal-plan/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    console.log('📄 [PDF-VIEW] Запрос персонального плана для sessionId:', sessionId);
+    
+    // Получаем данные из БД
+    const { data: primaryTest, error } = await supabase
+      .from('primary_test_results')
+      .select('personal_plan')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (error || !primaryTest?.personal_plan) {
+      return res.status(404).send('Персональный план не найден');
+    }
+
+    const html = formatPlanContent(primaryTest.personal_plan);
+    const fullHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Персональный план психологического благополучия</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+          .plan-paragraph { margin-bottom: 15px; }
+          h1, h2, h3 { color: #333; margin-top: 25px; }
+        </style>
+      </head>
+      <body>
+        <h1>Ваш Персональный План: Путь к Стабильности и Пониманию Себя</h1>
+        ${html}
+      </body>
+      </html>
+    `;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', 'inline; filename="personal-plan.html"');
+    res.send(fullHtml);
+  } catch (error) {
+    console.error('❌ [PDF-VIEW] Ошибка:', error);
+    res.status(500).send('Ошибка генерации документа');
+  }
+});
+
+router.get('/view/session-preparation/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    console.log('📄 [PDF-VIEW] Запрос подготовки к сеансу для sessionId:', sessionId);
+    
+    // Получаем данные из БД
+    const { data: primaryTest, error } = await supabase
+      .from('primary_test_results')
+      .select('session_preparation')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (error || !primaryTest?.session_preparation) {
+      return res.status(404).send('Подготовка к сеансу не найдена');
+    }
+
+    const html = formatPlanContent(primaryTest.session_preparation);
+    const fullHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Подготовка к сеансам с психологом и психиатром</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+          .plan-paragraph { margin-bottom: 15px; }
+          h1, h2, h3 { color: #333; margin-top: 25px; }
+        </style>
+      </head>
+      <body>
+        <h1>Подготовка к сеансам с психологом и психиатром</h1>
+        ${html}
+      </body>
+      </html>
+    `;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', 'inline; filename="session-preparation.html"');
+    res.send(fullHtml);
+  } catch (error) {
+    console.error('❌ [PDF-VIEW] Ошибка:', error);
+    res.status(500).send('Ошибка генерации документа');
+  }
+});
+
+router.get('/view/psychologist-pdf/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    console.log('📄 [PDF-VIEW] Запрос PDF для психолога для sessionId:', sessionId);
+    
+    // Получаем данные из БД
+    const { data: primaryTest, error } = await supabase
+      .from('primary_test_results')
+      .select('psychologist_pdf')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (error || !primaryTest?.psychologist_pdf) {
+      return res.status(404).send('PDF для психолога не найден');
+    }
+
+    const html = formatPlanContent(primaryTest.psychologist_pdf);
+    const fullHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Специальный отчет для психолога и психиатра</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+          .plan-paragraph { margin-bottom: 15px; }
+          h1, h2, h3 { color: #333; margin-top: 25px; }
+        </style>
+      </head>
+      <body>
+        <h1>Специальный отчет для психолога и психиатра с рекомендациями</h1>
+        ${html}
+      </body>
+      </html>
+    `;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', 'inline; filename="psychologist-report.html"');
+    res.send(fullHtml);
+  } catch (error) {
+    console.error('❌ [PDF-VIEW] Ошибка:', error);
+    res.status(500).send('Ошибка генерации документа');
+  }
+});
+
 export default router;

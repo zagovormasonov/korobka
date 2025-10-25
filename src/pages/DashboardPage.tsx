@@ -905,63 +905,28 @@ const DashboardPage: React.FC = () => {
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
-      const response = await apiRequest('api/pdf-html/personal-plan', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId: authData?.sessionId }),
-      });
-
-      if (response.ok) {
-        const pdfBlob = await response.blob();
-        const url = window.URL.createObjectURL(pdfBlob);
-        // Открываем PDF в новой вкладке (совместимость с iPhone Safari)
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        message.success('Персональный план открыт в новой вкладке!');
-      } else {
-        message.error('Ошибка при генерации персонального плана');
-      }
+      // Открываем PDF через прямой URL (работает в Safari приватном режиме)
+      const url = `${process.env.REACT_APP_API_URL || 'https://idenself.com'}/api/pdf/view/personal-plan/${authData?.sessionId}`;
+      window.open(url, '_blank');
+      message.success('Персональный план открыт в новой вкладке!');
     } catch (error) {
-      console.error('Error downloading personal plan:', error);
-      message.error('Произошла ошибка при скачивании персонального плана');
+      console.error('Error opening personal plan:', error);
+      message.error('Произошла ошибка при открытии персонального плана');
     } finally {
       setLoadingPersonalPlan(false);
     }
   };
 
-  const downloadSessionPreparation = async (specialistType: 'psychologist' | 'psychiatrist') => {
+  const downloadSessionPreparation = async (_specialistType: 'psychologist' | 'psychiatrist') => {
     setLoadingSessionPreparation(true);
     try {
-      const response = await apiRequest('api/pdf/session-preparation', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId: authData?.sessionId, specialistType }),
-      });
-
-      if (response.ok) {
-        const html = await response.text();
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = window.URL.createObjectURL(blob);
-        // Открываем HTML в новой вкладке (совместимость с iPhone Safari)
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        message.success('Подготовка к сеансу открыта в новой вкладке!');
-      } else {
-        message.error('Ошибка при генерации подготовки к сеансу');
-      }
+      // Открываем PDF через прямой URL (работает в Safari приватном режиме)
+      const url = `${process.env.REACT_APP_API_URL || 'https://idenself.com'}/api/pdf/view/session-preparation/${authData?.sessionId}`;
+      window.open(url, '_blank');
+      message.success('Подготовка к сеансу открыта в новой вкладке!');
     } catch (error) {
-      console.error('Error downloading session preparation:', error);
-      message.error('Произошла ошибка при скачивании подготовки к сеансу');
+      console.error('Error opening session preparation:', error);
+      message.error('Произошла ошибка при открытии подготовки к сеансу');
     } finally {
       setLoadingSessionPreparation(false);
     }
@@ -970,30 +935,13 @@ const DashboardPage: React.FC = () => {
   const downloadPsychologistPdf = async () => {
     setLoadingPsychologistPdf(true);
     try {
-      const response = await apiRequest('api/pdf/psychologist-pdf', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId: authData?.sessionId }),
-      });
-
-      if (response.ok) {
-        const pdfBlob = await response.blob();
-        const url = window.URL.createObjectURL(pdfBlob);
-        // Открываем PDF в новой вкладке (совместимость с iPhone Safari)
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        message.success('PDF для психолога открыт в новой вкладке!');
-      } else {
-        message.error('Ошибка при генерации PDF для психолога');
-      }
+      // Открываем PDF через прямой URL (работает в Safari приватном режиме)
+      const url = `${process.env.REACT_APP_API_URL || 'https://idenself.com'}/api/pdf/view/psychologist-pdf/${authData?.sessionId}`;
+      window.open(url, '_blank');
+      message.success('PDF для психолога открыт в новой вкладке!');
     } catch (error) {
-      console.error('Error downloading psychologist PDF:', error);
-      message.error('Произошла ошибка при скачивании PDF для психолога');
+      console.error('Error opening psychologist PDF:', error);
+      message.error('Произошла ошибка при открытии PDF для психолога');
     } finally {
       setLoadingPsychologistPdf(false);
     }
