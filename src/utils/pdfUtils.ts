@@ -82,6 +82,7 @@ export const openPdf = (
               width: 100%;
               overflow: auto;
               position: relative;
+              background: #f5f5f5;
             }
             iframe {
               width: 100%;
@@ -90,6 +91,13 @@ export const openPdf = (
               min-height: 100%;
               object-fit: contain;
               overflow: auto;
+              display: block;
+            }
+            .pdf-wrapper {
+              width: 100%;
+              height: 100%;
+              overflow: auto;
+              position: relative;
             }
           </style>
         </head>
@@ -102,10 +110,19 @@ export const openPdf = (
             </div>
           </div>
           <div class="pdf-container">
-            <iframe src="${url}" type="application/pdf"></iframe>
+            <div class="pdf-wrapper">
+              <iframe src="${url}" type="application/pdf"></iframe>
+            </div>
           </div>
           <script>
+            let isDownloading = false;
+            let isClosing = false;
+            
             function downloadPdf(event) {
+              if (isDownloading || isClosing) return;
+              
+              isDownloading = true;
+              
               // Предотвращаем всплытие события
               if (event) {
                 event.preventDefault();
@@ -147,15 +164,24 @@ export const openPdf = (
                 if (document.body.contains(notification)) {
                   document.body.removeChild(notification);
                 }
+                isDownloading = false;
               }, 2000);
             }
+            
             function closeWindow(event) {
+              if (isClosing || isDownloading) return;
+              
+              isClosing = true;
+              
               // Предотвращаем всплытие события
               if (event) {
                 event.preventDefault();
                 event.stopPropagation();
               }
-              window.close();
+              
+              setTimeout(() => {
+                window.close();
+              }, 100);
             }
           </script>
         </body>
@@ -185,7 +211,20 @@ export const openPdf = (
       iframe.style.backgroundColor = 'white';
       iframe.style.minHeight = '100vh';
       iframe.style.overflow = 'auto';
+      iframe.style.display = 'block';
       iframe.setAttribute('type', 'application/pdf');
+      
+      // Создаем обертку для лучшей прокрутки
+      const wrapper = document.createElement('div');
+      wrapper.style.width = '100%';
+      wrapper.style.height = '100vh';
+      wrapper.style.overflow = 'auto';
+      wrapper.style.position = 'fixed';
+      wrapper.style.top = '0';
+      wrapper.style.left = '0';
+      wrapper.style.zIndex = '9999';
+      wrapper.style.backgroundColor = 'white';
+      wrapper.appendChild(iframe);
       
       // Добавляем кнопку закрытия
       const closeButton = document.createElement('button');
@@ -205,11 +244,11 @@ export const openPdf = (
       closeButton.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
-        document.body.removeChild(iframe);
+        document.body.removeChild(wrapper);
         document.body.removeChild(closeButton);
       };
       
-      document.body.appendChild(iframe);
+      document.body.appendChild(wrapper);
       document.body.appendChild(closeButton);
       
       const message = `${successMessage} открыт в текущей вкладке!`;
