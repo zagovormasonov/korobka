@@ -18,7 +18,7 @@ import {
 } from '@ant-design/icons';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
-import { openPdf } from '../utils/pdfUtils';
+import { openPdf, downloadPdf } from '../utils/pdfUtils';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -106,6 +106,11 @@ const PersonalPlanPage: React.FC = () => {
   // Утилитарная функция для открытия PDF
   const handleOpenPdf = (url: string, filename: string, successMessage: string) => {
     openPdf(url, filename, successMessage, message.success);
+  };
+
+  // Утилитарная функция для скачивания PDF
+  const handleDownloadPdf = (url: string, filename: string, successMessage: string) => {
+    downloadPdf(url, filename, successMessage, message.success);
   };
 
   const downloadPersonalPlan = async () => {
@@ -519,25 +524,64 @@ const PersonalPlanPage: React.FC = () => {
             }}>
               Скачай персональный план, созданный на основе всех твоих тестов
             </Text>
-            <Button 
-              type="primary"
-              onClick={downloadPersonalPlan}
-              loading={loadingPersonalPlan}
-              disabled={!documentsStatus.personal_plan}
-              style={{
-                width: '100%',
-                height: '45px',
-                borderRadius: '22px',
-                backgroundColor: documentsStatus.personal_plan ? '#4F958B' : '#D9D9D9',
-                borderColor: documentsStatus.personal_plan ? '#4F958B' : '#D9D9D9',
-                color: '#ffffff',
-                fontSize: '16px',
-                fontWeight: '500'
-              }}
-            >
-              {loadingPersonalPlan ? 'Генерируем план...' : 
-               documentsStatus.personal_plan ? 'Скачать план' : 'План готовится...'}
-            </Button>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button 
+                type="primary"
+                onClick={downloadPersonalPlan}
+                loading={loadingPersonalPlan}
+                disabled={!documentsStatus.personal_plan}
+                style={{
+                  width: '100%',
+                  height: '45px',
+                  borderRadius: '22px',
+                  backgroundColor: documentsStatus.personal_plan ? '#4F958B' : '#D9D9D9',
+                  borderColor: documentsStatus.personal_plan ? '#4F958B' : '#D9D9D9',
+                  color: '#ffffff',
+                  fontSize: '16px',
+                  fontWeight: '500'
+                }}
+              >
+                {loadingPersonalPlan ? 'Генерируем план...' : 
+                 documentsStatus.personal_plan ? 'Открыть план' : 'План готовится...'}
+              </Button>
+              
+              {documentsStatus.personal_plan && (
+                <Button 
+                  type="default"
+                  onClick={async () => {
+                    setLoadingPersonalPlan(true);
+                    try {
+                      const response = await apiRequest(`api/background-generation/download/personal-plan/${authData?.sessionId}`, {
+                        method: 'GET',
+                      });
+                      if (response.ok) {
+                        const pdfBlob = await response.blob();
+                        const url = window.URL.createObjectURL(pdfBlob);
+                        handleDownloadPdf(url, 'personal-plan.pdf', 'Персональный план');
+                      } else {
+                        message.error('Ошибка при скачивании персонального плана');
+                      }
+                    } catch (error) {
+                      message.error('Произошла ошибка при скачивании персонального плана');
+                    } finally {
+                      setLoadingPersonalPlan(false);
+                    }
+                  }}
+                  loading={loadingPersonalPlan}
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    borderRadius: '20px',
+                    borderColor: '#4F958B',
+                    color: '#4F958B',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Скачать PDF
+                </Button>
+              )}
+            </Space>
           </div>
 
           {/* Psychologist Selection Card */}
@@ -688,25 +732,64 @@ const PersonalPlanPage: React.FC = () => {
             }}>
               Руководство для эффективной подготовки к сеансу
             </Text>
-            <Button 
-              type="primary"
-              onClick={() => downloadSessionPreparation('psychologist')}
-              loading={loadingSessionPreparation}
-              disabled={!documentsStatus.session_preparation}
-              style={{
-                width: '100%',
-                height: '45px',
-                borderRadius: '22px',
-                backgroundColor: documentsStatus.session_preparation ? '#4F958B' : '#D9D9D9',
-                borderColor: documentsStatus.session_preparation ? '#4F958B' : '#D9D9D9',
-                color: '#ffffff',
-                fontSize: '16px',
-                fontWeight: '500'
-              }}
-            >
-              {loadingSessionPreparation ? 'Генерируем...' : 
-               documentsStatus.session_preparation ? 'Скачать подготовку' : 'Подготовка готовится...'}
-            </Button>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button 
+                type="primary"
+                onClick={() => downloadSessionPreparation('psychologist')}
+                loading={loadingSessionPreparation}
+                disabled={!documentsStatus.session_preparation}
+                style={{
+                  width: '100%',
+                  height: '45px',
+                  borderRadius: '22px',
+                  backgroundColor: documentsStatus.session_preparation ? '#4F958B' : '#D9D9D9',
+                  borderColor: documentsStatus.session_preparation ? '#4F958B' : '#D9D9D9',
+                  color: '#ffffff',
+                  fontSize: '16px',
+                  fontWeight: '500'
+                }}
+              >
+                {loadingSessionPreparation ? 'Генерируем...' : 
+                 documentsStatus.session_preparation ? 'Открыть подготовку' : 'Подготовка готовится...'}
+              </Button>
+              
+              {documentsStatus.session_preparation && (
+                <Button 
+                  type="default"
+                  onClick={async () => {
+                    setLoadingSessionPreparation(true);
+                    try {
+                      const response = await apiRequest(`api/background-generation/download/session-preparation/${authData?.sessionId}`, {
+                        method: 'GET',
+                      });
+                      if (response.ok) {
+                        const pdfBlob = await response.blob();
+                        const url = window.URL.createObjectURL(pdfBlob);
+                        handleDownloadPdf(url, 'session-preparation-psychologist.pdf', 'Подготовка к сеансу');
+                      } else {
+                        message.error('Ошибка при скачивании подготовки к сеансу');
+                      }
+                    } catch (error) {
+                      message.error('Произошла ошибка при скачивании подготовки к сеансу');
+                    } finally {
+                      setLoadingSessionPreparation(false);
+                    }
+                  }}
+                  loading={loadingSessionPreparation}
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    borderRadius: '20px',
+                    borderColor: '#4F958B',
+                    color: '#4F958B',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Скачать PDF
+                </Button>
+              )}
+            </Space>
           </div>
 
           {/* Psychologist Recommendations Card */}

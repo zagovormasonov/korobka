@@ -21,7 +21,7 @@ import {
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
 import GenerationAnimation from '../components/GenerationAnimation';
-import { openPdf } from '../utils/pdfUtils';
+import { openPdf, downloadPdf } from '../utils/pdfUtils';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -927,6 +927,30 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const downloadPersonalPlanDirect = async () => {
+    setLoadingPersonalPlan(true);
+    try {
+      const response = await apiRequest('api/pdf-html/personal-plan', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
+      });
+
+      if (response.ok) {
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
+        
+        downloadPdf(url, 'personal-plan.pdf', 'Персональный план', message.success);
+      } else {
+        message.error('Ошибка при генерации персонального плана');
+      }
+    } catch (error) {
+      console.error('Error downloading personal plan:', error);
+      message.error('Произошла ошибка при скачивании персонального плана');
+    } finally {
+      setLoadingPersonalPlan(false);
+    }
+  };
+
   const downloadSessionPreparation = async (specialistType: 'psychologist' | 'psychiatrist') => {
     setLoadingSessionPreparation(true);
     try {
@@ -952,6 +976,31 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const downloadSessionPreparationDirect = async (specialistType: 'psychologist' | 'psychiatrist') => {
+    setLoadingSessionPreparation(true);
+    try {
+      const response = await apiRequest('api/pdf/session-preparation', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId, specialistType }),
+      });
+
+      if (response.ok) {
+        const html = await response.text();
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = window.URL.createObjectURL(blob);
+        
+        downloadPdf(url, `session-preparation-${specialistType}.html`, 'Подготовка к сеансу', message.success);
+      } else {
+        message.error('Ошибка при генерации подготовки к сеансу');
+      }
+    } catch (error) {
+      console.error('Error downloading session preparation:', error);
+      message.error('Произошла ошибка при скачивании подготовки к сеансу');
+    } finally {
+      setLoadingSessionPreparation(false);
+    }
+  };
+
   const downloadPsychologistPdf = async () => {
     setLoadingPsychologistPdf(true);
     try {
@@ -965,6 +1014,30 @@ const DashboardPage: React.FC = () => {
         const url = window.URL.createObjectURL(pdfBlob);
         
         openPdf(url, 'psychologist-pdf.pdf', 'PDF для психолога', message.success);
+      } else {
+        message.error('Ошибка при генерации PDF для психолога');
+      }
+    } catch (error) {
+      console.error('Error downloading psychologist PDF:', error);
+      message.error('Произошла ошибка при скачивании PDF для психолога');
+    } finally {
+      setLoadingPsychologistPdf(false);
+    }
+  };
+
+  const downloadPsychologistPdfDirect = async () => {
+    setLoadingPsychologistPdf(true);
+    try {
+      const response = await apiRequest('api/pdf/psychologist-pdf', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: authData?.sessionId }),
+      });
+
+      if (response.ok) {
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
+        
+        downloadPdf(url, 'psychologist-pdf.pdf', 'PDF для психолога', message.success);
       } else {
         message.error('Ошибка при генерации PDF для психолога');
       }
@@ -1134,23 +1207,42 @@ const DashboardPage: React.FC = () => {
                 }}>
                   Скачай персональный план, созданный на основе всех твоих тестов
                 </Text>
-                <Button 
-                  type="primary"
-                  onClick={downloadPersonalPlan}
-                  loading={loadingPersonalPlan}
-                  style={{
-                    width: '100%',
-                    height: '45px',
-                    borderRadius: '22px',
-                    backgroundColor: '#4F958B',
-                    borderColor: '#4F958B',
-                    color: '#ffffff',
-                    fontSize: '16px',
-                    fontWeight: '500'
-                  }}
-                >
-                  {loadingPersonalPlan ? 'Генерируем план...' : 'Скачать план'}
-                </Button>
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Button 
+                    type="primary"
+                    onClick={downloadPersonalPlan}
+                    loading={loadingPersonalPlan}
+                    style={{
+                      width: '100%',
+                      height: '45px',
+                      borderRadius: '22px',
+                      backgroundColor: '#4F958B',
+                      borderColor: '#4F958B',
+                      color: '#ffffff',
+                      fontSize: '16px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    {loadingPersonalPlan ? 'Генерируем план...' : 'Открыть план'}
+                  </Button>
+                  
+                  <Button 
+                    type="default"
+                    onClick={downloadPersonalPlanDirect}
+                    loading={loadingPersonalPlan}
+                    style={{
+                      width: '100%',
+                      height: '40px',
+                      borderRadius: '20px',
+                      borderColor: '#4F958B',
+                      color: '#4F958B',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Скачать PDF
+                  </Button>
+                </Space>
               </div>
 
               {/* Psychologist Selection Card */}
@@ -1301,23 +1393,42 @@ const DashboardPage: React.FC = () => {
                 }}>
                   Руководство для эффективной подготовки к сеансу
                 </Text>
-                <Button 
-                  type="primary"
-                  onClick={() => downloadSessionPreparation('psychologist')}
-                  loading={loadingSessionPreparation}
-                  style={{
-                    width: '100%',
-                    height: '45px',
-                    borderRadius: '22px',
-                    backgroundColor: '#4F958B',
-                    borderColor: '#4F958B',
-                    color: '#ffffff',
-                    fontSize: '16px',
-                    fontWeight: '500'
-                  }}
-                >
-                  {loadingSessionPreparation ? 'Генерируем...' : 'Скачать подготовку'}
-                </Button>
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Button 
+                    type="primary"
+                    onClick={() => downloadSessionPreparation('psychologist')}
+                    loading={loadingSessionPreparation}
+                    style={{
+                      width: '100%',
+                      height: '45px',
+                      borderRadius: '22px',
+                      backgroundColor: '#4F958B',
+                      borderColor: '#4F958B',
+                      color: '#ffffff',
+                      fontSize: '16px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    {loadingSessionPreparation ? 'Генерируем...' : 'Открыть подготовку'}
+                  </Button>
+                  
+                  <Button 
+                    type="default"
+                    onClick={() => downloadSessionPreparationDirect('psychologist')}
+                    loading={loadingSessionPreparation}
+                    style={{
+                      width: '100%',
+                      height: '40px',
+                      borderRadius: '20px',
+                      borderColor: '#4F958B',
+                      color: '#4F958B',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Скачать PDF
+                  </Button>
+                </Space>
               </div>
 
               {/* Psychologist PDF Card */}
@@ -1357,23 +1468,42 @@ const DashboardPage: React.FC = () => {
                 }}>
                   PDF с рекомендациями для психолога и психиатра
                 </Text>
-                <Button 
-                  type="primary"
-                  onClick={downloadPsychologistPdf}
-                  loading={loadingPsychologistPdf}
-                  style={{
-                    width: '100%',
-                    height: '45px',
-                    borderRadius: '22px',
-                    backgroundColor: '#4F958B',
-                    borderColor: '#4F958B',
-                    color: '#ffffff',
-                    fontSize: '16px',
-                    fontWeight: '500'
-                  }}
-                >
-                  {loadingPsychologistPdf ? 'Генерируем...' : 'Скачать PDF'}
-                </Button>
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Button 
+                    type="primary"
+                    onClick={downloadPsychologistPdf}
+                    loading={loadingPsychologistPdf}
+                    style={{
+                      width: '100%',
+                      height: '45px',
+                      borderRadius: '22px',
+                      backgroundColor: '#4F958B',
+                      borderColor: '#4F958B',
+                      color: '#ffffff',
+                      fontSize: '16px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    {loadingPsychologistPdf ? 'Генерируем...' : 'Открыть PDF'}
+                  </Button>
+                  
+                  <Button 
+                    type="default"
+                    onClick={downloadPsychologistPdfDirect}
+                    loading={loadingPsychologistPdf}
+                    style={{
+                      width: '100%',
+                      height: '40px',
+                      borderRadius: '20px',
+                      borderColor: '#4F958B',
+                      color: '#4F958B',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Скачать PDF
+                  </Button>
+                </Space>
               </div>
 
               {/* Feedback Card */}
