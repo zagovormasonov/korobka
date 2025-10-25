@@ -80,11 +80,16 @@ export const openPdf = (
             .pdf-container {
               height: calc(100vh - 70px);
               width: 100%;
+              overflow: auto;
+              position: relative;
             }
             iframe {
               width: 100%;
               height: 100%;
               border: none;
+              min-height: 100%;
+              object-fit: contain;
+              overflow: auto;
             }
           </style>
         </head>
@@ -100,16 +105,56 @@ export const openPdf = (
             <iframe src="${url}" type="application/pdf"></iframe>
           </div>
           <script>
-            function downloadPdf() {
+            function downloadPdf(event) {
+              // Предотвращаем всплытие события
+              if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+              }
+              
+              // Создаем ссылку для скачивания
               const link = document.createElement('a');
               link.href = '${url}';
               link.download = '${filename}';
               link.style.display = 'none';
+              
+              // Добавляем атрибуты для принудительного скачивания
+              link.setAttribute('download', '${filename}');
+              link.setAttribute('target', '_blank');
+              
+              // Добавляем в DOM, кликаем и удаляем
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
+              
+              // Показываем уведомление
+              const notification = document.createElement('div');
+              notification.innerHTML = '📥 Файл скачивается...';
+              notification.style.position = 'fixed';
+              notification.style.top = '50%';
+              notification.style.left = '50%';
+              notification.style.transform = 'translate(-50%, -50%)';
+              notification.style.backgroundColor = '#4F958B';
+              notification.style.color = 'white';
+              notification.style.padding = '15px 25px';
+              notification.style.borderRadius = '5px';
+              notification.style.zIndex = '10001';
+              notification.style.fontSize = '16px';
+              notification.style.fontWeight = '500';
+              document.body.appendChild(notification);
+              
+              setTimeout(() => {
+                if (document.body.contains(notification)) {
+                  document.body.removeChild(notification);
+                }
+              }, 2000);
             }
-            function closeWindow() {
+            function closeWindow(event) {
+              // Предотвращаем всплытие события
+              if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+              }
               window.close();
             }
           </script>
@@ -138,6 +183,9 @@ export const openPdf = (
       iframe.style.left = '0';
       iframe.style.zIndex = '9999';
       iframe.style.backgroundColor = 'white';
+      iframe.style.minHeight = '100vh';
+      iframe.style.overflow = 'auto';
+      iframe.setAttribute('type', 'application/pdf');
       
       // Добавляем кнопку закрытия
       const closeButton = document.createElement('button');
@@ -154,7 +202,9 @@ export const openPdf = (
       closeButton.style.cursor = 'pointer';
       closeButton.style.fontSize = '14px';
       
-      closeButton.onclick = () => {
+      closeButton.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
         document.body.removeChild(iframe);
         document.body.removeChild(closeButton);
       };
@@ -197,19 +247,23 @@ export const downloadPdf = (
     
     // Добавляем атрибуты для принудительного скачивания
     link.setAttribute('download', filename);
+    link.setAttribute('target', '_blank');
+    
+    // Добавляем обработчик события для отслеживания скачивания
+    link.addEventListener('click', (e) => {
+      console.log('Download link clicked');
+    });
     
     // Добавляем ссылку в DOM, кликаем и удаляем
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    // Небольшая задержка для проверки успешности скачивания
-    setTimeout(() => {
-      const message = `${successMessage} скачан!`;
-      if (onSuccess) {
-        onSuccess(message);
-      }
-    }, 500);
+    // Показываем сообщение об успехе
+    const message = `${successMessage} скачивается...`;
+    if (onSuccess) {
+      onSuccess(message);
+    }
     
   } catch (error) {
     console.error('Error downloading PDF:', error);
