@@ -116,20 +116,12 @@ const PersonalPlanPage: React.FC = () => {
   const downloadPersonalPlan = async () => {
     setLoadingPersonalPlan(true);
     try {
-      const response = await apiRequest(`api/background-generation/download/personal-plan/${authData?.sessionId}`, {
-        method: 'GET',
-      });
-
-      if (response.ok) {
-        const pdfBlob = await response.blob();
-        const url = window.URL.createObjectURL(pdfBlob);
-        
-        // Используем утилитарную функцию для открытия PDF
-        handleOpenPdf(url, 'personal-plan.pdf', 'Персональный план');
-      } else {
-        const errorData = await response.json();
-        message.error(errorData.error || 'Ошибка при скачивании персонального плана');
-      }
+      // Создаем прямую ссылку на PDF endpoint
+      const pdfUrl = `${window.location.origin}/api/background-generation/download/personal-plan/${authData?.sessionId}`;
+      
+      // Открываем PDF напрямую по ссылке
+      window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+      message.success('Персональный план открыт в новой вкладке!');
     } catch (error) {
       console.error('Error downloading personal plan:', error);
       message.error('Произошла ошибка при скачивании персонального плана');
@@ -141,20 +133,12 @@ const PersonalPlanPage: React.FC = () => {
   const downloadSessionPreparation = async (specialistType: 'psychologist' | 'psychiatrist') => {
     setLoadingSessionPreparation(true);
     try {
-      const response = await apiRequest(`api/background-generation/download/session-preparation/${authData?.sessionId}`, {
-        method: 'GET',
-      });
-
-      if (response.ok) {
-        const pdfBlob = await response.blob();
-        const url = window.URL.createObjectURL(pdfBlob);
-        
-        // Используем утилитарную функцию для открытия PDF
-        handleOpenPdf(url, `session-preparation-${specialistType}.pdf`, 'Подготовка к сеансу');
-      } else {
-        const errorData = await response.json();
-        message.error(errorData.error || 'Ошибка при скачивании подготовки к сеансу');
-      }
+      // Создаем прямую ссылку на PDF endpoint
+      const pdfUrl = `${window.location.origin}/api/background-generation/download/session-preparation/${authData?.sessionId}`;
+      
+      // Открываем PDF напрямую по ссылке
+      window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+      message.success('Подготовка к сеансу открыта в новой вкладке!');
     } catch (error) {
       console.error('Error downloading session preparation:', error);
       message.error('Произошла ошибка при скачивании подготовки к сеансу');
@@ -524,64 +508,25 @@ const PersonalPlanPage: React.FC = () => {
             }}>
               Скачай персональный план, созданный на основе всех твоих тестов
             </Text>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Button 
-                type="primary"
-                onClick={downloadPersonalPlan}
-                loading={loadingPersonalPlan}
-                disabled={!documentsStatus.personal_plan}
-                style={{
-                  width: '100%',
-                  height: '45px',
-                  borderRadius: '22px',
-                  backgroundColor: documentsStatus.personal_plan ? '#4F958B' : '#D9D9D9',
-                  borderColor: documentsStatus.personal_plan ? '#4F958B' : '#D9D9D9',
-                  color: '#ffffff',
-                  fontSize: '16px',
-                  fontWeight: '500'
-                }}
-              >
-                {loadingPersonalPlan ? 'Генерируем план...' : 
-                 documentsStatus.personal_plan ? 'Открыть план' : 'План готовится...'}
-              </Button>
-              
-              {documentsStatus.personal_plan && (
-                <Button 
-                  type="default"
-                  onClick={async () => {
-                    setLoadingPersonalPlan(true);
-                    try {
-                      const response = await apiRequest(`api/background-generation/download/personal-plan/${authData?.sessionId}`, {
-                        method: 'GET',
-                      });
-                      if (response.ok) {
-                        const pdfBlob = await response.blob();
-                        const url = window.URL.createObjectURL(pdfBlob);
-                        handleDownloadPdf(url, 'personal-plan.pdf', 'Персональный план');
-                      } else {
-                        message.error('Ошибка при скачивании персонального плана');
-                      }
-                    } catch (error) {
-                      message.error('Произошла ошибка при скачивании персонального плана');
-                    } finally {
-                      setLoadingPersonalPlan(false);
-                    }
-                  }}
-                  loading={loadingPersonalPlan}
-                  style={{
-                    width: '100%',
-                    height: '40px',
-                    borderRadius: '20px',
-                    borderColor: '#4F958B',
-                    color: '#4F958B',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  Скачать PDF
-                </Button>
-              )}
-            </Space>
+            <Button 
+              type="primary"
+              onClick={downloadPersonalPlan}
+              loading={loadingPersonalPlan}
+              disabled={!documentsStatus.personal_plan}
+              style={{
+                width: '100%',
+                height: '45px',
+                borderRadius: '22px',
+                backgroundColor: documentsStatus.personal_plan ? '#4F958B' : '#D9D9D9',
+                borderColor: documentsStatus.personal_plan ? '#4F958B' : '#D9D9D9',
+                color: '#ffffff',
+                fontSize: '16px',
+                fontWeight: '500'
+              }}
+            >
+              {loadingPersonalPlan ? 'Генерируем план...' : 
+               documentsStatus.personal_plan ? 'Скачать план' : 'План готовится...'}
+            </Button>
           </div>
 
           {/* Psychologist Selection Card */}
@@ -732,64 +677,25 @@ const PersonalPlanPage: React.FC = () => {
             }}>
               Руководство для эффективной подготовки к сеансу
             </Text>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Button 
-                type="primary"
-                onClick={() => downloadSessionPreparation('psychologist')}
-                loading={loadingSessionPreparation}
-                disabled={!documentsStatus.session_preparation}
-                style={{
-                  width: '100%',
-                  height: '45px',
-                  borderRadius: '22px',
-                  backgroundColor: documentsStatus.session_preparation ? '#4F958B' : '#D9D9D9',
-                  borderColor: documentsStatus.session_preparation ? '#4F958B' : '#D9D9D9',
-                  color: '#ffffff',
-                  fontSize: '16px',
-                  fontWeight: '500'
-                }}
-              >
-                {loadingSessionPreparation ? 'Генерируем...' : 
-                 documentsStatus.session_preparation ? 'Открыть подготовку' : 'Подготовка готовится...'}
-              </Button>
-              
-              {documentsStatus.session_preparation && (
-                <Button 
-                  type="default"
-                  onClick={async () => {
-                    setLoadingSessionPreparation(true);
-                    try {
-                      const response = await apiRequest(`api/background-generation/download/session-preparation/${authData?.sessionId}`, {
-                        method: 'GET',
-                      });
-                      if (response.ok) {
-                        const pdfBlob = await response.blob();
-                        const url = window.URL.createObjectURL(pdfBlob);
-                        handleDownloadPdf(url, 'session-preparation-psychologist.pdf', 'Подготовка к сеансу');
-                      } else {
-                        message.error('Ошибка при скачивании подготовки к сеансу');
-                      }
-                    } catch (error) {
-                      message.error('Произошла ошибка при скачивании подготовки к сеансу');
-                    } finally {
-                      setLoadingSessionPreparation(false);
-                    }
-                  }}
-                  loading={loadingSessionPreparation}
-                  style={{
-                    width: '100%',
-                    height: '40px',
-                    borderRadius: '20px',
-                    borderColor: '#4F958B',
-                    color: '#4F958B',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  Скачать PDF
-                </Button>
-              )}
-            </Space>
+            <Button 
+              type="primary"
+              onClick={() => downloadSessionPreparation('psychologist')}
+              loading={loadingSessionPreparation}
+              disabled={!documentsStatus.session_preparation}
+              style={{
+                width: '100%',
+                height: '45px',
+                borderRadius: '22px',
+                backgroundColor: documentsStatus.session_preparation ? '#4F958B' : '#D9D9D9',
+                borderColor: documentsStatus.session_preparation ? '#4F958B' : '#D9D9D9',
+                color: '#ffffff',
+                fontSize: '16px',
+                fontWeight: '500'
+              }}
+            >
+              {loadingSessionPreparation ? 'Генерируем...' : 
+               documentsStatus.session_preparation ? 'Скачать подготовку' : 'Подготовка готовится...'}
+            </Button>
           </div>
 
           {/* Psychologist Recommendations Card */}
