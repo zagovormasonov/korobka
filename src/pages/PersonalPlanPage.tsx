@@ -852,11 +852,11 @@ const PersonalPlanPage: React.FC = () => {
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             display: 'flex',
             flexDirection: 'column',
-            height: '600px',
-            boxSizing: 'border-box',
-            overflow: 'hidden'
+            minHeight: '600px',
+            maxHeight: '600px',
+            boxSizing: 'border-box'
           }}>
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px', flexShrink: 0 }}>
               <div style={{
                 width: '60px',
                 height: '60px',
@@ -888,14 +888,13 @@ const PersonalPlanPage: React.FC = () => {
             
             {/* Область сообщений */}
             <div style={{
-              flex: 1,
+              flex: '1 1 auto',
               overflowY: 'auto',
               marginBottom: '15px',
               padding: '15px',
               backgroundColor: '#F5F7FA',
               borderRadius: '12px',
-              minHeight: '300px',
-              maxHeight: '400px'
+              minHeight: 0
             }}>
               {loadingChatHistory ? (
                 <div style={{ textAlign: 'center', padding: '20px', color: '#7B8794' }}>
@@ -952,7 +951,7 @@ const PersonalPlanPage: React.FC = () => {
             </div>
             
             {/* Поле ввода */}
-            <Space direction="vertical" style={{ width: '100%', boxSizing: 'border-box' }}>
+            <Space direction="vertical" style={{ width: '100%', boxSizing: 'border-box', flexShrink: 0 }}>
               <TextArea
                 placeholder="Расскажите о вашем опыте на сеансе у психолога..."
                 value={feedbackText}
