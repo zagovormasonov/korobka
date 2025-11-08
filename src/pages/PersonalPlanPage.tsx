@@ -852,7 +852,9 @@ const PersonalPlanPage: React.FC = () => {
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             display: 'flex',
             flexDirection: 'column',
-            height: '600px'
+            height: '600px',
+            boxSizing: 'border-box',
+            overflow: 'hidden'
           }}>
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <div style={{
@@ -950,7 +952,7 @@ const PersonalPlanPage: React.FC = () => {
             </div>
             
             {/* Поле ввода */}
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space direction="vertical" style={{ width: '100%', boxSizing: 'border-box' }}>
               <TextArea
                 placeholder="Расскажите о вашем опыте на сеансе у психолога..."
                 value={feedbackText}
@@ -966,7 +968,8 @@ const PersonalPlanPage: React.FC = () => {
                 disabled={!feedbackLimit.canSend || loadingFeedback}
                 style={{ 
                   borderRadius: '12px',
-                  resize: 'none'
+                  resize: 'none',
+                  boxSizing: 'border-box'
                 }}
               />
               <Button 
@@ -982,7 +985,9 @@ const PersonalPlanPage: React.FC = () => {
                   borderColor: feedbackLimit.canSend ? '#4F958B' : '#D9D9D9',
                   color: '#ffffff',
                   fontSize: '16px',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  boxSizing: 'border-box',
+                  margin: 0
                 }}
               >
                 {loadingFeedback ? 'Анализируем...' : 
