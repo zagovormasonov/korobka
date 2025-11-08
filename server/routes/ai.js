@@ -767,9 +767,100 @@ router.post('/session-preparation', async (req, res) => {
 });
 
 // Обратная связь о сеансе
+// Получить историю чата обратной связи
+router.get('/session-feedback/history/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+    // Получаем историю сообщений из базы
+    const { data: messages, error } = await supabase
+      .from('feedback_chat_messages')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching chat history:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    res.json({ success: true, messages: messages || [] });
+  } catch (error) {
+    console.error('Error fetching chat history:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Проверить количество запросов за сегодня
+router.get('/session-feedback/limit/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+    // Получаем начало текущего дня в UTC
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    
+    // Подсчитываем количество запросов за сегодня
+    const { count, error } = await supabase
+      .from('feedback_chat_messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('session_id', sessionId)
+      .eq('role', 'user')
+      .gte('created_at', today.toISOString());
+
+    if (error) {
+      console.error('Error checking limit:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    const requestsToday = count || 0;
+    const limit = 5;
+    const remaining = Math.max(0, limit - requestsToday);
+
+    res.json({ 
+      success: true, 
+      requestsToday, 
+      limit, 
+      remaining,
+      canSend: remaining > 0
+    });
+  } catch (error) {
+    console.error('Error checking limit:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.post('/session-feedback', async (req, res) => {
   try {
-    const { sessionId, feedbackText } = req.body;
+    const { sessionId, message, history } = req.body;
+    
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, error: 'Сообщение не может быть пустым' });
+    }
+
+    // Проверяем ограничение на 5 запросов в день
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    
+    const { count, error: limitError } = await supabase
+      .from('feedback_chat_messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('session_id', sessionId)
+      .eq('role', 'user')
+      .gte('created_at', today.toISOString());
+
+    if (limitError) {
+      console.error('Error checking limit:', limitError);
+      return res.status(500).json({ success: false, error: 'Ошибка проверки лимита' });
+    }
+
+    const requestsToday = count || 0;
+    if (requestsToday >= 5) {
+      return res.status(429).json({ 
+        success: false, 
+        error: 'Достигнут лимит запросов на сегодня (5 запросов в день). Попробуйте завтра.' 
+      });
+    }
     
     // Получаем результаты первичного теста
     const { data: primaryTest, error: primaryError } = await supabase
@@ -785,21 +876,34 @@ router.post('/session-feedback', async (req, res) => {
     const primaryAnswers = primaryTest.answers;
     const userEmail = primaryTest.email;
 
-    // Получаем результаты дополнительных тестов по email
+    // Получаем результаты дополнительных тестов по sessionId
     const { data: additionalTests, error: additionalError } = await supabase
       .from('additional_test_results')
       .select('test_type, answers')
-      .eq('email', userEmail);
+      .eq('session_id', sessionId);
 
     // Формируем результаты дополнительных тестов
     let testResults = 'Дополнительные тесты не пройдены';
     if (additionalTests && additionalTests.length > 0) {
       testResults = additionalTests.map(test => 
-        `${test.test_name}: ${test.test_result}`
+        `${test.test_type}: ${test.answers}`
       ).join('; ');
     }
+
+    // Формируем контекст из истории чата
+    let historyContext = '';
+    if (history && Array.isArray(history) && history.length > 0) {
+      historyContext = '\n\nИСТОРИЯ ПРЕДЫДУЩИХ СООБЩЕНИЙ:\n';
+      history.forEach((msg, idx) => {
+        if (msg.role === 'user') {
+          historyContext += `Пользователь: ${msg.content}\n`;
+        } else if (msg.role === 'assistant') {
+          historyContext += `Ассистент: ${msg.content}\n`;
+        }
+      });
+    }
     
-    const prompt = `Проведи глубокое исследование эффективности терапевтического сеанса и создай детальный анализ с рекомендациями.
+    const prompt = `Ты - профессиональный психолог-консультант, который анализирует обратную связь клиентов после терапевтических сеансов.
 
 ИССЛЕДОВАТЕЛЬСКАЯ ЗАДАЧА:
 Проанализируй обратную связь пользователя о сеансе в контексте его психологического профиля и дай научно обоснованные рекомендации.
@@ -807,7 +911,8 @@ router.post('/session-feedback', async (req, res) => {
 ДАННЫЕ ДЛЯ АНАЛИЗА:
 Результаты первичного теста: ${JSON.stringify(primaryAnswers)}
 Результаты дополнительных тестов: ${testResults}
-Обратная связь пользователя: ${feedbackText}
+${historyContext}
+ТЕКУЩЕЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ: ${message}
 
 ИССЛЕДОВАТЕЛЬСКИЕ НАПРАВЛЕНИЯ:
 1. Проанализируй соответствие сеанса выявленным проблемам
@@ -850,25 +955,54 @@ router.post('/session-feedback', async (req, res) => {
 - Практичность и выполнимость
 - На русском языке
 - Четкая структура с заголовками
+- Если это продолжение диалога, учитывай предыдущие сообщения
 
 ФОРМАТ ОТВЕТА: Только текст анализа, без дополнительных объяснений.`;
 
+    console.log('🚀 [FEEDBACK-CHAT] Отправляем запрос к Gemini API...');
     const analysis = await callGeminiAI(prompt, 8000);
+    console.log('✅ [FEEDBACK-CHAT] Получен ответ от Gemini');
     
-    // Сохраняем обратную связь в базу
+    // Сохраняем сообщение пользователя
+    const { error: userMsgError } = await supabase
+      .from('feedback_chat_messages')
+      .insert({
+        session_id: sessionId,
+        role: 'user',
+        content: message.trim()
+      });
+
+    if (userMsgError) {
+      console.error('Error saving user message:', userMsgError);
+    }
+
+    // Сохраняем ответ AI
+    const { error: aiMsgError } = await supabase
+      .from('feedback_chat_messages')
+      .insert({
+        session_id: sessionId,
+        role: 'assistant',
+        content: analysis
+      });
+
+    if (aiMsgError) {
+      console.error('Error saving AI message:', aiMsgError);
+    }
+
+    // Также сохраняем в старую таблицу для обратной совместимости
     const { error: insertError } = await supabase
       .from('session_feedback')
       .insert({
         session_id: sessionId,
-        feedback_text: feedbackText,
+        feedback_text: message.trim(),
         ai_response: analysis
       });
 
     if (insertError) {
-      console.error('Error saving feedback:', insertError);
+      console.error('Error saving feedback (legacy):', insertError);
     }
 
-    res.json({ success: true, analysis });
+    res.json({ success: true, response: analysis, requestsRemaining: Math.max(0, 4 - requestsToday) });
   } catch (error) {
     console.error('Error processing feedback:', error);
     res.status(500).json({ success: false, error: error.message });

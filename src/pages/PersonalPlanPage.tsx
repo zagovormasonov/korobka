@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Typography, 
@@ -28,6 +28,9 @@ const PersonalPlanPage: React.FC = () => {
   const { isAuthenticated, isLoading, authData, logout } = useAuth();
   const [psychologistForm] = Form.useForm();
   const [feedbackText, setFeedbackText] = useState('');
+  const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  const [loadingChatHistory, setLoadingChatHistory] = useState(false);
+  const [feedbackLimit, setFeedbackLimit] = useState({ requestsToday: 0, limit: 5, remaining: 5, canSend: true });
   
   // Состояния загрузки для AI операций
   const [loadingPersonalPlan, setLoadingPersonalPlan] = useState(false);
@@ -35,6 +38,7 @@ const PersonalPlanPage: React.FC = () => {
   const [loadingPsychologistRecommendations, setLoadingPsychologistRecommendations] = useState(false);
   const [psychologistRequestSent, setPsychologistRequestSent] = useState(false); // Анимация отправки заявки
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
   
   // Состояния для проверки готовности документов
   const [documentsStatus, setDocumentsStatus] = useState({
@@ -61,8 +65,15 @@ const PersonalPlanPage: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated && authData?.sessionId) {
       checkDocumentsStatus();
+      loadChatHistory();
+      checkFeedbackLimit();
     }
   }, [isAuthenticated, authData?.sessionId]);
+
+  // Прокрутка к последнему сообщению
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
 
   const checkDocumentsStatus = async () => {
     try {
@@ -315,37 +326,114 @@ const PersonalPlanPage: React.FC = () => {
     }
   };
 
+  const loadChatHistory = async () => {
+    if (!authData?.sessionId) return;
+    
+    setLoadingChatHistory(true);
+    try {
+      const response = await apiRequest(`api/ai/session-feedback/history/${authData.sessionId}`, {
+        method: 'GET',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.messages) {
+          const formattedMessages = data.messages.map((msg: any) => ({
+            role: msg.role,
+            content: msg.content
+          }));
+          setChatMessages(formattedMessages);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+    } finally {
+      setLoadingChatHistory(false);
+    }
+  };
+
+  const checkFeedbackLimit = async () => {
+    if (!authData?.sessionId) return;
+    
+    try {
+      const response = await apiRequest(`api/ai/session-feedback/limit/${authData.sessionId}`, {
+        method: 'GET',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setFeedbackLimit(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking feedback limit:', error);
+    }
+  };
+
   const handleFeedbackSubmit = async () => {
     if (!feedbackText.trim()) {
       message.warning('Пожалуйста, введите текст обратной связи');
       return;
     }
 
+    if (!feedbackLimit.canSend) {
+      message.warning(`Достигнут лимит запросов на сегодня (${feedbackLimit.limit} запросов в день). Попробуйте завтра.`);
+      return;
+    }
+
+    const userMessage = feedbackText.trim();
     setLoadingFeedback(true);
+    
+    // Добавляем сообщение пользователя в чат
+    setChatMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setFeedbackText('');
+
     try {
+      // Формируем историю для отправки
+      const history = chatMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
       const response = await apiRequest('api/ai/session-feedback', {
         method: 'POST',
-          body: JSON.stringify({
-            sessionId: authData?.sessionId,
-            feedbackText: feedbackText.trim()
-          }),
+        body: JSON.stringify({
+          sessionId: authData?.sessionId,
+          message: userMessage,
+          history: history
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          message.success('Анализ готов! Проверьте результаты ниже.');
-          // Можно добавить отображение результата
-          setFeedbackText('');
+          // Добавляем ответ AI в чат
+          setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+          // Обновляем лимит
+          await checkFeedbackLimit();
+          message.success('Ответ получен!');
         } else {
-          message.error('Ошибка при анализе обратной связи');
+          message.error(data.error || 'Ошибка при анализе обратной связи');
+          // Удаляем сообщение пользователя при ошибке
+          setChatMessages(prev => prev.slice(0, -1));
         }
       } else {
-        message.error('Ошибка при отправке обратной связи');
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 429) {
+          message.error(errorData.error || 'Достигнут лимит запросов на сегодня (5 запросов в день). Попробуйте завтра.');
+          setFeedbackLimit(prev => ({ ...prev, canSend: false, remaining: 0 }));
+        } else {
+          message.error(errorData.error || 'Ошибка при отправке обратной связи');
+        }
+        // Удаляем сообщение пользователя при ошибке
+        setChatMessages(prev => prev.slice(0, -1));
       }
     } catch (error) {
       console.error('Error submitting feedback:', error);
       message.error('Произошла ошибка при отправке обратной связи');
+      // Удаляем сообщение пользователя при ошибке
+      setChatMessages(prev => prev.slice(0, -1));
     } finally {
       setLoadingFeedback(false);
     }
@@ -756,14 +844,17 @@ const PersonalPlanPage: React.FC = () => {
             </Button>
           </div>
 
-          {/* Feedback Card */}
+          {/* Feedback Chat Card */}
           <div style={{
             backgroundColor: 'white',
             borderRadius: '20px',
             padding: '30px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '600px'
           }}>
-            <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <div style={{
                 width: '60px',
                 height: '60px',
@@ -772,26 +863,107 @@ const PersonalPlanPage: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                margin: '0 auto 20px auto'
+                margin: '0 auto 15px auto'
               }}>
                 <MessageOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
               </div>
               <Title level={4} style={{ 
                 color: '#2C3E50', 
-                marginBottom: '0',
+                marginBottom: '5px',
                 fontSize: '18px',
                 fontWeight: '600'
               }}>
                 Обратная связь
               </Title>
+              <Text style={{ 
+                color: '#7B8794', 
+                fontSize: '12px',
+                display: 'block'
+              }}>
+                Осталось запросов: {feedbackLimit.remaining} из {feedbackLimit.limit}
+              </Text>
             </div>
             
+            {/* Область сообщений */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              marginBottom: '15px',
+              padding: '15px',
+              backgroundColor: '#F5F7FA',
+              borderRadius: '12px',
+              minHeight: '300px',
+              maxHeight: '400px'
+            }}>
+              {loadingChatHistory ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#7B8794' }}>
+                  Загрузка истории...
+                </div>
+              ) : chatMessages.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#7B8794' }}>
+                  <MessageOutlined style={{ fontSize: '32px', marginBottom: '10px', opacity: 0.5 }} />
+                  <div>Начните диалог о вашем опыте на сеансе</div>
+                </div>
+              ) : (
+                chatMessages.map((msg, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      marginBottom: '12px',
+                      display: 'flex',
+                      justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
+                    }}
+                  >
+                    <div
+                      style={{
+                        maxWidth: '80%',
+                        padding: '10px 15px',
+                        borderRadius: '12px',
+                        backgroundColor: msg.role === 'user' ? '#4F958B' : '#ffffff',
+                        color: msg.role === 'user' ? '#ffffff' : '#2C3E50',
+                        boxShadow: msg.role === 'assistant' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        fontSize: '14px',
+                        lineHeight: '1.5'
+                      }}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))
+              )}
+              {loadingFeedback && (
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
+                  <div style={{
+                    padding: '10px 15px',
+                    borderRadius: '12px',
+                    backgroundColor: '#ffffff',
+                    color: '#7B8794',
+                    fontSize: '14px'
+                  }}>
+                    Анализирую...
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+            
+            {/* Поле ввода */}
             <Space direction="vertical" style={{ width: '100%' }}>
               <TextArea
                 placeholder="Расскажите о вашем опыте на сеансе у психолога..."
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
-                rows={4}
+                onPressEnter={(e) => {
+                  if (e.shiftKey) return;
+                  e.preventDefault();
+                  if (!loadingFeedback && feedbackLimit.canSend) {
+                    handleFeedbackSubmit();
+                  }
+                }}
+                rows={3}
+                disabled={!feedbackLimit.canSend || loadingFeedback}
                 style={{ 
                   borderRadius: '12px',
                   resize: 'none'
@@ -801,18 +973,21 @@ const PersonalPlanPage: React.FC = () => {
                 type="primary" 
                 onClick={handleFeedbackSubmit}
                 loading={loadingFeedback}
+                disabled={!feedbackLimit.canSend}
                 style={{
                   width: '100%',
                   height: '45px',
                   borderRadius: '22px',
-                  backgroundColor: '#4F958B',
-                  borderColor: '#4F958B',
+                  backgroundColor: feedbackLimit.canSend ? '#4F958B' : '#D9D9D9',
+                  borderColor: feedbackLimit.canSend ? '#4F958B' : '#D9D9D9',
                   color: '#ffffff',
                   fontSize: '16px',
                   fontWeight: '500'
                 }}
               >
-                {loadingFeedback ? 'Анализируем...' : 'Получить обратную связь'}
+                {loadingFeedback ? 'Анализируем...' : 
+                 !feedbackLimit.canSend ? `Лимит исчерпан (${feedbackLimit.requestsToday}/${feedbackLimit.limit})` :
+                 'Получить обратную связь'}
               </Button>
             </Space>
           </div>
