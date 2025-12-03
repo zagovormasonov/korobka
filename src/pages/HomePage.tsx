@@ -310,7 +310,7 @@ const HomePage: React.FC = () => {
       </Card>
 
       {/* Кнопка Telegram */}
-      <TelegramButton style={{ marginTop: '40px' }} />
+      <TelegramButton variant="glass" style={{ marginTop: '40px' }} />
 
       {/* Ссылки внизу */}
       <div style={{ 

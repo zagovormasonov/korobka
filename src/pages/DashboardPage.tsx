@@ -1671,6 +1671,9 @@ const DashboardPage: React.FC = () => {
                 </Space>
               </div>
             </div>
+            
+            {/* Кнопка Telegram для разблокированного плана */}
+            <TelegramButton variant="solid" style={{ marginTop: '40px', marginBottom: '20px' }} />
           </div>
         ) : (
           <div>
@@ -2026,6 +2029,9 @@ const DashboardPage: React.FC = () => {
           </div>
 
 
+        {/* Кнопка Telegram для заблокированного плана */}
+        <TelegramButton variant="solid" style={{ marginTop: '40px', marginBottom: '20px' }} />
+
         {/* Модальное окно для ввода результата теста */}
         <Modal
           title={
@@ -2122,9 +2128,6 @@ const DashboardPage: React.FC = () => {
           totalSteps={3}
           stepNames={['Персональный план', 'Подготовка к сеансам с психологом и психиатром', 'PDF для психолога']}
         />
-        
-        {/* Кнопка Telegram */}
-        <TelegramButton style={{ marginTop: '40px', marginBottom: '40px' }} />
       </div>
     </div>
   );
