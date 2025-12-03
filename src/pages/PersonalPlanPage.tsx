@@ -6,7 +6,8 @@ import {
   Input, 
   Form, 
   message,
-  Space
+  Space,
+  Modal
 } from 'antd'; 
 import { apiRequest } from '../config/api'; 
 import { 
@@ -19,6 +20,7 @@ import {
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
 import TelegramButton from '../components/TelegramButton';
+import Footer from '../components/Footer';
 import { openPdf, downloadPdf } from '../utils/pdfUtils';
 
 const { Title, Text } = Typography;
@@ -49,6 +51,9 @@ const PersonalPlanPage: React.FC = () => {
     generation_completed: false
   });
   const [checkingStatus, setCheckingStatus] = useState(true);
+  
+  // Состояние для модального окна чата
+  const [chatModalVisible, setChatModalVisible] = useState(false);
   
   // Устанавливаем цвет статус-бара для градиентного фона
   useThemeColor('#c3cfe2');
@@ -851,156 +856,241 @@ const PersonalPlanPage: React.FC = () => {
             borderRadius: '20px',
             padding: '30px',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: '600px',
-            maxHeight: '600px',
-            boxSizing: 'border-box'
+            textAlign: 'center'
           }}>
-            <div style={{ textAlign: 'center', marginBottom: '20px', flexShrink: 0 }}>
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                backgroundColor: '#E8F5F3',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 15px auto'
-              }}>
-                <MessageOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
-              </div>
-              <Title level={4} style={{ 
-                color: '#2C3E50', 
-                marginBottom: '5px',
-                fontSize: '18px',
-                fontWeight: '600'
-              }}>
-                Обратная связь
-              </Title>
-              <Text style={{ 
-                color: '#7B8794', 
-                fontSize: '12px',
-                display: 'block'
-              }}>
-                Осталось запросов: {feedbackLimit.remaining} из {feedbackLimit.limit}
-              </Text>
-            </div>
-            
-            {/* Область сообщений */}
             <div style={{
-              flex: '1 1 auto',
-              overflowY: 'auto',
-              marginBottom: '15px',
-              padding: '15px',
-              backgroundColor: '#F5F7FA',
-              borderRadius: '12px',
-              minHeight: 0
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              backgroundColor: '#E8F5F3',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto'
             }}>
-              {loadingChatHistory ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#7B8794' }}>
-                  Загрузка истории...
-                </div>
-              ) : chatMessages.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#7B8794' }}>
-                  <MessageOutlined style={{ fontSize: '32px', marginBottom: '10px', opacity: 0.5 }} />
-                  <div>Начните диалог о вашем опыте на сеансе</div>
-                </div>
-              ) : (
-                chatMessages.map((msg, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      marginBottom: '12px',
-                      display: 'flex',
-                      justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
-                    }}
-                  >
-                    <div
-                      style={{
-                        maxWidth: '80%',
-                        padding: '10px 15px',
-                        borderRadius: '12px',
-                        backgroundColor: msg.role === 'user' ? '#4F958B' : '#ffffff',
-                        color: msg.role === 'user' ? '#ffffff' : '#2C3E50',
-                        boxShadow: msg.role === 'assistant' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                        fontSize: '14px',
-                        lineHeight: '1.5'
-                      }}
-                    >
-                      {msg.content}
-                    </div>
-                  </div>
-                ))
-              )}
-              {loadingFeedback && (
-                <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
-                  <div style={{
-                    padding: '10px 15px',
-                    borderRadius: '12px',
-                    backgroundColor: '#ffffff',
-                    color: '#7B8794',
-                    fontSize: '14px'
-                  }}>
-                    Анализирую...
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+              <MessageOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
             </div>
-            
-            {/* Поле ввода */}
-            <Space direction="vertical" style={{ width: '100%', boxSizing: 'border-box', flexShrink: 0 }}>
-              <TextArea
-                placeholder="Расскажите о вашем опыте на сеансе у психолога..."
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                onPressEnter={(e) => {
-                  if (e.shiftKey) return;
-                  e.preventDefault();
-                  if (!loadingFeedback && feedbackLimit.canSend) {
-                    handleFeedbackSubmit();
-                  }
-                }}
-                rows={3}
-                disabled={!feedbackLimit.canSend || loadingFeedback}
-                style={{ 
-                  borderRadius: '12px',
-                  resize: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <Button 
-                type="primary" 
-                onClick={handleFeedbackSubmit}
-                loading={loadingFeedback}
-                disabled={!feedbackLimit.canSend}
-                style={{
-                  width: '100%',
-                  height: '45px',
-                  borderRadius: '22px',
-                  backgroundColor: feedbackLimit.canSend ? '#4F958B' : '#D9D9D9',
-                  borderColor: feedbackLimit.canSend ? '#4F958B' : '#D9D9D9',
-                  color: '#ffffff',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  boxSizing: 'border-box',
-                  margin: 0
-                }}
-              >
-                {loadingFeedback ? 'Анализируем...' : 
-                 !feedbackLimit.canSend ? `Лимит исчерпан (${feedbackLimit.requestsToday}/${feedbackLimit.limit})` :
-                 'Получить обратную связь'}
-              </Button>
-            </Space>
+            <Title level={4} style={{ 
+              color: '#2C3E50', 
+              marginBottom: '15px',
+              fontSize: '18px',
+              fontWeight: '600'
+            }}>
+              Обратная связь
+            </Title>
+            <Text style={{ 
+              color: '#7B8794', 
+              fontSize: '14px',
+              display: 'block',
+              marginBottom: '25px',
+              lineHeight: '1.5'
+            }}>
+              Получите персональную обратную связь от AI о вашем опыте на сеансе у психолога
+            </Text>
+            <Text style={{ 
+              color: '#7B8794', 
+              fontSize: '12px',
+              display: 'block',
+              marginBottom: '25px'
+            }}>
+              Осталось запросов: {feedbackLimit.remaining} из {feedbackLimit.limit}
+            </Text>
+            <Button 
+              type="primary"
+              onClick={() => setChatModalVisible(true)}
+              style={{
+                width: '100%',
+                height: '45px',
+                borderRadius: '22px',
+                backgroundColor: '#4F958B',
+                borderColor: '#4F958B',
+                color: '#ffffff',
+                fontSize: '16px',
+                fontWeight: '500'
+              }}
+            >
+              Открыть чат
+            </Button>
           </div>
         </div>
         
         {/* Кнопка Telegram */}
         <TelegramButton variant="solid" style={{ marginTop: '40px', marginBottom: '20px' }} />
+        
+        {/* Футер со ссылками */}
+        <Footer />
       </div>
+      
+      {/* Модальное окно чата */}
+      <Modal
+        title={null}
+        open={chatModalVisible}
+        onCancel={() => setChatModalVisible(false)}
+        footer={null}
+        width="90%"
+        style={{ maxWidth: '800px', top: 20 }}
+        styles={{
+          content: {
+            borderRadius: '20px',
+            padding: 0,
+            maxHeight: '90vh',
+            overflow: 'hidden'
+          },
+          body: {
+            padding: 0,
+            height: 'calc(90vh - 60px)',
+            display: 'flex',
+            flexDirection: 'column'
+          }
+        }}
+      >
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          height: '100%',
+          padding: '30px'
+        }}>
+          {/* Заголовок чата */}
+          <div style={{ textAlign: 'center', marginBottom: '20px', flexShrink: 0 }}>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              backgroundColor: '#E8F5F3',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 15px auto'
+            }}>
+              <MessageOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
+            </div>
+            <Title level={4} style={{ 
+              color: '#2C3E50', 
+              marginBottom: '5px',
+              fontSize: '18px',
+              fontWeight: '600'
+            }}>
+              Обратная связь
+            </Title>
+            <Text style={{ 
+              color: '#7B8794', 
+              fontSize: '12px',
+              display: 'block'
+            }}>
+              Осталось запросов: {feedbackLimit.remaining} из {feedbackLimit.limit}
+            </Text>
+          </div>
+          
+          {/* Область сообщений */}
+          <div style={{
+            flex: '1 1 auto',
+            overflowY: 'auto',
+            marginBottom: '15px',
+            padding: '15px',
+            backgroundColor: '#F5F7FA',
+            borderRadius: '12px',
+            minHeight: 0
+          }}>
+            {loadingChatHistory ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#7B8794' }}>
+                Загрузка истории...
+              </div>
+            ) : chatMessages.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#7B8794' }}>
+                <MessageOutlined style={{ fontSize: '32px', marginBottom: '10px', opacity: 0.5 }} />
+                <div>Начните диалог о вашем опыте на сеансе</div>
+              </div>
+            ) : (
+              chatMessages.map((msg, index) => (
+                <div
+                  key={index}
+                  style={{
+                    marginBottom: '12px',
+                    display: 'flex',
+                    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
+                  }}
+                >
+                  <div
+                    style={{
+                      maxWidth: '80%',
+                      padding: '10px 15px',
+                      borderRadius: '12px',
+                      backgroundColor: msg.role === 'user' ? '#4F958B' : '#ffffff',
+                      color: msg.role === 'user' ? '#ffffff' : '#2C3E50',
+                      boxShadow: msg.role === 'assistant' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      fontSize: '14px',
+                      lineHeight: '1.5'
+                    }}
+                  >
+                    {msg.content}
+                  </div>
+                </div>
+              ))
+            )}
+            {loadingFeedback && (
+              <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
+                <div style={{
+                  padding: '10px 15px',
+                  borderRadius: '12px',
+                  backgroundColor: '#ffffff',
+                  color: '#7B8794',
+                  fontSize: '14px'
+                }}>
+                  Анализирую...
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+          
+          {/* Поле ввода */}
+          <Space direction="vertical" style={{ width: '100%', boxSizing: 'border-box', flexShrink: 0 }}>
+            <TextArea
+              placeholder="Расскажите о вашем опыте на сеансе у психолога..."
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              onPressEnter={(e) => {
+                if (e.shiftKey) return;
+                e.preventDefault();
+                if (!loadingFeedback && feedbackLimit.canSend) {
+                  handleFeedbackSubmit();
+                }
+              }}
+              rows={3}
+              disabled={!feedbackLimit.canSend || loadingFeedback}
+              style={{ 
+                borderRadius: '12px',
+                resize: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+            <Button 
+              type="primary" 
+              onClick={handleFeedbackSubmit}
+              loading={loadingFeedback}
+              disabled={!feedbackLimit.canSend}
+              style={{
+                width: '100%',
+                height: '45px',
+                borderRadius: '22px',
+                backgroundColor: feedbackLimit.canSend ? '#4F958B' : '#D9D9D9',
+                borderColor: feedbackLimit.canSend ? '#4F958B' : '#D9D9D9',
+                color: '#ffffff',
+                fontSize: '16px',
+                fontWeight: '500',
+                boxSizing: 'border-box',
+                margin: 0
+              }}
+            >
+              {loadingFeedback ? 'Анализируем...' : 
+               !feedbackLimit.canSend ? `Лимит исчерпан (${feedbackLimit.requestsToday}/${feedbackLimit.limit})` :
+               'Получить обратную связь'}
+            </Button>
+          </Space>
+        </div>
+      </Modal>
     </div>
   );
 };
