@@ -18,6 +18,7 @@ import {
 } from '@ant-design/icons';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
+import TelegramButton from '../components/TelegramButton';
 import { openPdf, downloadPdf } from '../utils/pdfUtils';
 
 const { Title, Text } = Typography;
@@ -996,6 +997,9 @@ const PersonalPlanPage: React.FC = () => {
             </Space>
           </div>
         </div>
+        
+        {/* Кнопка Telegram */}
+        <TelegramButton variant="solid" style={{ marginTop: '40px', marginBottom: '20px' }} />
       </div>
     </div>
   );
