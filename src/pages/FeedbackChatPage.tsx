@@ -149,18 +149,35 @@ const FeedbackChatPage: React.FC = () => {
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
+        console.error('❌ [FEEDBACK CHAT] Ошибка ответа сервера:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        
         if (response.status === 429) {
           message.error(errorData.error || 'Достигнут лимит запросов на сегодня (5 запросов в день). Попробуйте завтра.');
           setFeedbackLimit(prev => ({ ...prev, canSend: false, remaining: 0 }));
+        } else if (response.status === 404) {
+          message.error('Данные сессии не найдены. Пожалуйста, пройдите тест заново.');
+        } else if (response.status === 500) {
+          message.error(errorData.error || 'Ошибка сервера. Попробуйте позже.');
         } else {
-          message.error(errorData.error || 'Ошибка при отправке обратной связи');
+          message.error(errorData.error || `Ошибка ${response.status}: ${response.statusText}`);
         }
         // Удаляем сообщение пользователя при ошибке
         setChatMessages(prev => prev.slice(0, -1));
       }
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      message.error('Произошла ошибка при отправке обратной связи');
+    } catch (error: any) {
+      console.error('❌ [FEEDBACK CHAT] Критическая ошибка:', error);
+      console.error('❌ [FEEDBACK CHAT] Stack:', error.stack);
+      
+      let errorMessage = 'Произошла ошибка при отправке обратной связи';
+      if (error.message) {
+        errorMessage += ': ' + error.message;
+      }
+      message.error(errorMessage);
+      
       // Удаляем сообщение пользователя при ошибке
       setChatMessages(prev => prev.slice(0, -1));
     } finally {

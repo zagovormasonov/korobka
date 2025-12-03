@@ -834,7 +834,14 @@ router.post('/session-feedback', async (req, res) => {
   try {
     const { sessionId, message, history } = req.body;
     
+    console.log('📥 [FEEDBACK-CHAT] Получен запрос:', { 
+      sessionId, 
+      messageLength: message?.length,
+      historyLength: history?.length 
+    });
+    
     if (!message || !message.trim()) {
+      console.log('❌ [FEEDBACK-CHAT] Пустое сообщение');
       return res.status(400).json({ success: false, error: 'Сообщение не может быть пустым' });
     }
 
@@ -842,6 +849,7 @@ router.post('/session-feedback', async (req, res) => {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
     
+    console.log('🔢 [FEEDBACK-CHAT] Проверяем лимит для sessionId:', sessionId);
     const { count, error: limitError } = await supabase
       .from('feedback_chat_messages')
       .select('*', { count: 'exact', head: true })
@@ -850,12 +858,15 @@ router.post('/session-feedback', async (req, res) => {
       .gte('created_at', today.toISOString());
 
     if (limitError) {
-      console.error('Error checking limit:', limitError);
+      console.error('❌ [FEEDBACK-CHAT] Ошибка проверки лимита:', limitError);
       return res.status(500).json({ success: false, error: 'Ошибка проверки лимита' });
     }
 
     const requestsToday = count || 0;
+    console.log('📊 [FEEDBACK-CHAT] Запросов сегодня:', requestsToday);
+    
     if (requestsToday >= 5) {
+      console.log('⚠️ [FEEDBACK-CHAT] Лимит превышен');
       return res.status(429).json({ 
         success: false, 
         error: 'Достигнут лимит запросов на сегодня (5 запросов в день). Попробуйте завтра.' 
@@ -863,15 +874,24 @@ router.post('/session-feedback', async (req, res) => {
     }
     
     // Получаем результаты первичного теста
+    console.log('📥 [FEEDBACK-CHAT] Загружаем данные теста для sessionId:', sessionId);
     const { data: primaryTest, error: primaryError } = await supabase
       .from('primary_test_results')
       .select('answers, email')
       .eq('session_id', sessionId)
       .single();
 
-    if (primaryError || !primaryTest) {
-      return res.status(404).json({ success: false, error: 'Primary test results not found' });
+    if (primaryError) {
+      console.error('❌ [FEEDBACK-CHAT] Ошибка загрузки теста:', primaryError);
+      return res.status(404).json({ success: false, error: 'Результаты теста не найдены: ' + primaryError.message });
     }
+    
+    if (!primaryTest) {
+      console.error('❌ [FEEDBACK-CHAT] Тест не найден для sessionId:', sessionId);
+      return res.status(404).json({ success: false, error: 'Результаты теста не найдены' });
+    }
+    
+    console.log('✅ [FEEDBACK-CHAT] Данные теста загружены');
 
     const primaryAnswers = primaryTest.answers;
     const userEmail = primaryTest.email;
@@ -966,8 +986,17 @@ ${historyContext}
 ФОРМАТ ОТВЕТА: Только чистый текст без markdown форматирования, без символов #, **, и других markdown элементов.`;
 
     console.log('🚀 [FEEDBACK-CHAT] Отправляем запрос к Gemini API...');
-    let analysis = await callGeminiAI(prompt, 8000);
-    console.log('✅ [FEEDBACK-CHAT] Получен ответ от Gemini');
+    let analysis;
+    try {
+      analysis = await callGeminiAI(prompt, 8000);
+      console.log('✅ [FEEDBACK-CHAT] Получен ответ от Gemini, длина:', analysis?.length);
+    } catch (geminiError) {
+      console.error('❌ [FEEDBACK-CHAT] Ошибка Gemini API:', geminiError);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Ошибка при генерации ответа: ' + geminiError.message 
+      });
+    }
     
     // Убираем markdown форматирование из ответа
     analysis = analysis
@@ -982,6 +1011,7 @@ ${historyContext}
       .replace(/^\d+\.\s+/gm, '') // Убираем нумерацию списков
       .trim();
     
+    console.log('💾 [FEEDBACK-CHAT] Сохраняем сообщение пользователя...');
     // Сохраняем сообщение пользователя
     const { error: userMsgError } = await supabase
       .from('feedback_chat_messages')
@@ -992,9 +1022,15 @@ ${historyContext}
       });
 
     if (userMsgError) {
-      console.error('Error saving user message:', userMsgError);
+      console.error('❌ [FEEDBACK-CHAT] Ошибка сохранения сообщения пользователя:', userMsgError);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Ошибка сохранения сообщения: ' + userMsgError.message 
+      });
     }
+    console.log('✅ [FEEDBACK-CHAT] Сообщение пользователя сохранено');
 
+    console.log('💾 [FEEDBACK-CHAT] Сохраняем ответ AI...');
     // Сохраняем ответ AI
     const { error: aiMsgError } = await supabase
       .from('feedback_chat_messages')
@@ -1005,8 +1041,13 @@ ${historyContext}
       });
 
     if (aiMsgError) {
-      console.error('Error saving AI message:', aiMsgError);
+      console.error('❌ [FEEDBACK-CHAT] Ошибка сохранения ответа AI:', aiMsgError);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Ошибка сохранения ответа: ' + aiMsgError.message 
+      });
     }
+    console.log('✅ [FEEDBACK-CHAT] Ответ AI сохранён');
 
     // Также сохраняем в старую таблицу для обратной совместимости
     const { error: insertError } = await supabase
@@ -1018,13 +1059,15 @@ ${historyContext}
       });
 
     if (insertError) {
-      console.error('Error saving feedback (legacy):', insertError);
+      console.error('⚠️ [FEEDBACK-CHAT] Ошибка сохранения в legacy таблицу (не критично):', insertError);
     }
 
+    console.log('✅ [FEEDBACK-CHAT] Запрос обработан успешно');
     res.json({ success: true, response: analysis, requestsRemaining: Math.max(0, 4 - requestsToday) });
   } catch (error) {
-    console.error('Error processing feedback:', error);
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ [FEEDBACK-CHAT] Критическая ошибка:', error);
+    console.error('❌ [FEEDBACK-CHAT] Stack trace:', error.stack);
+    res.status(500).json({ success: false, error: error.message || 'Внутренняя ошибка сервера' });
   }
 });
 
