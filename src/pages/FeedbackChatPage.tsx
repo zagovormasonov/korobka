@@ -171,20 +171,26 @@ const FeedbackChatPage: React.FC = () => {
   return (
     <div style={{
       height: '100vh',
+      width: '100vw',
       background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-      display: 'flex',
-      flexDirection: 'column',
+      position: 'fixed',
+      top: 0,
+      left: 0,
       overflow: 'hidden'
     }}>
       {/* Шапка - фиксированная */}
       <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
         backgroundColor: 'white',
         padding: '20px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         display: 'flex',
         alignItems: 'center',
         gap: '16px',
-        flexShrink: 0
+        zIndex: 10
       }}>
         <ArrowLeftOutlined 
           style={{ 
@@ -214,10 +220,15 @@ const FeedbackChatPage: React.FC = () => {
 
       {/* Область сообщений - прокручивается */}
       <div style={{
-        flex: 1,
+        position: 'fixed',
+        top: '80px',
+        left: 0,
+        right: 0,
+        bottom: '100px',
         overflowY: 'auto',
         overflowX: 'hidden',
-        padding: '20px'
+        padding: '20px',
+        WebkitOverflowScrolling: 'touch'
       }}>
         {loadingChatHistory ? (
           <div style={{ 
@@ -292,12 +303,16 @@ const FeedbackChatPage: React.FC = () => {
         )}
       </div>
 
-      {/* Поле ввода - фиксированное */}
+      {/* Поле ввода - фиксированное внизу */}
       <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
         backgroundColor: 'white',
         padding: '16px 20px',
         boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
-        flexShrink: 0
+        zIndex: 10
       }}>
         <div style={{ 
           maxWidth: '800px', 
