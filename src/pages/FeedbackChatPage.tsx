@@ -144,19 +144,21 @@ const FeedbackChatPage: React.FC = () => {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
       background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      overflow: 'hidden'
     }}>
-      {/* Шапка */}
+      {/* Шапка - фиксированная */}
       <div style={{
         backgroundColor: 'white',
         padding: '20px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         display: 'flex',
         alignItems: 'center',
-        gap: '16px'
+        gap: '16px',
+        flexShrink: 0
       }}>
         <ArrowLeftOutlined 
           style={{ 
@@ -184,17 +186,16 @@ const FeedbackChatPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Область сообщений */}
+      {/* Область сообщений - прокручивается */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column'
+        overflowX: 'hidden',
+        padding: '20px'
       }}>
         {loadingChatHistory ? (
           <div style={{ 
-            flex: 1,
+            height: '100%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -204,7 +205,7 @@ const FeedbackChatPage: React.FC = () => {
           </div>
         ) : chatMessages.length === 0 ? (
           <div style={{ 
-            flex: 1,
+            height: '100%',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -265,11 +266,12 @@ const FeedbackChatPage: React.FC = () => {
         )}
       </div>
 
-      {/* Поле ввода */}
+      {/* Поле ввода - фиксированное */}
       <div style={{
         backgroundColor: 'white',
         padding: '16px 20px',
-        boxShadow: '0 -2px 8px rgba(0,0,0,0.1)'
+        boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
+        flexShrink: 0
       }}>
         <div style={{ 
           maxWidth: '800px', 
