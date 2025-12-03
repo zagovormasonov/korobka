@@ -21,6 +21,7 @@ import {
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
 import GenerationAnimation from '../components/GenerationAnimation';
+import TelegramButton from '../components/TelegramButton';
 import { openPdf, downloadPdf } from '../utils/pdfUtils';
 
 const { Title, Text } = Typography;
@@ -2121,6 +2122,9 @@ const DashboardPage: React.FC = () => {
           totalSteps={3}
           stepNames={['Персональный план', 'Подготовка к сеансам с психологом и психиатром', 'PDF для психолога']}
         />
+        
+        {/* Кнопка Telegram */}
+        <TelegramButton style={{ marginTop: '40px', marginBottom: '40px' }} />
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import Silk from '../components/Silk';
 import { apiRequest } from '../config/api';
 import { useThemeColor } from '../hooks/useThemeColor';
+import TelegramButton from '../components/TelegramButton';
 import { useAuth } from '../hooks/useAuth';
 
 const { Title } = Typography;
@@ -307,6 +308,9 @@ const HomePage: React.FC = () => {
           </Form.Item>
         </Form>
       </Card>
+
+      {/* Кнопка Telegram */}
+      <TelegramButton style={{ marginTop: '40px' }} />
 
       {/* Ссылки внизу */}
       <div style={{ 
