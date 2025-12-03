@@ -40,6 +40,17 @@ const FeedbackChatPage: React.FC = () => {
     }
   }, [authData?.sessionId]);
 
+  // Добавляем приветственное сообщение для новых чатов
+  useEffect(() => {
+    if (!loadingChatHistory && chatMessages.length === 0) {
+      const welcomeMessage = {
+        role: 'assistant' as const,
+        content: 'Здравствуйте! Данный чат посвящён обратной связи в ответ на то, как прошёл сеанс со специалистом. Вы можете отправить 5 запросов (1 запрос = описание 1 сеанса) и получить обратную связь'
+      };
+      setChatMessages([welcomeMessage]);
+    }
+  }, [loadingChatHistory, chatMessages.length]);
+
   const loadChatHistory = async () => {
     if (!authData?.sessionId) {
       console.log('⚠️ [FEEDBACK CHAT] Нет sessionId для загрузки истории');
