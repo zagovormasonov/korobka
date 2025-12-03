@@ -10,13 +10,21 @@ const { TextArea } = Input;
 
 const FeedbackChatPage: React.FC = () => {
   const navigate = useNavigate();
-  const { authData } = useAuth();
+  const { authData, isAuthenticated, isLoading } = useAuth();
   const [feedbackText, setFeedbackText] = useState('');
   const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [loadingChatHistory, setLoadingChatHistory] = useState(false);
   const [feedbackLimit, setFeedbackLimit] = useState({ requestsToday: 0, limit: 5, remaining: 5, canSend: true });
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Проверка авторизации
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      message.error('Необходимо войти в личный кабинет');
+      navigate('/lk/login', { replace: true });
+    }
+  }, [isLoading, isAuthenticated, navigate]);
 
   // Прокрутка к последнему сообщению
   useEffect(() => {
@@ -25,13 +33,20 @@ const FeedbackChatPage: React.FC = () => {
 
   // Загрузка истории чата
   useEffect(() => {
-    loadChatHistory();
-    checkFeedbackLimit();
-  }, []);
+    if (authData?.sessionId) {
+      console.log('📥 [FEEDBACK CHAT] Загружаем историю чата для sessionId:', authData.sessionId);
+      loadChatHistory();
+      checkFeedbackLimit();
+    }
+  }, [authData?.sessionId]);
 
   const loadChatHistory = async () => {
-    if (!authData?.sessionId) return;
+    if (!authData?.sessionId) {
+      console.log('⚠️ [FEEDBACK CHAT] Нет sessionId для загрузки истории');
+      return;
+    }
     
+    console.log('📥 [FEEDBACK CHAT] Загружаем историю чата...');
     setLoadingChatHistory(true);
     try {
       const response = await apiRequest(`api/ai/session-feedback/history/${authData.sessionId}`, {
@@ -40,24 +55,32 @@ const FeedbackChatPage: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ [FEEDBACK CHAT] История чата загружена:', data);
         if (data.success && data.messages) {
           const formattedMessages = data.messages.map((msg: any) => ({
             role: msg.role,
             content: msg.content
           }));
           setChatMessages(formattedMessages);
+          console.log('💬 [FEEDBACK CHAT] Установлено сообщений:', formattedMessages.length);
         }
+      } else {
+        console.error('❌ [FEEDBACK CHAT] Ошибка загрузки истории:', response.status);
       }
     } catch (error) {
-      console.error('Error loading chat history:', error);
+      console.error('❌ [FEEDBACK CHAT] Ошибка при загрузке истории чата:', error);
     } finally {
       setLoadingChatHistory(false);
     }
   };
 
   const checkFeedbackLimit = async () => {
-    if (!authData?.sessionId) return;
+    if (!authData?.sessionId) {
+      console.log('⚠️ [FEEDBACK CHAT] Нет sessionId для проверки лимита');
+      return;
+    }
     
+    console.log('🔢 [FEEDBACK CHAT] Проверяем лимит запросов...');
     try {
       const response = await apiRequest(`api/ai/session-feedback/limit/${authData.sessionId}`, {
         method: 'GET',
@@ -65,12 +88,15 @@ const FeedbackChatPage: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ [FEEDBACK CHAT] Лимит загружен:', data);
         if (data.success) {
           setFeedbackLimit(data);
         }
+      } else {
+        console.error('❌ [FEEDBACK CHAT] Ошибка проверки лимита:', response.status);
       }
     } catch (error) {
-      console.error('Error checking feedback limit:', error);
+      console.error('❌ [FEEDBACK CHAT] Ошибка при проверке лимита:', error);
     }
   };
 
