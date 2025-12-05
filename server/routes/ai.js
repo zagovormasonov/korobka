@@ -129,7 +129,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     // Создаем клиент Google AI
     console.log('🔧 Создаем клиент Google AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = "gemini-3.0-pro"; // Последняя версия модели
+    const modelName = "gemini-3-pro-preview"; // Gemini 3.0 Pro (preview)
     console.log(`🤖 Получаем модель ${modelName}...`);
     const model = genAI.getGenerativeModel({ model: modelName });
     
