@@ -84,7 +84,7 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
       throw new Error('GEMINI_API_KEY не установлен в переменных окружения');
     }
 
-    // Создаем клиент Google AI
+    // Создаем клиент Google AI (для fallback моделей)
     const genAI = new GoogleGenerativeAI(apiKey);
     
     // Сохраняем пути загруженных файлов для последующего удаления
@@ -120,14 +120,14 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
       }
     }
 
-    // Пробуем разные модели с fallback (начиная с Gemini 2.5 Pro - самая новая стабильная)
-    // Только проверенные модели, которые существуют в API v1
-    // Примечание: gemini-3-pro-preview недоступна в v1 API (требует v1beta)
+    // Пробуем разные модели с fallback (начиная с Gemini 3.0 Pro Preview)
+    // Используем v1beta API для доступа к preview моделям
     const models = [
-      'gemini-2.5-pro',           // Последняя стабильная версия (самая мощная в v1)
-      'gemini-2.0-flash-exp',     // Экспериментальная 2.0
-      'gemini-1.5-flash',         // Стабильная быстрая модель
-      'gemini-1.5-flash-8b'       // Легкая модель
+      'models/gemini-3-pro-preview', // Gemini 3.0 Pro (v1beta)
+      'gemini-2.5-pro',              // Fallback на 2.5 Pro
+      'gemini-2.0-flash-exp',        // Экспериментальная 2.0
+      'gemini-1.5-flash',            // Стабильная быстрая модель
+      'gemini-1.5-flash-8b'          // Легкая модель
     ];
     
     let result;
@@ -138,6 +138,80 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
         console.log(`🤖 [${requestId}] Пробуем модель ${modelName}...`);
         console.log(`📊 [${requestId}] Количество частей в запросе: ${parts.length} (текст: ${parts.filter(p => p.text).length}, файлы: ${parts.filter(p => p.inlineData).length})`);
         
+        // Для preview моделей используем прямой вызов v1beta API
+        if (modelName === 'models/gemini-3-pro-preview') {
+          console.log(`🔧 [${requestId}] Используем v1beta API для preview модели`);
+          
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
+          
+          const requestBody = {
+            contents: [{
+              parts: parts
+            }],
+            generationConfig: {
+              maxOutputTokens: 8192
+            }
+          };
+          
+          // Если есть история, добавляем её
+          if (history && history !== '[]' && history !== '') {
+            let parsedHistory;
+            try {
+              parsedHistory = JSON.parse(history);
+            } catch (parseError) {
+              console.error('❌ Ошибка парсинга истории:', parseError);
+              parsedHistory = [];
+            }
+            
+            if (parsedHistory.length > 0) {
+              requestBody.contents = parsedHistory.map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+              }));
+              requestBody.contents.push({ parts: parts });
+            }
+          }
+          
+          console.log('🚀 Отправляем запрос к v1beta API...');
+          const startTime = Date.now();
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+          });
+          
+          const elapsed = Date.now() - startTime;
+          console.log(`⏱️ Время ответа v1beta API: ${(elapsed / 1000).toFixed(2)}с`);
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`v1beta API error: ${JSON.stringify(errorData)}`);
+          }
+          
+          const data = await response.json();
+          const text = data.candidates[0].content.parts[0].text;
+          
+          console.log(`✅ [${requestId}] Ответ получен от ${modelName}, длина:`, text.length, 'символов');
+          
+          if (res.headersSent) {
+            console.error(`⚠️ [${requestId}] Заголовки уже отправлены! Пропускаем отправку ответа.`);
+            return;
+          }
+          
+          res.setHeader('Content-Type', 'application/json; charset=utf-8');
+          res.status(200).json({
+            success: true,
+            response: text,
+            model: modelName
+          });
+          
+          console.log(`📤 [${requestId}] JSON ответ отправлен клиенту успешно`);
+          return;
+        }
+        
+        // Для остальных моделей используем обычный SDK
         const model = genAI.getGenerativeModel({ 
           model: modelName,
           generationConfig: {
