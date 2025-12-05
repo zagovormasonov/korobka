@@ -120,10 +120,11 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
       }
     }
 
-    // Пробуем разные модели с fallback (начиная с Gemini 2.5 Pro)
+    // Пробуем разные модели с fallback (начиная с Gemini 3.0 Pro)
     // Только проверенные модели, которые существуют в API v1
     const models = [
-      'gemini-2.5-pro',           // Последняя версия 2.5 Pro
+      'gemini-3.0-pro',           // Последняя версия 3.0 Pro (если существует)
+      'gemini-2.5-pro',           // Последняя версия 2.5 Pro (fallback)
       'gemini-2.0-flash-exp',     // Экспериментальная 2.0
       'gemini-1.5-flash',         // Стабильная быстрая модель
       'gemini-1.5-flash-8b'       // Легкая модель

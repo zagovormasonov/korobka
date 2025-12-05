@@ -129,7 +129,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     // Создаем клиент Google AI
     console.log('🔧 Создаем клиент Google AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = "gemini-2.5-pro"; // Точное название из AI Studio
+    const modelName = "gemini-3.0-pro"; // Последняя версия модели
     console.log(`🤖 Получаем модель ${modelName}...`);
     const model = genAI.getGenerativeModel({ model: modelName });
     
@@ -160,6 +160,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       
       // Список альтернативных моделей для попытки (от новых к старым)
       const alternativeModels = [
+        'gemini-2.5-pro',         // Fallback на 2.5 Pro
         'gemini-1.5-pro-latest',  // Стабильная 1.5 Pro (последняя версия)
         'gemini-1.5-pro',         // Стабильная 1.5 Pro
         'gemini-1.5-flash',       // Быстрая 1.5
@@ -197,7 +198,7 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       delete process.env.HTTPS_PROXY;
       
       // Пробуем альтернативные модели без прокси
-      const fallbackModels = ['gemini-1.5-pro-latest', 'gemini-1.5-pro', 'gemini-pro'];
+      const fallbackModels = ['gemini-2.5-pro', 'gemini-1.5-pro-latest', 'gemini-1.5-pro', 'gemini-pro'];
       
       for (const modelName of fallbackModels) {
         try {
