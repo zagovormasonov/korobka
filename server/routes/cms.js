@@ -321,8 +321,8 @@ router.get('/users', checkAuth, async (req, res) => {
         funnel: {
           started: hasTestStart || answersCount > 0, // Либо событие, либо есть ответы
           questionsAnswered: answersCount,
-          totalQuestions: 60, // Общее количество вопросов в первичном тесте
-          completed: hasTestComplete || answersCount >= 60, // Событие или >= 60 ответов
+          totalQuestions: 45, // Общее количество вопросов в первичном тесте
+          completed: hasTestComplete || answersCount >= 45, // Событие или >= 45 ответов
           paid: hasPayment || user.personal_plan_unlocked
         }
       };
