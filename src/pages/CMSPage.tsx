@@ -240,24 +240,6 @@ const CMSPage: React.FC = () => {
     }
   };
 
-  const fetchUsers = async () => {
-    const token = localStorage.getItem('cms_token');
-    if (!token) return;
-    
-    try {
-      const response = await apiRequest('api/cms/users', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || []);
-      }
-    } catch (error) {
-      console.error('Ошибка получения списка пользователей:', error);
-    }
-  };
-
   const fetchFunnelData = async (token: string) => {
     try {
       const response = await apiRequest(`api/cms/stats/funnel?period=${funnelPeriod}`, { 
