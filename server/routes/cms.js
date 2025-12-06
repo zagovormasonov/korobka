@@ -340,12 +340,12 @@ router.get('/users', checkAuth, async (req, res) => {
   }
 });
 
-// График активности по времени суток
+// График активности по времени
 router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
   try {
-    const { period = 'day' } = req.query; // day, week, month
+    const { period = 'day', pages = 'all' } = req.query; // day, week, month
     
-    console.log('📊 [CMS] Получение активности по часам за период:', period);
+    console.log('📊 [CMS] Получение активности за период:', period, 'страницы:', pages);
     
     // Определяем временной диапазон
     let dateFilter = null;
@@ -362,7 +362,7 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
     // Получаем heartbeat события за выбранный период
     let query = supabase
       .from('analytics_events')
-      .select('created_at, session_id')
+      .select('created_at, session_id, page_url')
       .eq('event_type', 'heartbeat');
     
     if (dateFilter) {
@@ -373,38 +373,100 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
     
     if (error) throw error;
     
-    // Группируем по часам (0-23)
-    const hourlyActivity = new Array(24).fill(0).map((_, hour) => ({
-      hour: hour,
-      label: `${hour}:00`,
-      users: new Set() // Используем Set для уникальных пользователей
-    }));
+    // Фильтруем события по страницам, если указаны фильтры
+    let filteredEvents = events || [];
+    if (pages && pages !== 'all') {
+      const pageFilters = pages.split(',');
+      filteredEvents = events?.filter(event => {
+        const url = event.page_url || '';
+        
+        if (pageFilters.includes('homepage') && url === '/') return true;
+        if (pageFilters.includes('test') && (url.startsWith('/test') || url.startsWith('/bpd-test'))) return true;
+        if (pageFilters.includes('dashboard') && (url.startsWith('/dashboard') || url.startsWith('/personal-plan') || url.startsWith('/feedback-chat'))) return true;
+        if (pageFilters.includes('other') && url !== '/' && !url.startsWith('/test') && !url.startsWith('/bpd-test') && !url.startsWith('/dashboard') && !url.startsWith('/personal-plan') && !url.startsWith('/feedback-chat')) return true;
+        
+        return false;
+      }) || [];
+    }
     
-    // Обрабатываем события
-    events?.forEach(event => {
-      const date = new Date(event.created_at);
-      const hour = date.getHours();
-      hourlyActivity[hour].users.add(event.session_id);
-    });
+    let activityData = [];
     
-    // Конвертируем Set в count
-    const activityData = hourlyActivity.map(item => ({
-      hour: item.hour,
-      label: item.label,
-      users: item.users.size,
-      avg: item.users.size // Для совместимости с графиком
-    }));
+    // Группируем данные в зависимости от периода
+    if (period === 'day') {
+      // За сутки: по часам (0-23)
+      const hourlyActivity = new Array(24).fill(0).map((_, hour) => ({
+        index: hour,
+        label: `${hour}:00`,
+        users: new Set()
+      }));
+      
+      filteredEvents.forEach(event => {
+        const date = new Date(event.created_at);
+        const hour = date.getHours();
+        hourlyActivity[hour].users.add(event.session_id);
+      });
+      
+      activityData = hourlyActivity.map(item => ({
+        index: item.index,
+        label: item.label,
+        users: item.users.size
+      }));
+      
+    } else if (period === 'week') {
+      // За неделю: по дням недели (Пн-Вс)
+      const weekDays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+      const weeklyActivity = weekDays.map((day, index) => ({
+        index: index,
+        label: day,
+        users: new Set()
+      }));
+      
+      filteredEvents.forEach(event => {
+        const date = new Date(event.created_at);
+        const dayOfWeek = date.getDay();
+        weeklyActivity[dayOfWeek].users.add(event.session_id);
+      });
+      
+      activityData = weeklyActivity.map(item => ({
+        index: item.index,
+        label: item.label,
+        users: item.users.size
+      }));
+      
+    } else if (period === 'month') {
+      // За месяц: по дням месяца (1-31)
+      const daysInMonth = 31;
+      const monthlyActivity = Array.from({ length: daysInMonth }, (_, i) => ({
+        index: i + 1,
+        label: `${i + 1}`,
+        users: new Set()
+      }));
+      
+      filteredEvents.forEach(event => {
+        const date = new Date(event.created_at);
+        const dayOfMonth = date.getDate();
+        if (dayOfMonth >= 1 && dayOfMonth <= daysInMonth) {
+          monthlyActivity[dayOfMonth - 1].users.add(event.session_id);
+        }
+      });
+      
+      activityData = monthlyActivity.map(item => ({
+        index: item.index,
+        label: item.label,
+        users: item.users.size
+      }));
+    }
     
-    console.log(`✅ [CMS] Данные активности по часам сформированы`);
+    console.log(`✅ [CMS] Данные активности сформированы: ${activityData.length} точек`);
     
     res.json({
       success: true,
       data: activityData,
       period,
-      totalEvents: events?.length || 0
+      totalEvents: filteredEvents.length
     });
   } catch (error) {
-    console.error('❌ [CMS] Ошибка получения активности по часам:', error);
+    console.error('❌ [CMS] Ошибка получения активности:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

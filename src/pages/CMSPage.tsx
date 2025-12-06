@@ -17,7 +17,8 @@ import {
   Tag,
   Space,
   Tooltip,
-  Switch
+  Switch,
+  Checkbox
 } from 'antd';
 import { 
   PieChart, 
@@ -45,8 +46,7 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined,
-  ClockCircleOutlined
+  CloseCircleOutlined
 } from '@ant-design/icons';
 import { apiRequest } from '../config/api';
 import { io, Socket } from 'socket.io-client';
@@ -97,6 +97,12 @@ const CMSPage: React.FC = () => {
   // Данные графика активности
   const [activityData, setActivityData] = useState<any[]>([]);
   const [activityPeriod, setActivityPeriod] = useState('day'); // day, week, month
+  const [activityFilters, setActivityFilters] = useState({
+    homepage: true,
+    test: true,
+    dashboard: true,
+    other: true
+  });
 
   // Проверка авторизации при загрузке (из localStorage)
   useEffect(() => {
@@ -155,14 +161,14 @@ const CMSPage: React.FC = () => {
     }
   }, [funnelPeriod, isAuthenticated]);
 
-  // Перезагрузка графика активности при изменении периода
+  // Перезагрузка графика активности при изменении периода или фильтров
   useEffect(() => {
     if (!isAuthenticated) return;
     const token = localStorage.getItem('cms_token');
     if (token) {
       fetchActivityData(token);
     }
-  }, [activityPeriod, isAuthenticated]);
+  }, [activityPeriod, activityFilters, isAuthenticated]);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -272,7 +278,14 @@ const CMSPage: React.FC = () => {
 
   const fetchActivityData = async (token: string) => {
     try {
-      const response = await apiRequest(`api/cms/stats/activity-by-hour?period=${activityPeriod}`, { 
+      // Формируем список активных фильтров
+      const activeFilters = Object.entries(activityFilters)
+        .filter(([_, enabled]) => enabled)
+        .map(([key, _]) => key);
+      
+      const pagesParam = activeFilters.length > 0 ? activeFilters.join(',') : 'all';
+      
+      const response = await apiRequest(`api/cms/stats/activity-by-hour?period=${activityPeriod}&pages=${pagesParam}`, { 
         headers: { 'Authorization': `Bearer ${token}` } 
       });
       if (response.ok) {
@@ -404,17 +417,6 @@ const CMSPage: React.FC = () => {
               } : { margin: '4px 8px', borderRadius: '8px' }
             },
             {
-              key: 'activity',
-              icon: <ClockCircleOutlined />,
-              label: 'График Активности',
-              style: activeTab === 'activity' ? {
-                backgroundColor: '#e6f7ff',
-                color: '#1890ff',
-                borderRadius: '8px',
-                margin: '4px 8px'
-              } : { margin: '4px 8px', borderRadius: '8px' }
-            },
-            {
               key: 'roadmap',
               icon: <ThunderboltOutlined />,
               label: 'Реализовать',
@@ -450,7 +452,6 @@ const CMSPage: React.FC = () => {
               {activeTab === 'funnel' && 'Воронка Конверсии'}
               {activeTab === 'users' && 'Пользователи'}
               {activeTab === 'analytics' && 'Аналитика Диагнозов'}
-              {activeTab === 'activity' && 'График Активности'}
               {activeTab === 'roadmap' && 'Дорожная карта'}
             </Title>
             <div style={{ background: 'white', padding: '8px 16px', borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
@@ -523,6 +524,121 @@ const CMSPage: React.FC = () => {
                             персональных планов выдано пользователям
                           </Text>
                         </div>
+                      </Card>
+                    </Col>
+                  </Row>
+
+                  {/* График Активности */}
+                  <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
+                    <Col span={24}>
+                      <Card 
+                        title="📈 Активность пользователей"
+                        bordered={false}
+                        extra={
+                          <Space>
+                            <Select
+                              value={activityPeriod}
+                              onChange={setActivityPeriod}
+                              style={{ width: 150 }}
+                            >
+                              <Select.Option value="day">За сутки (часы)</Select.Option>
+                              <Select.Option value="week">За неделю (дни)</Select.Option>
+                              <Select.Option value="month">За месяц (даты)</Select.Option>
+                            </Select>
+                          </Space>
+                        }
+                      >
+                        <div style={{ marginBottom: '16px' }}>
+                          <Text type="secondary">
+                            {activityPeriod === 'day' && 'График показывает уникальных пользователей по часам за последние 24 часа'}
+                            {activityPeriod === 'week' && 'График показывает уникальных пользователей по дням недели за последние 7 дней'}
+                            {activityPeriod === 'month' && 'График показывает уникальных пользователей по датам за последние 30 дней'}
+                          </Text>
+                        </div>
+
+                        <div style={{ marginBottom: '16px' }}>
+                          <Space wrap>
+                            <Checkbox 
+                              checked={activityFilters.homepage}
+                              onChange={(e) => setActivityFilters({ ...activityFilters, homepage: e.target.checked })}
+                            >
+                              Главная страница
+                            </Checkbox>
+                            <Checkbox 
+                              checked={activityFilters.test}
+                              onChange={(e) => setActivityFilters({ ...activityFilters, test: e.target.checked })}
+                            >
+                              Тест
+                            </Checkbox>
+                            <Checkbox 
+                              checked={activityFilters.dashboard}
+                              onChange={(e) => setActivityFilters({ ...activityFilters, dashboard: e.target.checked })}
+                            >
+                              Личный кабинет
+                            </Checkbox>
+                            <Checkbox 
+                              checked={activityFilters.other}
+                              onChange={(e) => setActivityFilters({ ...activityFilters, other: e.target.checked })}
+                            >
+                              Остальные страницы
+                            </Checkbox>
+                          </Space>
+                        </div>
+                        
+                        {activityData.length > 0 ? (
+                          <ResponsiveContainer width="100%" height={400}>
+                            <LineChart data={activityData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis 
+                                dataKey="label" 
+                                label={{ 
+                                  value: activityPeriod === 'day' ? 'Часы' : activityPeriod === 'week' ? 'Дни недели' : 'Дата месяца', 
+                                  position: 'insideBottom', 
+                                  offset: -5 
+                                }}
+                              />
+                              <YAxis 
+                                label={{ value: 'Уникальных пользователей', angle: -90, position: 'insideLeft' }}
+                              />
+                              <ChartTooltip 
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length) {
+                                    return (
+                                      <div style={{ 
+                                        background: 'white', 
+                                        padding: '10px', 
+                                        border: '1px solid #ccc',
+                                        borderRadius: '4px'
+                                      }}>
+                                        <p style={{ margin: 0 }}>
+                                          <strong>{payload[0].payload.label}</strong>
+                                        </p>
+                                        <p style={{ margin: '4px 0 0 0', color: '#1890ff' }}>
+                                          👥 Пользователей: {payload[0].value}
+                                        </p>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Legend />
+                              <Line 
+                                type="monotone" 
+                                dataKey="users" 
+                                name="Уникальных пользователей"
+                                stroke="#1890ff" 
+                                strokeWidth={2}
+                                dot={{ fill: '#1890ff', r: 4 }}
+                                activeDot={{ r: 6 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                            <Text type="secondary">Нет данных для выбранного периода или фильтров</Text>
+                          </div>
+                        )}
                       </Card>
                     </Col>
                   </Row>
@@ -781,87 +897,6 @@ const CMSPage: React.FC = () => {
                     </Col>
                   </Row>
                 </>
-              )}
-
-              {/* График Активности */}
-              {activeTab === 'activity' && (
-                <Row gutter={[16, 16]}>
-                  <Col span={24}>
-                    <Card 
-                      title="📈 Активность пользователей по времени суток"
-                      bordered={false}
-                      extra={
-                        <Select
-                          value={activityPeriod}
-                          onChange={setActivityPeriod}
-                          style={{ width: 150 }}
-                        >
-                          <Select.Option value="day">За сутки</Select.Option>
-                          <Select.Option value="week">За неделю</Select.Option>
-                          <Select.Option value="month">За месяц</Select.Option>
-                        </Select>
-                      }
-                    >
-                      <div style={{ marginBottom: '16px' }}>
-                        <Text type="secondary">
-                          График показывает, в какое время суток пользователи наиболее активны на сайте (по Москве).
-                          Данные собираются на основе heartbeat событий.
-                        </Text>
-                      </div>
-                      
-                      {activityData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={400}>
-                          <LineChart data={activityData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis 
-                              dataKey="label" 
-                              label={{ value: 'Время суток', position: 'insideBottom', offset: -5 }}
-                            />
-                            <YAxis 
-                              label={{ value: 'Уникальных пользователей', angle: -90, position: 'insideLeft' }}
-                            />
-                            <ChartTooltip 
-                              content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                  return (
-                                    <div style={{ 
-                                      background: 'white', 
-                                      padding: '10px', 
-                                      border: '1px solid #ccc',
-                                      borderRadius: '4px'
-                                    }}>
-                                      <p style={{ margin: 0 }}>
-                                        <strong>{payload[0].payload.label}</strong>
-                                      </p>
-                                      <p style={{ margin: '4px 0 0 0', color: '#1890ff' }}>
-                                        👥 Пользователей: {payload[0].value}
-                                      </p>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              }}
-                            />
-                            <Legend />
-                            <Line 
-                              type="monotone" 
-                              dataKey="users" 
-                              name="Уникальных пользователей"
-                              stroke="#1890ff" 
-                              strokeWidth={2}
-                              dot={{ fill: '#1890ff', r: 4 }}
-                              activeDot={{ r: 6 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                          <Text type="secondary">Нет данных для выбранного периода</Text>
-                        </div>
-                      )}
-                    </Card>
-                  </Col>
-                </Row>
               )}
 
               {/* Дорожная карта */}
