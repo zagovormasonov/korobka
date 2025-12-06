@@ -5,6 +5,7 @@ import { CheckCircleOutlined, CopyOutlined, UserOutlined, LockOutlined } from '@
 import { apiRequest } from '../config/api';
 import Silk from '../components/Silk';
 import { useThemeColor } from '../hooks/useThemeColor';
+import { trackEvent } from '../utils/analytics';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -29,6 +30,12 @@ const PaymentSuccessPage: React.FC = () => {
     if (sessionId) {
       // Просто проверяем, что сессия валидна
       setLoading(false);
+      
+      // Tracking: успешная оплата
+      trackEvent('payment_success', sessionId, { 
+        amount: 10,
+        payment_method: 'tinkoff'
+      });
     } else {
       setError('Неверные параметры');
       setLoading(false);

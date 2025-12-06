@@ -6,6 +6,7 @@ import { useThemeColor } from '../hooks/useThemeColor';
 import { 
   CheckCircleOutlined
 } from '@ant-design/icons';
+import { trackEvent } from '../utils/analytics';
 
 const { Title, Paragraph } = Typography;
 
@@ -68,6 +69,9 @@ const PaymentPage: React.FC = () => {
   useEffect(() => {
     if (sessionId) {
       generateMascotMessage();
+      
+      // Tracking: инициализация оплаты
+      trackEvent('payment_init', sessionId, { amount: 10 });
       
       // Проверяем, пришел ли пользователь после неудачной оплаты
       const urlParams = new URLSearchParams(window.location.search);

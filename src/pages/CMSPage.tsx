@@ -11,7 +11,8 @@ import {
   Button, 
   message, 
   Spin,
-  List
+  List,
+  Select
 } from 'antd';
 import { 
   PieChart, 
@@ -66,6 +67,7 @@ const CMSPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [funnelPeriod, setFunnelPeriod] = useState('all'); // all, day, week, month
   
   // Данные статистики
   const [basicStats, setBasicStats] = useState<any>(null);
@@ -92,6 +94,15 @@ const CMSPage: React.FC = () => {
     
     return () => clearInterval(interval);
   }, [isAuthenticated]);
+
+  // Перезагрузка воронки при изменении периода
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const token = localStorage.getItem('cms_token');
+    if (token) {
+      fetchFunnelData(token);
+    }
+  }, [funnelPeriod, isAuthenticated]);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -129,7 +140,7 @@ const CMSPage: React.FC = () => {
       // Параллельная загрузка всех данных
       const [basicRes, funnelRes, diagnosisRes, activeRes] = await Promise.all([
         apiRequest('api/cms/stats/basic', { headers }),
-        apiRequest('api/cms/stats/funnel', { headers }),
+        apiRequest(`api/cms/stats/funnel?period=${funnelPeriod}`, { headers }),
         apiRequest('api/cms/stats/diagnosis', { headers }),
         apiRequest('api/cms/stats/active', { headers })
       ]);
@@ -173,6 +184,20 @@ const CMSPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setActiveUsers(data.activeUsers);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchFunnelData = async (token: string) => {
+    try {
+      const response = await apiRequest(`api/cms/stats/funnel?period=${funnelPeriod}`, { 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFunnelData(data.funnel);
       }
     } catch (e) {
       console.error(e);
@@ -373,7 +398,23 @@ const CMSPage: React.FC = () => {
               {activeTab === 'funnel' && (
                 <Row gutter={[16, 16]}>
                   <Col span={24}>
-                    <Card title="Воронка продаж" bordered={false}>
+                    <Card 
+                      title="Воронка продаж" 
+                      bordered={false}
+                      extra={
+                        <Select 
+                          value={funnelPeriod} 
+                          onChange={setFunnelPeriod}
+                          style={{ width: 150 }}
+                          options={[
+                            { label: 'За всё время', value: 'all' },
+                            { label: 'За месяц', value: 'month' },
+                            { label: 'За неделю', value: 'week' },
+                            { label: 'За день', value: 'day' }
+                          ]}
+                        />
+                      }
+                    >
                       <div style={{ height: 400 }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart

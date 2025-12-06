@@ -4,6 +4,7 @@ import { apiRequest } from '../config/api';
 import { ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import { trackEvent } from '../utils/analytics';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -156,6 +157,15 @@ const TestPage: React.FC = () => {
       const data = await response.json();
       console.log('📋 Загружено вопросов:', data.length);
       setQuestions(data);
+      
+      // Tracking: начало теста (только если это первый запуск, а не восстановление)
+      const savedData = localStorage.getItem('testProgress');
+      if (!savedData || JSON.parse(savedData).currentQuestionIndex === 0) {
+        trackEvent('test_start', sessionId, { 
+          test_type: 'primary',
+          total_questions: data.length 
+        });
+      }
     } catch (error) {
       console.error('Error fetching questions:', error);
     }
@@ -184,11 +194,29 @@ const TestPage: React.FC = () => {
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
       saveCurrentAnswer();
+      
+      // Tracking: ответ на вопрос
+      trackEvent('test_question', sessionId, {
+        test_type: 'primary',
+        question_number: currentQuestionIndex + 1,
+        total_questions: questions.length,
+        progress_percent: Math.round(((currentQuestionIndex + 1) / questions.length) * 100)
+      });
+      
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       resetCurrentState();
     } else {
       // Сохраняем текущий ответ перед завершением
       saveCurrentAnswer();
+      
+      // Tracking: последний вопрос
+      trackEvent('test_question', sessionId, {
+        test_type: 'primary',
+        question_number: questions.length,
+        total_questions: questions.length,
+        progress_percent: 100
+      });
+      
       handleSubmit();
     }
   };
@@ -326,6 +354,14 @@ const TestPage: React.FC = () => {
 
       if (response.ok) {
         console.log('✅ Тест успешно отправлен, переходим к оплате');
+        
+        // Tracking: завершение теста
+        trackEvent('test_complete', sessionId, {
+          test_type: 'primary',
+          questions_answered: finalAnswers.length,
+          total_questions: questions.length
+        });
+        
         clearLocalStorage(); // Очищаем сохраненные данные после успешной отправки
         navigate(`/payment?sessionId=${sessionId}`);
       } else {

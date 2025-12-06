@@ -7,6 +7,7 @@ import { apiRequest } from '../config/api';
 import { useThemeColor } from '../hooks/useThemeColor';
 import TelegramButton from '../components/TelegramButton';
 import { useAuth } from '../hooks/useAuth';
+import { trackEvent, getOrCreateSessionId } from '../utils/analytics';
 
 const { Title } = Typography;
 
@@ -18,6 +19,12 @@ const HomePage: React.FC = () => {
   
   // Устанавливаем цвет статус-бара для градиентного фона
   useThemeColor('#FFED82');
+
+  // Tracking: посещение главной страницы
+  useEffect(() => {
+    const sessionId = getOrCreateSessionId();
+    trackEvent('page_visit', sessionId, { page: 'home' });
+  }, []);
 
   // Проверяем авторизацию при загрузке страницы
   useEffect(() => {

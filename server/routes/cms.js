@@ -162,35 +162,95 @@ router.get('/stats/diagnosis', checkAuth, async (req, res) => {
   }
 });
 
-// Воронка конверсии
+// Воронка конверсии (с поддержкой фильтров по времени)
 router.get('/stats/funnel', checkAuth, async (req, res) => {
   try {
-    // 1. Посетители (примерно, на основе созданных сессий)
-    const { count: visits } = await supabase
-      .from('primary_test_results')
-      .select('*', { count: 'exact', head: true });
-      
-    // 2. Начали тест (те же visits, так как сессия создается при старте)
-    const started = visits || 0;
+    const { period = 'all' } = req.query; // all, day, week, month
     
-    // 3. Прошли тест (есть ответы)
-    const { count: completed } = await supabase
-      .from('primary_test_results')
-      .select('*', { count: 'exact', head: true })
-      .not('answers', 'is', null);
+    // Вычисляем дату начала для фильтра
+    let dateFilter = null;
+    const now = new Date();
+    
+    if (period === 'day') {
+      dateFilter = new Date(now.setDate(now.getDate() - 1)).toISOString();
+    } else if (period === 'week') {
+      dateFilter = new Date(now.setDate(now.getDate() - 7)).toISOString();
+    } else if (period === 'month') {
+      dateFilter = new Date(now.setMonth(now.getMonth() - 1)).toISOString();
+    }
+
+    console.log(`📊 [CMS] Получение воронки за период: ${period}, dateFilter: ${dateFilter}`);
+    
+    // Проверяем наличие таблицы analytics_events
+    const { data: tableCheck, error: tableError } = await supabase
+      .from('analytics_events')
+      .select('id')
+      .limit(1);
+    
+    // Если таблицы нет или она пустая - используем fallback на старую логику
+    if (tableError || !tableCheck) {
+      console.log('⚠️ [CMS] Таблица analytics_events не найдена, используем fallback');
       
-    // 4. Оплатили (разблокировали план)
-    const { count: paid } = await supabase
-      .from('primary_test_results')
-      .select('*', { count: 'exact', head: true })
-      .eq('personal_plan_unlocked', true);
+      // Fallback: старая логика на основе primary_test_results
+      let query1 = supabase.from('primary_test_results').select('*', { count: 'exact', head: true });
+      let query2 = supabase.from('primary_test_results').select('*', { count: 'exact', head: true }).not('answers', 'is', null);
+      let query3 = supabase.from('primary_test_results').select('*', { count: 'exact', head: true }).eq('personal_plan_unlocked', true);
+      
+      if (dateFilter) {
+        query1 = query1.gte('created_at', dateFilter);
+        query2 = query2.gte('created_at', dateFilter);
+        query3 = query3.gte('created_at', dateFilter);
+      }
+      
+      const [r1, r2, r3] = await Promise.all([query1, query2, query3]);
+      
+      return res.json({
+        success: true,
+        period,
+        source: 'fallback',
+        funnel: [
+          { name: 'Начали тест', value: r1.count || 0, fill: '#8884d8' },
+          { name: 'Завершили тест', value: r2.count || 0, fill: '#83a6ed' },
+          { name: 'Купили план', value: r3.count || 0, fill: '#82ca9d' }
+        ]
+      });
+    }
+    
+    // Основная логика: используем analytics_events
+    let baseQuery = supabase.from('analytics_events');
+    
+    // Подсчитываем события по типам
+    const queries = [
+      'test_start',
+      'test_complete',
+      'payment_success'
+    ].map(eventType => {
+      let query = baseQuery
+        .select('session_id', { count: 'exact', head: false })
+        .eq('event_type', eventType);
+      
+      if (dateFilter) {
+        query = query.gte('created_at', dateFilter);
+      }
+      
+      return query;
+    });
+    
+    const [startResult, completeResult, paymentResult] = await Promise.all(queries);
+    
+    // Уникальные сессии (distinct session_id)
+    const uniqueStarts = new Set(startResult.data?.map(e => e.session_id) || []).size;
+    const uniqueCompletes = new Set(completeResult.data?.map(e => e.session_id) || []).size;
+    const uniquePayments = new Set(paymentResult.data?.map(e => e.session_id) || []).size;
 
     res.json({
       success: true,
+      period,
+      source: 'analytics_events',
       funnel: [
-        { name: 'Начали тест', value: started, fill: '#8884d8' },
-        { name: 'Завершили тест', value: completed || 0, fill: '#83a6ed' },
-        { name: 'Купили план', value: paid || 0, fill: '#82ca9d' }
+        { name: 'Начали тест', value: uniqueStarts, fill: '#8884d8' },
+        { name: 'Завершили тест', value: uniqueCompletes, fill: '#83a6ed' },
+        { name: 'Купили план', value: uniquePayments, fill: '#82ca9d' }
       ]
     });
   } catch (error) {
