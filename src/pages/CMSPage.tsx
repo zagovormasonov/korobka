@@ -18,7 +18,8 @@ import {
   Space,
   Tooltip,
   Switch,
-  Checkbox
+  Checkbox,
+  DatePicker
 } from 'antd';
 import { 
   PieChart, 
@@ -46,10 +47,21 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined
+  CloseCircleOutlined,
+  LeftOutlined,
+  RightOutlined
 } from '@ant-design/icons';
+import dayjs, { Dayjs } from 'dayjs';
+import 'dayjs/locale/ru';
+import weekday from 'dayjs/plugin/weekday';
+import isoWeek from 'dayjs/plugin/isoWeek';
 import { apiRequest } from '../config/api';
 import { io, Socket } from 'socket.io-client';
+
+// Настройка dayjs
+dayjs.locale('ru');
+dayjs.extend(weekday);
+dayjs.extend(isoWeek);
 
 const { Title, Text, Paragraph } = Typography;
 const { Content, Sider } = Layout;
@@ -100,6 +112,7 @@ const CMSPage: React.FC = () => {
   // Данные графика активности
   const [activityData, setActivityData] = useState<any[]>([]);
   const [activityPeriod, setActivityPeriod] = useState('day'); // day, week, month
+  const [activityDate, setActivityDate] = useState<Dayjs>(dayjs()); // Выбранная дата
   const [activityFilters, setActivityFilters] = useState({
     homepage: true,
     test: true,
@@ -169,14 +182,14 @@ const CMSPage: React.FC = () => {
     }
   }, [funnelPeriod, isAuthenticated]);
 
-  // Перезагрузка графика активности при изменении периода или фильтров
+  // Перезагрузка графика активности при изменении периода, даты или фильтров
   useEffect(() => {
     if (!isAuthenticated) return;
     const token = localStorage.getItem('cms_token');
     if (token) {
       fetchActivityData(token);
     }
-  }, [activityPeriod, activityFilters, isAuthenticated]);
+  }, [activityPeriod, activityDate, activityFilters, isAuthenticated]);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -292,8 +305,9 @@ const CMSPage: React.FC = () => {
         .map(([key, _]) => key);
       
       const pagesParam = activeFilters.length > 0 ? activeFilters.join(',') : 'all';
+      const dateParam = activityDate.format('YYYY-MM-DD');
       
-      const response = await apiRequest(`api/cms/stats/activity-by-hour?period=${activityPeriod}&pages=${pagesParam}`, { 
+      const response = await apiRequest(`api/cms/stats/activity-by-hour?period=${activityPeriod}&pages=${pagesParam}&date=${dateParam}`, { 
         headers: { 'Authorization': `Bearer ${token}` } 
       });
       if (response.ok) {
@@ -364,9 +378,14 @@ const CMSPage: React.FC = () => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider theme="light" width={250} style={{ borderRight: '1px solid #f0f0f0' }}>
-        <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>
-          <Title level={4} style={{ margin: 0, color: '#1890ff' }}>
-            <DashboardOutlined /> idenself CMS
+        <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+          <img 
+            src="/logo_cms.png" 
+            alt="idenself" 
+            style={{ width: '40px', height: '40px', objectFit: 'contain' }}
+          />
+          <Title level={4} style={{ margin: 0, color: '#151D3F' }}>
+            idenself CMS
           </Title>
         </div>
         <Menu 
@@ -546,8 +565,12 @@ const CMSPage: React.FC = () => {
                           <Space>
                             <Select
                               value={activityPeriod}
-                              onChange={setActivityPeriod}
-                              style={{ width: 150 }}
+                              onChange={(value) => {
+                                setActivityPeriod(value);
+                                // При смене периода сбрасываем на текущую дату
+                                setActivityDate(dayjs());
+                              }}
+                              style={{ width: 180 }}
                             >
                               <Select.Option value="day">За сутки (часы)</Select.Option>
                               <Select.Option value="week">За неделю (дни)</Select.Option>
@@ -556,12 +579,63 @@ const CMSPage: React.FC = () => {
                           </Space>
                         }
                       >
-                        <div style={{ marginBottom: '16px' }}>
+                        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text type="secondary">
-                            {activityPeriod === 'day' && 'График показывает уникальных пользователей по часам за последние 24 часа'}
-                            {activityPeriod === 'week' && 'График показывает уникальных пользователей по дням недели за последние 7 дней'}
-                            {activityPeriod === 'month' && 'График показывает уникальных пользователей по датам за последние 30 дней'}
+                            {activityPeriod === 'day' && `График по часам за ${activityDate.format('DD.MM.YYYY')}`}
+                            {activityPeriod === 'week' && `График по дням недели с ${activityDate.startOf('week').add(1, 'day').format('DD.MM')} по ${activityDate.endOf('week').add(1, 'day').format('DD.MM.YYYY')}`}
+                            {activityPeriod === 'month' && `График за ${activityDate.format('MMMM YYYY')}`}
                           </Text>
+                          
+                          <Space>
+                            <Button 
+                              icon={<LeftOutlined />}
+                              onClick={() => {
+                                if (activityPeriod === 'day') {
+                                  setActivityDate(activityDate.subtract(1, 'day'));
+                                } else if (activityPeriod === 'week') {
+                                  setActivityDate(activityDate.subtract(1, 'week'));
+                                } else {
+                                  setActivityDate(activityDate.subtract(1, 'month'));
+                                }
+                              }}
+                            />
+                            <DatePicker
+                              value={activityDate}
+                              onChange={(date) => date && setActivityDate(date)}
+                              picker={activityPeriod === 'month' ? 'month' : 'date'}
+                              format={activityPeriod === 'month' ? 'MMMM YYYY' : 'DD.MM.YYYY'}
+                              placeholder="Выберите дату"
+                              allowClear={false}
+                              style={{ width: 180 }}
+                            />
+                            <Button 
+                              icon={<RightOutlined />}
+                              onClick={() => {
+                                if (activityPeriod === 'day') {
+                                  setActivityDate(activityDate.add(1, 'day'));
+                                } else if (activityPeriod === 'week') {
+                                  setActivityDate(activityDate.add(1, 'week'));
+                                } else {
+                                  setActivityDate(activityDate.add(1, 'month'));
+                                }
+                              }}
+                              disabled={
+                                activityPeriod === 'day' ? activityDate.isAfter(dayjs(), 'day') :
+                                activityPeriod === 'week' ? activityDate.isAfter(dayjs(), 'week') :
+                                activityDate.isAfter(dayjs(), 'month')
+                              }
+                            />
+                            <Button
+                              onClick={() => setActivityDate(dayjs())}
+                              disabled={
+                                activityPeriod === 'day' ? activityDate.isSame(dayjs(), 'day') :
+                                activityPeriod === 'week' ? activityDate.isSame(dayjs(), 'week') :
+                                activityDate.isSame(dayjs(), 'month')
+                              }
+                            >
+                              Сегодня
+                            </Button>
+                          </Space>
                         </div>
 
                         <div style={{ marginBottom: '16px' }}>

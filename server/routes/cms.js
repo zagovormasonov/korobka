@@ -343,31 +343,49 @@ router.get('/users', checkAuth, async (req, res) => {
 // График активности по времени
 router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
   try {
-    const { period = 'day', pages = 'all' } = req.query; // day, week, month
+    const { period = 'day', pages = 'all', date } = req.query;
     
-    console.log('📊 [CMS] Получение активности за период:', period, 'страницы:', pages);
+    console.log('📊 [CMS] Получение активности за период:', period, 'дата:', date, 'страницы:', pages);
     
-    // Определяем временной диапазон
-    let dateFilter = null;
-    const now = new Date();
+    // Определяем временной диапазон на основе выбранной даты
+    const selectedDate = date ? new Date(date) : new Date();
+    let startDate, endDate;
     
     if (period === 'day') {
-      dateFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      // За конкретные сутки (00:00 - 23:59 выбранного дня в UTC, но с учётом московского времени)
+      // Вычитаем 3 часа из начала дня чтобы получить московский полдень в UTC
+      startDate = new Date(selectedDate);
+      startDate.setHours(0, 0, 0, 0);
+      startDate = new Date(startDate.getTime() - 3 * 60 * 60 * 1000); // Московское время -> UTC
+      
+      endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
     } else if (period === 'week') {
-      dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      // За неделю начиная с понедельника выбранной недели
+      const dayOfWeek = selectedDate.getDay();
+      const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Понедельник
+      
+      startDate = new Date(selectedDate);
+      startDate.setDate(selectedDate.getDate() + diff);
+      startDate.setHours(0, 0, 0, 0);
+      startDate = new Date(startDate.getTime() - 3 * 60 * 60 * 1000);
+      
+      endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
     } else if (period === 'month') {
-      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      // За весь выбранный месяц
+      startDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1, 0, 0, 0, 0);
+      startDate = new Date(startDate.getTime() - 3 * 60 * 60 * 1000);
+      
+      endDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1, 0, 0, 0, 0);
+      endDate = new Date(endDate.getTime() - 3 * 60 * 60 * 1000);
     }
     
     // Получаем heartbeat события за выбранный период
     let query = supabase
       .from('analytics_events')
       .select('created_at, session_id, page_url')
-      .eq('event_type', 'heartbeat');
-    
-    if (dateFilter) {
-      query = query.gte('created_at', dateFilter.toISOString());
-    }
+      .eq('event_type', 'heartbeat')
+      .gte('created_at', startDate.toISOString())
+      .lt('created_at', endDate.toISOString());
     
     const { data: events, error } = await query;
     
