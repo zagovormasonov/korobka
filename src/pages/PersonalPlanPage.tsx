@@ -911,8 +911,22 @@ const PersonalPlanPage: React.FC = () => {
           </div>
         </div>
         
-        {/* Кнопка Telegram */}
-        <TelegramButton variant="solid" style={{ marginTop: '40px', marginBottom: '20px' }} />
+        {/* Кнопки Telegram */}
+        <TelegramButton 
+          variant="solid" 
+          style={{ marginTop: '40px', marginBottom: '20px' }} 
+          text="Написать в telegram"
+          url="https://t.me/idenself"
+          topText="Напишите, пожалуйста, обратную связь, идеи и пожелания нам в telegram"
+        />
+        
+        <TelegramButton 
+          variant="solid" 
+          style={{ marginTop: '0', marginBottom: '20px' }} 
+          text="Дневник развития нашего проекта"
+          url="https://t.me/idenself_channel"
+          bottomText="Вы можете поддержать проект, отправив любую сумму на АльфаБанк по номеру телефона +79251988962 (Иван)"
+        />
         
         {/* Футер со ссылками */}
         <Footer />

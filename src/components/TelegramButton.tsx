@@ -4,15 +4,39 @@ interface TelegramButtonProps {
   style?: React.CSSProperties;
   className?: string;
   variant?: 'glass' | 'solid'; // glass для главной страницы, solid для личного кабинета
+  text?: string; // Текст кнопки
+  url?: string; // URL для перехода
+  topText?: string; // Текст над кнопкой
+  bottomText?: string; // Текст под кнопкой
 }
 
-const TelegramButton: React.FC<TelegramButtonProps> = ({ style, className, variant = 'solid' }) => {
+const TelegramButton: React.FC<TelegramButtonProps> = ({ 
+  style, 
+  className, 
+  variant = 'solid',
+  text = 'Связаться с нами в telegram',
+  url = 'https://t.me/idenself',
+  topText,
+  bottomText
+}) => {
   const isGlass = variant === 'glass';
   
   return (
     <div style={{ textAlign: 'center', margin: '20px 0', ...style }} className={className}>
+      {topText && (
+        <p style={{
+          color: isGlass ? 'rgba(0, 0, 0, 0.7)' : '#666',
+          fontSize: '14px',
+          fontFamily: 'Inter, sans-serif',
+          marginBottom: '12px',
+          lineHeight: '1.5'
+        }}>
+          {topText}
+        </p>
+      )}
+      
       <a 
-        href="https://t.me/idenself" 
+        href={url} 
         target="_blank" 
         rel="noopener noreferrer"
         style={{
@@ -51,9 +75,21 @@ const TelegramButton: React.FC<TelegramButtonProps> = ({ style, className, varia
           fontWeight: '500',
           fontFamily: 'Inter, sans-serif'
         }}>
-          Связаться с нами в telegram
+          {text}
         </span>
       </a>
+      
+      {bottomText && (
+        <p style={{
+          color: isGlass ? 'rgba(0, 0, 0, 0.7)' : '#666',
+          fontSize: '14px',
+          fontFamily: 'Inter, sans-serif',
+          marginTop: '12px',
+          lineHeight: '1.5'
+        }}>
+          {bottomText}
+        </p>
+      )}
     </div>
   );
 };
