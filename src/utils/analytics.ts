@@ -1,4 +1,40 @@
 import { apiRequest } from '../config/api';
+import { io, Socket } from 'socket.io-client';
+
+let socket: Socket | null = null;
+
+/**
+ * Получить или создать WebSocket соединение
+ */
+function getSocket(): Socket {
+  if (!socket) {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 
+                      (import.meta.env.DEV ? 'http://localhost:5000' : 'https://idenself.com');
+    
+    console.log('🔌 [WS] Подключаемся к WebSocket:', apiBaseUrl);
+    
+    socket = io(apiBaseUrl, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 10
+    });
+
+    socket.on('connect', () => {
+      console.log('✅ [WS] Подключено к WebSocket');
+    });
+
+    socket.on('disconnect', () => {
+      console.log('❌ [WS] Отключено от WebSocket');
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('❌ [WS] Ошибка подключения:', error);
+    });
+  }
+  
+  return socket;
+}
 
 /**
  * Отправка события аналитики на сервер
@@ -33,78 +69,83 @@ export const trackEvent = async (
 
 /**
  * Получить или создать session ID для аналитики
+ * ВАЖНО: Использует тот же sessionId что и в тесте!
  */
 export const getOrCreateSessionId = (): string => {
-  let sessionId = sessionStorage.getItem('analytics_session_id');
+  // Приоритет: sessionId из теста (localStorage) > sessionStorage > новый
+  let sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
   
   if (!sessionId) {
-    // Проверяем, может быть есть основной sessionId
-    sessionId = sessionStorage.getItem('sessionId') || localStorage.getItem('sessionId');
-    
-    if (!sessionId) {
-      // Создаём новый
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    // Проверяем testProgress
+    const testProgress = localStorage.getItem('testProgress');
+    if (testProgress) {
+      try {
+        const data = JSON.parse(testProgress);
+        if (data.sessionId) {
+          sessionId = data.sessionId;
+        }
+      } catch (e) {
+        console.error('Ошибка парсинга testProgress:', e);
+      }
     }
-    
-    sessionStorage.setItem('analytics_session_id', sessionId);
+  }
+  
+  if (!sessionId) {
+    // Создаём новый только если нигде не нашли
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    sessionStorage.setItem('sessionId', sessionId);
   }
   
   return sessionId;
 };
 
 /**
- * Запустить отправку heartbeat для отслеживания онлайн пользователей
- * Отправляет событие каждые 30 секунд пока вкладка активна
+ * Запустить WebSocket соединение для отслеживания онлайн статуса
  */
 export const startHeartbeat = () => {
-  const sessionId = getOrCreateSessionId();
   const currentPath = window.location.pathname;
   
-  // Не отправляем heartbeat для /chat и /cms
+  // Не подключаемся для /chat и /cms
   if (currentPath.startsWith('/chat') || currentPath.startsWith('/cms')) {
-    console.log('📊 [HEARTBEAT] Пропускаем heartbeat для', currentPath);
+    console.log('📊 [WS] Пропускаем WebSocket для', currentPath);
     return;
   }
   
-  // Отправляем первый heartbeat сразу
-  trackEvent('heartbeat', sessionId, { page: currentPath });
+  const sessionId = getOrCreateSessionId();
+  const socket = getSocket();
   
-  // Затем каждые 30 секунд
-  const interval = setInterval(() => {
+  // Отправляем статус "онлайн" при подключении
+  socket.emit('user_online', { sessionId, page: currentPath });
+  console.log('🟢 [WS] Отправили user_online:', sessionId);
+  
+  // Heartbeat каждые 30 секунд
+  const heartbeatInterval = setInterval(() => {
     const path = window.location.pathname;
     
     // Проверяем что не перешли на /chat или /cms
     if (path.startsWith('/chat') || path.startsWith('/cms')) {
-      clearInterval(interval);
+      clearInterval(heartbeatInterval);
+      socket.disconnect();
       return;
     }
     
-    // Проверяем что вкладка активна (не свернута)
+    // Отправляем heartbeat только если вкладка активна
     if (document.visibilityState === 'visible') {
-      trackEvent('heartbeat', sessionId, { page: path });
+      socket.emit('heartbeat', { sessionId, page: path });
     }
-  }, 30000); // 30 секунд
+  }, 30000);
   
-  // Очищаем interval при закрытии страницы
+  // Отключаемся при закрытии страницы
   window.addEventListener('beforeunload', () => {
-    clearInterval(interval);
+    clearInterval(heartbeatInterval);
+    socket.disconnect();
   });
   
-  // Останавливаем heartbeat если вкладка неактивна больше 2 минут
-  let lastActiveTime = Date.now();
-  
+  // Паузим heartbeat если вкладка неактивна
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      lastActiveTime = Date.now();
-      // Отправляем heartbeat при возвращении на вкладку
-      trackEvent('heartbeat', sessionId, { page: window.location.pathname });
-    } else {
-      // Если вкладка свернута больше 2 минут - останавливаем
-      setTimeout(() => {
-        if (Date.now() - lastActiveTime > 120000) {
-          clearInterval(interval);
-        }
-      }, 120000);
+      // При возвращении отправляем user_online снова
+      socket.emit('user_online', { sessionId, page: window.location.pathname });
     }
   });
 };

@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createServer } from 'http';
+import { initializeWebSocket, getOnlineUsers, getOnlineCount } from './websocket.js';
 import testRoutes from './routes/tests.js';
 import paymentRoutes from './routes/payments.js';
 import aiRoutes from './routes/ai.js';
@@ -228,8 +230,18 @@ app.get('/api/health/database', async (req, res) => {
   }
 });
 
-app.listen(PORT, '0.0.0.0', async () => {
-  console.log(`🚀 Сервер запущен на 0.0.0.0:${PORT}`);
+// Создаем HTTP сервер для socket.io
+const httpServer = createServer(app);
+
+// Инициализируем WebSocket
+const io = initializeWebSocket(httpServer);
+
+// Экспортируем для использования в роутах
+export { io, getOnlineUsers, getOnlineCount };
+
+httpServer.listen(PORT, '0.0.0.0', async () => {
+  console.log(`🚀 HTTP сервер запущен на 0.0.0.0:${PORT}`);
+  console.log(`🔌 WebSocket сервер активен`);
   console.log(`🌐 Frontend: ${FRONTEND_URL || 'не задан (FRONTEND_URL)'}`);
   console.log(`🔧 Backend API: ${process.env.BACKEND_URL || `http://127.0.0.1:${PORT}`}`);
   

@@ -46,6 +46,7 @@ import {
   CloseCircleOutlined
 } from '@ant-design/icons';
 import { apiRequest } from '../config/api';
+import { io, Socket } from 'socket.io-client';
 
 const { Title, Text, Paragraph } = Typography;
 const { Content, Sider } = Layout;
@@ -98,16 +99,47 @@ const CMSPage: React.FC = () => {
     }
   }, []);
 
-  // Периодическое обновление "активных сейчас"
+  // WebSocket для реал-тайм обновления "активных сейчас"
   useEffect(() => {
     if (!isAuthenticated) return;
     
-    const interval = setInterval(() => {
-      fetchActiveUsers();
-    }, 30000); // каждые 30 сек
+    // Первоначальная загрузка
+    fetchActiveUsers();
     
-    return () => clearInterval(interval);
-  }, [isAuthenticated]);
+    // @ts-ignore - для совместимости с разными типами import.meta
+    const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL || 
+                      ((import.meta as any).env?.DEV ? 'http://localhost:5000' : 'https://idenself.com');
+    
+    console.log('🔌 [CMS] Подключаемся к WebSocket для реал-тайм обновлений');
+    
+    const socket: Socket = io(apiBaseUrl, {
+      transports: ['websocket', 'polling'],
+      reconnection: true
+    });
+    
+    socket.on('connect', () => {
+      console.log('✅ [CMS] WebSocket подключен');
+    });
+    
+    // Слушаем обновления счётчика онлайн пользователей
+    socket.on('online_count', (count: number) => {
+      console.log('📊 [CMS] Обновление онлайн счётчика:', count);
+      setActiveUsers(count);
+    });
+    
+    // Слушаем обновления списка онлайн пользователей
+    socket.on('online_users_update', (onlineSessionIds: string[]) => {
+      console.log('📊 [CMS] Обновление списка онлайн пользователей:', onlineSessionIds.length);
+      // Обновляем список пользователей если мы на вкладке "Пользователи"
+      if (activeTab === 'users') {
+        fetchUsers();
+      }
+    });
+    
+    return () => {
+      socket.disconnect();
+    };
+  }, [isAuthenticated, activeTab]);
 
   // Перезагрузка воронки при изменении периода
   useEffect(() => {
@@ -207,6 +239,24 @@ const CMSPage: React.FC = () => {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const fetchUsers = async () => {
+    const token = localStorage.getItem('cms_token');
+    if (!token) return;
+    
+    try {
+      const response = await apiRequest('api/cms/users', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || []);
+      }
+    } catch (error) {
+      console.error('Ошибка получения списка пользователей:', error);
     }
   };
 

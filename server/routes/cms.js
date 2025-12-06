@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getOnlineUsers, getOnlineCount } from '../websocket.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -91,76 +92,20 @@ router.get('/stats/basic', checkAuth, async (req, res) => {
   }
 });
 
-// Активные пользователи ("Прямо сейчас") - считаем тех, кто онлайн в последнюю минуту
+// Активные пользователи ("Прямо сейчас") - реал-тайм через WebSocket
 router.get('/stats/active', checkAuth, async (req, res) => {
   try {
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+    // Получаем данные из WebSocket (мгновенно, без запроса к БД!)
+    const onlineCount = getOnlineCount();
+    const onlineUsers = getOnlineUsers();
     
-    // Проверяем наличие таблицы analytics_events
-    const { data: eventsCheck, error: eventsError } = await supabase
-      .from('analytics_events')
-      .select('session_id')
-      .eq('event_type', 'heartbeat')
-      .gte('created_at', oneMinuteAgo)
-      .limit(1);
+    console.log(`✅ [CMS] WebSocket: ${onlineCount} пользователей онлайн`);
     
-    // Если таблица analytics_events есть и есть heartbeat события - используем их
-    if (!eventsError && eventsCheck) {
-      console.log('📊 [CMS] Используем heartbeat события для подсчёта РЕАЛЬНО онлайн пользователей');
-      
-      const { data: recentHeartbeats } = await supabase
-        .from('analytics_events')
-        .select('session_id')
-        .eq('event_type', 'heartbeat')
-        .gte('created_at', oneMinuteAgo);
-      
-      // Уникальные session_id с heartbeat за последнюю минуту = реально онлайн
-      const uniqueSessions = new Set(recentHeartbeats?.map(e => e.session_id) || []);
-      
-      console.log(`✅ [CMS] Найдено ${uniqueSessions.size} пользователей онлайн (heartbeat за последние 60 сек)`);
-      
-      return res.json({
-        success: true,
-        activeUsers: uniqueSessions.size,
-        source: 'heartbeat',
-        window_seconds: 60
-      });
-    }
-    
-    // Fallback: используем старую логику (любые события за последние 5 минут)
-    console.log('⚠️ [CMS] Fallback: используем любые события за 5 минут');
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    
-    const { data: recentEvents } = await supabase
-      .from('analytics_events')
-      .select('session_id')
-      .gte('created_at', fiveMinutesAgo);
-    
-    if (recentEvents) {
-      const uniqueSessions = new Set(recentEvents.map(e => e.session_id));
-      return res.json({
-        success: true,
-        activeUsers: uniqueSessions.size,
-        source: 'events_fallback',
-        window_seconds: 300
-      });
-    }
-    
-    // Последний fallback: primary_test_results
-    console.log('⚠️ [CMS] Last fallback: используем primary_test_results.updated_at');
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-    
-    const { count: activeUsers, error } = await supabase
-      .from('primary_test_results')
-      .select('*', { count: 'exact', head: true })
-      .gte('updated_at', fifteenMinutesAgo);
-
-    if (error) throw error;
-
     res.json({
       success: true,
-      activeUsers: activeUsers || 0,
-      source: 'legacy_fallback'
+      activeUsers: onlineCount,
+      onlineSessionIds: onlineUsers,
+      source: 'websocket'
     });
   } catch (error) {
     console.error('❌ [CMS] Ошибка получения активных пользователей:', error);
@@ -326,15 +271,8 @@ router.get('/users', checkAuth, async (req, res) => {
 
     if (usersError) throw usersError;
 
-    // Получаем heartbeat события за последние 60 секунд для определения онлайн статуса
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
-    const { data: heartbeats } = await supabase
-      .from('analytics_events')
-      .select('session_id')
-      .eq('event_type', 'heartbeat')
-      .gte('created_at', oneMinuteAgo);
-
-    const onlineSessions = new Set(heartbeats?.map(h => h.session_id) || []);
+    // Получаем онлайн пользователей из WebSocket (реал-тайм!)
+    const onlineSessions = new Set(getOnlineUsers());
 
     // Получаем события для всех пользователей (test_start, test_complete, payment_success)
     const { data: allEvents } = await supabase
