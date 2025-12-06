@@ -373,7 +373,6 @@ router.get('/users', checkAuth, async (req, res) => {
       return {
         sessionId: user.session_id,
         nickname: user.nickname || 'Аноним',
-        email: user.email || null,
         hasPassword: !!user.dashboard_password,
         password: user.dashboard_password || null, // Будет скрыт на фронте по умолчанию
         createdAt: user.created_at,
@@ -384,7 +383,8 @@ router.get('/users', checkAuth, async (req, res) => {
         funnel: {
           started: hasTestStart || answersCount > 0, // Либо событие, либо есть ответы
           questionsAnswered: answersCount,
-          completed: hasTestComplete || answersCount >= 20, // Событие или >= 20 ответов
+          totalQuestions: 60, // Общее количество вопросов в первичном тесте
+          completed: hasTestComplete || answersCount >= 60, // Событие или >= 60 ответов
           paid: hasPayment || user.personal_plan_unlocked
         }
       };

@@ -530,22 +530,22 @@ const CMSPage: React.FC = () => {
                           },
                           {
                             title: 'Вопросов отвечено',
-                            dataIndex: ['funnel', 'questionsAnswered'],
                             key: 'questionsAnswered',
-                            width: 120,
-                            render: (answered: number) => (
-                              <Tag color={answered >= 20 ? 'success' : answered > 0 ? 'warning' : 'default'}>
-                                {answered} / 20
-                              </Tag>
-                            ),
+                            width: 140,
+                            render: (record: any) => {
+                              const answered = record.funnel.questionsAnswered;
+                              const total = record.funnel.totalQuestions;
+                              const percent = total > 0 ? Math.round((answered / total) * 100) : 0;
+                              
+                              return (
+                                <Tooltip title={`${percent}% теста пройдено`}>
+                                  <Tag color={answered >= total ? 'success' : answered > total * 0.5 ? 'warning' : answered > 0 ? 'orange' : 'default'}>
+                                    {answered} / {total}
+                                  </Tag>
+                                </Tooltip>
+                              );
+                            },
                             sorter: (a, b) => a.funnel.questionsAnswered - b.funnel.questionsAnswered
-                          },
-                          {
-                            title: 'Email',
-                            dataIndex: 'email',
-                            key: 'email',
-                            width: 200,
-                            render: (email: string) => email || <Text type="secondary">—</Text>
                           },
                           {
                             title: 'Дата регистрации',
