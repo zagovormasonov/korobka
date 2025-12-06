@@ -2,14 +2,17 @@ import { apiRequest } from '../config/api';
 import { io, Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
+let heartbeatInterval: NodeJS.Timeout | null = null;
+let isHeartbeatActive = false;
 
 /**
  * Получить или создать WebSocket соединение
  */
 function getSocket(): Socket {
-  if (!socket) {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 
-                      (import.meta.env.DEV ? 'http://localhost:5000' : 'https://idenself.com');
+  if (!socket || !socket.connected) {
+    // @ts-ignore
+    const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL || 
+                      ((import.meta as any).env?.MODE === 'development' ? 'http://localhost:5000' : 'https://idenself.com');
     
     console.log('🔌 [WS] Подключаемся к WebSocket:', apiBaseUrl);
     
@@ -21,15 +24,24 @@ function getSocket(): Socket {
     });
 
     socket.on('connect', () => {
-      console.log('✅ [WS] Подключено к WebSocket');
+      console.log('✅ [WS] Подключено к WebSocket, ID:', socket?.id);
+      
+      // При переподключении отправляем user_online снова
+      const sessionId = getOrCreateSessionId();
+      const currentPath = window.location.pathname;
+      
+      if (!currentPath.startsWith('/chat') && !currentPath.startsWith('/cms')) {
+        socket?.emit('user_online', { sessionId, page: currentPath });
+        console.log('🟢 [WS] user_online отправлен:', { sessionId, page: currentPath });
+      }
     });
 
-    socket.on('disconnect', () => {
-      console.log('❌ [WS] Отключено от WebSocket');
+    socket.on('disconnect', (reason) => {
+      console.log('❌ [WS] Отключено от WebSocket, причина:', reason);
     });
 
     socket.on('connect_error', (error) => {
-      console.error('❌ [WS] Ошибка подключения:', error);
+      console.error('❌ [WS] Ошибка подключения:', error.message);
     });
   }
   
@@ -101,8 +113,15 @@ export const getOrCreateSessionId = (): string => {
 
 /**
  * Запустить WebSocket соединение для отслеживания онлайн статуса
+ * ВАЖНО: Вызывается только один раз при загрузке приложения!
  */
 export const startHeartbeat = () => {
+  // Если уже активен - не запускаем повторно
+  if (isHeartbeatActive) {
+    console.log('⚠️ [WS] Heartbeat уже активен, пропускаем');
+    return;
+  }
+  
   const currentPath = window.location.pathname;
   
   // Не подключаемся для /chat и /cms
@@ -111,42 +130,82 @@ export const startHeartbeat = () => {
     return;
   }
   
+  isHeartbeatActive = true;
+  console.log('🚀 [WS] Запускаем heartbeat систему');
+  
   const sessionId = getOrCreateSessionId();
+  console.log('🔑 [WS] Session ID:', sessionId);
+  
   const socket = getSocket();
   
-  // Отправляем статус "онлайн" при подключении
-  socket.emit('user_online', { sessionId, page: currentPath });
-  console.log('🟢 [WS] Отправили user_online:', sessionId);
+  // Отправляем статус "онлайн" при подключении (если уже подключен)
+  if (socket.connected) {
+    socket.emit('user_online', { sessionId, page: currentPath });
+    console.log('🟢 [WS] user_online отправлен сразу:', { sessionId, page: currentPath });
+  }
   
   // Heartbeat каждые 30 секунд
-  const heartbeatInterval = setInterval(() => {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+  }
+  
+  heartbeatInterval = setInterval(() => {
     const path = window.location.pathname;
     
     // Проверяем что не перешли на /chat или /cms
     if (path.startsWith('/chat') || path.startsWith('/cms')) {
-      clearInterval(heartbeatInterval);
-      socket.disconnect();
+      console.log('🛑 [WS] Остановка heartbeat - перешли на', path);
+      stopHeartbeat();
       return;
     }
     
     // Отправляем heartbeat только если вкладка активна
-    if (document.visibilityState === 'visible') {
+    if (document.visibilityState === 'visible' && socket.connected) {
       socket.emit('heartbeat', { sessionId, page: path });
+      console.log('💓 [WS] Heartbeat отправлен');
     }
   }, 30000);
   
   // Отключаемся при закрытии страницы
-  window.addEventListener('beforeunload', () => {
-    clearInterval(heartbeatInterval);
+  const handleBeforeUnload = () => {
+    console.log('👋 [WS] Закрытие страницы');
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
     socket.disconnect();
-  });
+  };
+  
+  window.addEventListener('beforeunload', handleBeforeUnload);
   
   // Паузим heartbeat если вкладка неактивна
-  document.addEventListener('visibilitychange', () => {
+  const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
-      // При возвращении отправляем user_online снова
-      socket.emit('user_online', { sessionId, page: window.location.pathname });
+      const path = window.location.pathname;
+      if (!path.startsWith('/chat') && !path.startsWith('/cms')) {
+        // При возвращении отправляем user_online снова
+        socket.emit('user_online', { sessionId, page: path });
+        console.log('👁️ [WS] Вкладка активна, user_online отправлен');
+      }
+    } else {
+      console.log('😴 [WS] Вкладка неактивна');
     }
-  });
+  };
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange);
 };
+
+/**
+ * Остановить heartbeat
+ */
+function stopHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+  
+  if (socket && socket.connected) {
+    socket.disconnect();
+  }
+  
+  isHeartbeatActive = false;
+  console.log('🛑 [WS] Heartbeat остановлен');
+}
 

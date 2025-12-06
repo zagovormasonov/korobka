@@ -517,25 +517,39 @@ const CMSPage: React.FC = () => {
                         scroll={{ x: 1200 }}
                         columns={[
                           {
-                            title: 'Статус',
-                            dataIndex: 'isOnline',
-                            key: 'isOnline',
-                            width: 80,
-                            render: (isOnline: boolean) => (
-                              <Tooltip title={isOnline ? 'Онлайн' : 'Офлайн'}>
-                                <Tag color={isOnline ? 'success' : 'default'} icon={isOnline ? <CheckCircleOutlined /> : <CloseCircleOutlined />}>
-                                  {isOnline ? 'Онлайн' : 'Офлайн'}
-                                </Tag>
-                              </Tooltip>
-                            ),
-                            sorter: (a, b) => Number(b.isOnline) - Number(a.isOnline)
+                            title: 'Дата регистрации',
+                            dataIndex: 'createdAt',
+                            key: 'createdAt',
+                            width: 150,
+                            render: (date: string) => new Date(date).toLocaleDateString('ru-RU', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }),
+                            sorter: (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                           },
                           {
                             title: 'Никнейм',
-                            dataIndex: 'nickname',
                             key: 'nickname',
                             width: 150,
-                            render: (nickname: string) => <Text strong>{nickname}</Text>
+                            render: (record: any) => (
+                              <Space>
+                                {record.isOnline && (
+                                  <span style={{ 
+                                    display: 'inline-block',
+                                    width: '8px',
+                                    height: '8px',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#52c41a',
+                                    marginRight: '4px'
+                                  }} />
+                                )}
+                                <Text strong>{record.nickname}</Text>
+                              </Space>
+                            ),
+                            sorter: (a, b) => Number(b.isOnline) - Number(a.isOnline)
                           },
                           {
                             title: 'Пароль',
@@ -596,20 +610,6 @@ const CMSPage: React.FC = () => {
                               );
                             },
                             sorter: (a, b) => a.funnel.questionsAnswered - b.funnel.questionsAnswered
-                          },
-                          {
-                            title: 'Дата регистрации',
-                            dataIndex: 'createdAt',
-                            key: 'createdAt',
-                            width: 150,
-                            render: (date: string) => new Date(date).toLocaleDateString('ru-RU', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            }),
-                            sorter: (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                           }
                         ]}
                       />

@@ -76,14 +76,10 @@ const customTheme = {
 
 // Компонент для запуска heartbeat
 function HeartbeatTracker() {
-  const location = useLocation();
-  
   useEffect(() => {
-    // Запускаем heartbeat только если не на /chat и /cms
-    if (!location.pathname.startsWith('/chat') && !location.pathname.startsWith('/cms')) {
-      startHeartbeat();
-    }
-  }, [location.pathname]);
+    // Запускаем heartbeat ОДИН РАЗ при загрузке приложения
+    startHeartbeat();
+  }, []); // Пустой массив зависимостей = запуск только один раз
   
   return null;
 }

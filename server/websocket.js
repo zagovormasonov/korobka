@@ -34,6 +34,8 @@ export function initializeWebSocket(httpServer) {
     socket.on('user_online', (data) => {
       const { sessionId, page } = data;
       
+      console.log(`📥 [WS] user_online получен:`, { sessionId, page, socketId: socket.id });
+      
       // Пропускаем /chat и /cms
       if (page?.startsWith('/chat') || page?.startsWith('/cms')) {
         console.log('⚪ [WS] Пропускаем страницу:', page);
@@ -47,6 +49,9 @@ export function initializeWebSocket(httpServer) {
         lastSeen: Date.now(),
         page: page || '/'
       });
+      
+      console.log(`📊 [WS] Всего онлайн: ${activeSessions.size} пользователей`);
+      console.log(`📊 [WS] Список онлайн:`, Array.from(activeSessions.keys()));
 
       // Отправляем обновлённое количество в CMS
       io.emit('online_count', activeSessions.size);
