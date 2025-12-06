@@ -16,6 +16,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ConsentPage from './pages/ConsentPage';
 import ChatPage from './pages/ChatPage';
 import FeedbackChatPage from './pages/FeedbackChatPage';
+import CMSPage from './pages/CMSPage';
 
 const customTheme = {
   algorithm: theme.defaultAlgorithm,
@@ -92,6 +93,7 @@ function App() {
             <Route path="/consent" element={<ConsentPage />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/feedback-chat" element={<FeedbackChatPage />} />
+            <Route path="/cms" element={<CMSPage />} />
           </Routes>
         </div>
       </Router>
