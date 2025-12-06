@@ -113,10 +113,76 @@ router.get('/stats/active', checkAuth, async (req, res) => {
   }
 });
 
-// Статистика по диагнозам (аналитика)
+// Функция анализа предполагаемых диагнозов на основе первичного опросника
+function analyzeDiagnosis(answers) {
+  // Инициализируем счетчики для каждого диагноза
+  const scores = {
+    bpd: 0,        // Пограничное расстройство личности
+    depression: 0,  // Депрессия
+    anxiety: 0,     // Тревожное расстройство
+    bipolar: 0,     // Биполярное расстройство
+    adhd: 0,        // СДВГ
+    ptsd: 0,        // ПТСР
+    ocd: 0,         // ОКР
+    eating: 0,      // Расстройства пищевого поведения
+    substance: 0,   // Зависимость от веществ
+    dissociative: 0 // Диссоциативное расстройство
+  };
+  
+  // Анализируем ответы (answers - массив объектов с questionId и answer)
+  answers.forEach(ans => {
+    const qId = ans.questionId;
+    const answer = ans.answer;
+    
+    // Биполярное расстройство (БАР)
+    if ([2, 18].includes(qId) && answer === 'yes') scores.bipolar += 2;
+    if (qId === 2 && typeof answer === 'number' && answer >= 7) scores.bipolar += 1;
+    
+    // Пограничное расстройство личности (ПРЛ)
+    if ([4, 17, 19, 22, 26, 38].includes(qId) && answer === 'yes') scores.bpd += 1.5;
+    if ([19, 22].includes(qId) && typeof answer === 'number' && answer >= 7) scores.bpd += 1;
+    
+    // СДВГ
+    if ([3, 11, 16].includes(qId) && answer === 'yes') scores.adhd += 2;
+    if ([3, 11].includes(qId) && typeof answer === 'number' && answer >= 6) scores.adhd += 1;
+    
+    // ПТСР
+    if ([6, 34].includes(qId) && answer === 'yes') scores.ptsd += 2;
+    if (qId === 6 && typeof answer === 'number' && answer >= 7) scores.ptsd += 1;
+    
+    // Депрессия
+    if ([2, 3, 18].includes(qId) && answer === 'yes') scores.depression += 1.5;
+    if ([25, 27, 29].includes(qId) && typeof answer === 'number' && answer >= 7) scores.depression += 1;
+    
+    // Тревожное расстройство
+    if ([5, 12, 21].includes(qId) && answer === 'yes') scores.anxiety += 1.5;
+    if ([5, 12].includes(qId) && typeof answer === 'number' && answer >= 7) scores.anxiety += 1;
+    
+    // ОКР
+    if (qId === 13 && answer === 'yes') scores.ocd += 3;
+    if (qId === 13 && typeof answer === 'number' && answer >= 7) scores.ocd += 1;
+    
+    // Расстройства пищевого поведения
+    if (qId === 7 && answer === 'yes') scores.eating += 3;
+    if (qId === 7 && typeof answer === 'number' && answer >= 7) scores.eating += 1;
+    
+    // Зависимость от веществ
+    if ([8, 32].includes(qId) && answer === 'yes') scores.substance += 2;
+    
+    // Диссоциативное расстройство
+    if ([14, 25].includes(qId) && answer === 'yes') scores.dissociative += 2;
+    if (qId === 14 && typeof answer === 'number' && answer >= 7) scores.dissociative += 1;
+  });
+  
+  return scores;
+}
+
+// Статистика по предполагаемым диагнозам на основе первичного опросника
 router.get('/stats/diagnosis', checkAuth, async (req, res) => {
   try {
-    // Получаем последние 1000 результатов для анализа (чтобы не грузить базу)
+    console.log('📊 [CMS] Получение статистики предполагаемых диагнозов');
+    
+    // Получаем последние 1000 результатов для анализа
     const { data: results, error } = await supabase
       .from('primary_test_results')
       .select('answers')
@@ -125,34 +191,109 @@ router.get('/stats/diagnosis', checkAuth, async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-
-    // Упрощенная логика анализа (примерная, так как мы не знаем точную логику интерпретации на сервере)
-    // В answers лежит массив строк или объектов. Предположим, что это массив ответов.
-    // Здесь мы просто симулируем статистику на основе реальных данных, 
-    // в будущем можно подключить реальный алгоритм подсчета баллов.
     
-    // Для демо-целей покажем реальное количество проанализированных анкет
-    // и сгенерируем распределение на их основе
+    // Подсчитываем реальные диагнозы из ответов
+    const diagnosisCounts = {
+      bpd: 0,
+      depression: 0,
+      anxiety: 0,
+      bipolar: 0,
+      adhd: 0,
+      ptsd: 0,
+      ocd: 0,
+      eating: 0,
+      substance: 0,
+      dissociative: 0,
+      none: 0
+    };
     
-    // В РЕАЛЬНОСТИ: Здесь нужно подключить тот же алгоритм, что в tests.js
+    // Для подсчета коморбидности
+    const comorbidity = {
+      bpdDepression: 0,
+      bpdAnxiety: 0,
+      bpdEating: 0,
+      total: 0
+    };
     
-    // Пока вернем заглушку с данными, но основанную на количестве
+    results.forEach(result => {
+      if (!result.answers || !Array.isArray(result.answers)) return;
+      
+      const scores = analyzeDiagnosis(result.answers);
+      
+      // Определяем какие диагнозы превышают пороговые значения
+      const diagnosed = {
+        bpd: scores.bpd >= 4,
+        depression: scores.depression >= 3,
+        anxiety: scores.anxiety >= 3,
+        bipolar: scores.bipolar >= 3,
+        adhd: scores.adhd >= 3,
+        ptsd: scores.ptsd >= 3,
+        ocd: scores.ocd >= 3,
+        eating: scores.eating >= 3,
+        substance: scores.substance >= 2,
+        dissociative: scores.dissociative >= 3
+      };
+      
+      // Подсчитываем диагнозы
+      let hasAnyDiagnosis = false;
+      Object.keys(diagnosed).forEach(key => {
+        if (diagnosed[key]) {
+          diagnosisCounts[key]++;
+          hasAnyDiagnosis = true;
+        }
+      });
+      
+      if (!hasAnyDiagnosis) {
+        diagnosisCounts.none++;
+      }
+      
+      // Подсчитываем коморбидность (если есть ПРЛ)
+      if (diagnosed.bpd) {
+        comorbidity.total++;
+        if (diagnosed.depression) comorbidity.bpdDepression++;
+        if (diagnosed.anxiety) comorbidity.bpdAnxiety++;
+        if (diagnosed.eating) comorbidity.bpdEating++;
+      }
+    });
+    
     const totalAnalyzed = results.length;
+    
+    console.log(`✅ [CMS] Проанализировано ${totalAnalyzed} анкет`);
+    console.log(`📊 [CMS] Распределение диагнозов:`, diagnosisCounts);
     
     res.json({
       success: true,
       totalAnalyzed,
       distribution: [
-        { name: 'ПРЛ (Пограничное расстройство)', value: Math.round(totalAnalyzed * 0.45), color: '#FF8042' },
-        { name: 'Депрессия', value: Math.round(totalAnalyzed * 0.30), color: '#0088FE' },
-        { name: 'Тревожное расстройство', value: Math.round(totalAnalyzed * 0.15), color: '#00C49F' },
-        { name: 'БАР (Биполярное расстройство)', value: Math.round(totalAnalyzed * 0.05), color: '#FFBB28' },
-        { name: 'Без выраженных признаков', value: Math.round(totalAnalyzed * 0.05), color: '#8884d8' }
+        { name: 'ПРЛ (Пограничное расстройство)', value: diagnosisCounts.bpd, color: '#FF8042' },
+        { name: 'Депрессия', value: diagnosisCounts.depression, color: '#0088FE' },
+        { name: 'Тревожное расстройство', value: diagnosisCounts.anxiety, color: '#00C49F' },
+        { name: 'БАР (Биполярное расстройство)', value: diagnosisCounts.bipolar, color: '#FFBB28' },
+        { name: 'СДВГ', value: diagnosisCounts.adhd, color: '#8DD1E1' },
+        { name: 'ПТСР', value: diagnosisCounts.ptsd, color: '#A4DE6C' },
+        { name: 'ОКР', value: diagnosisCounts.ocd, color: '#D0ED57' },
+        { name: 'РПП', value: diagnosisCounts.eating, color: '#FFC658' },
+        { name: 'Зависимость от веществ', value: diagnosisCounts.substance, color: '#FF6B9D' },
+        { name: 'Диссоциативное расстройство', value: diagnosisCounts.dissociative, color: '#C3AED6' },
+        { name: 'Без выраженных признаков', value: diagnosisCounts.none, color: '#8884d8' }
       ],
-      correlations: [
-        { name: 'ПРЛ + Депрессия', value: 72 }, // %
-        { name: 'ПРЛ + Тревожность', value: 65 }, // %
-        { name: 'ПРЛ + РПП', value: 40 } // %
+      correlations: comorbidity.total > 0 ? [
+        { 
+          name: 'ПРЛ + Депрессия', 
+          value: Math.round((comorbidity.bpdDepression / comorbidity.total) * 100) 
+        },
+        { 
+          name: 'ПРЛ + Тревожность', 
+          value: Math.round((comorbidity.bpdAnxiety / comorbidity.total) * 100) 
+        },
+        { 
+          name: 'ПРЛ + РПП', 
+          value: Math.round((comorbidity.bpdEating / comorbidity.total) * 100) 
+        }
+      ] : [
+        { name: 'ПРЛ + Депрессия', value: 0 },
+        { name: 'ПРЛ + Тревожность', value: 0 },
+        { name: 'ПРЛ + РПП', value: 0 }
       ]
     });
   } catch (error) {
@@ -497,6 +638,108 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ [CMS] Ошибка получения активности:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Тепловая карта активности (день недели × час) и прогнозирование
+router.get('/stats/heatmap', checkAuth, async (req, res) => {
+  try {
+    console.log('🔥 [CMS] Получение тепловой карты активности');
+    
+    // Получаем все heartbeat события за последние 30 дней
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
+    const { data: events, error } = await supabase
+      .from('analytics_events')
+      .select('created_at, session_id')
+      .eq('event_type', 'heartbeat')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+    
+    if (error) throw error;
+    
+    // Создаём тепловую карту: 7 дней × 24 часа
+    const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const heatmapMatrix = weekDays.map((day, dayIndex) => {
+      const hourlyData = Array.from({ length: 24 }, (_, hour) => ({
+        day: day,
+        hour: hour,
+        users: new Set()
+      }));
+      return { dayIndex, hourlyData };
+    });
+    
+    // Заполняем данные
+    events?.forEach(event => {
+      const moscowDate = new Date(new Date(event.created_at).getTime() + 3 * 60 * 60 * 1000);
+      let dayOfWeek = moscowDate.getUTCDay();
+      dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Пн=0, ..., Вс=6
+      const hour = moscowDate.getUTCHours();
+      
+      heatmapMatrix[dayOfWeek].hourlyData[hour].users.add(event.session_id);
+    });
+    
+    // Формируем данные для тепловой карты
+    const heatmap = [];
+    heatmapMatrix.forEach(({ dayIndex, hourlyData }) => {
+      hourlyData.forEach(({ day, hour, users }) => {
+        heatmap.push({
+          day: day,
+          hour: hour,
+          users: users.size
+        });
+      });
+    });
+    
+    // Прогнозирование пиковых часов
+    const hourlyStats = Array.from({ length: 24 }, (_, hour) => ({
+      hour: hour,
+      totalUsers: 0,
+      count: 0
+    }));
+    
+    heatmapMatrix.forEach(({ hourlyData }) => {
+      hourlyData.forEach(({ hour, users }) => {
+        hourlyStats[hour].totalUsers += users.size;
+        if (users.size > 0) hourlyStats[hour].count++;
+      });
+    });
+    
+    // Средняя активность по часам
+    const avgByHour = hourlyStats.map(({ hour, totalUsers, count }) => ({
+      hour: hour,
+      avg: count > 0 ? totalUsers / count : 0
+    }));
+    
+    // Находим топ-3 пиковых часа
+    const peakHours = [...avgByHour]
+      .sort((a, b) => b.avg - a.avg)
+      .slice(0, 3)
+      .map(h => `${h.hour}:00`);
+    
+    // Находим топ-3 часа с минимальной нагрузкой (для техработ)
+    const lowHours = [...avgByHour]
+      .sort((a, b) => a.avg - b.avg)
+      .slice(0, 3)
+      .map(h => `${h.hour}:00`);
+    
+    const prediction = {
+      peakHours: peakHours,
+      bestMaintenanceTime: lowHours,
+      avgUsersPerHour: avgByHour.reduce((sum, h) => sum + h.avg, 0) / 24
+    };
+    
+    console.log(`✅ [CMS] Тепловая карта сформирована: ${heatmap.length} точек`);
+    console.log(`📊 [CMS] Пиковые часы:`, peakHours);
+    console.log(`🔧 [CMS] Лучшее время для техработ:`, lowHours);
+    
+    res.json({
+      success: true,
+      heatmap: heatmap,
+      prediction: prediction
+    });
+  } catch (error) {
+    console.error('❌ [CMS] Ошибка получения тепловой карты:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

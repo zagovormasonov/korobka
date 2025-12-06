@@ -119,6 +119,10 @@ const CMSPage: React.FC = () => {
     dashboard: true,
     other: true
   });
+  
+  // Данные тепловой карты и прогнозирования
+  const [heatmapData, setHeatmapData] = useState<any[]>([]);
+  const [peakHoursPrediction, setPeakHoursPrediction] = useState<any>(null);
 
   // Проверка авторизации при загрузке (из localStorage)
   useEffect(() => {
@@ -258,6 +262,9 @@ const CMSPage: React.FC = () => {
         setUsers(data.users || []);
       }
 
+      // Загружаем тепловую карту и прогнозирование
+      await fetchHeatmapData(token);
+
     } catch (error) {
       console.error('Ошибка загрузки статистики:', error);
       message.error('Не удалось загрузить данные');
@@ -313,6 +320,21 @@ const CMSPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setActivityData(data.data || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchHeatmapData = async (token: string) => {
+    try {
+      const response = await apiRequest('api/cms/stats/heatmap', { 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setHeatmapData(data.heatmap || []);
+        setPeakHoursPrediction(data.prediction || null);
       }
     } catch (e) {
       console.error(e);
@@ -724,6 +746,203 @@ const CMSPage: React.FC = () => {
                       </Card>
                     </Col>
                   </Row>
+
+                  {/* Тепловая карта активности */}
+                  <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
+                    <Col span={24}>
+                      <Card 
+                        title="🔥 Тепловая карта активности (день недели × час дня)"
+                        bordered={false}
+                      >
+                        <div style={{ marginBottom: '16px' }}>
+                          <Text type="secondary">
+                            Показывает когда пользователи наиболее активны. Данные за последние 30 дней (московское время).
+                          </Text>
+                        </div>
+                        
+                        {heatmapData.length > 0 ? (
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ 
+                              width: '100%', 
+                              borderCollapse: 'collapse',
+                              fontSize: '12px',
+                              minWidth: '800px'
+                            }}>
+                              <thead>
+                                <tr>
+                                  <th style={{ 
+                                    padding: '8px', 
+                                    border: '1px solid #f0f0f0',
+                                    backgroundColor: '#fafafa',
+                                    position: 'sticky',
+                                    left: 0,
+                                    zIndex: 1
+                                  }}>День / Час</th>
+                                  {Array.from({ length: 24 }, (_, i) => (
+                                    <th key={i} style={{ 
+                                      padding: '8px', 
+                                      border: '1px solid #f0f0f0',
+                                      backgroundColor: '#fafafa',
+                                      minWidth: '35px'
+                                    }}>{i}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => {
+                                  const dayData = heatmapData.filter(d => d.day === day);
+                                  const maxUsers = Math.max(...dayData.map(d => d.users), 1);
+                                  
+                                  return (
+                                    <tr key={day}>
+                                      <td style={{ 
+                                        padding: '8px', 
+                                        border: '1px solid #f0f0f0',
+                                        fontWeight: 'bold',
+                                        backgroundColor: '#fafafa',
+                                        position: 'sticky',
+                                        left: 0,
+                                        zIndex: 1
+                                      }}>{day}</td>
+                                      {Array.from({ length: 24 }, (_, hour) => {
+                                        const cell = dayData.find(d => d.hour === hour);
+                                        const users = cell?.users || 0;
+                                        const intensity = users / maxUsers;
+                                        
+                                        // Градация от светло-голубого до темно-синего
+                                        const backgroundColor = users === 0 
+                                          ? '#f5f5f5' 
+                                          : `rgba(24, 144, 255, ${0.2 + intensity * 0.8})`;
+                                        
+                                        const textColor = intensity > 0.5 ? 'white' : '#000';
+                                        
+                                        return (
+                                          <td key={hour} style={{ 
+                                            padding: '8px', 
+                                            border: '1px solid #f0f0f0',
+                                            backgroundColor: backgroundColor,
+                                            color: textColor,
+                                            textAlign: 'center',
+                                            fontWeight: users > 0 ? 'bold' : 'normal',
+                                            cursor: users > 0 ? 'help' : 'default'
+                                          }}
+                                          title={users > 0 ? `${users} польз.` : '0'}
+                                          >
+                                            {users > 0 ? users : '·'}
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                            <Text type="secondary">Нет данных для тепловой карты</Text>
+                          </div>
+                        )}
+                      </Card>
+                    </Col>
+                  </Row>
+
+                  {/* Прогнозирование пиковых часов */}
+                  {peakHoursPrediction && (
+                    <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
+                      <Col xs={24} md={12}>
+                        <Card 
+                          title="📈 Пиковые часы активности"
+                          bordered={false}
+                        >
+                          <div style={{ marginBottom: '16px' }}>
+                            <Text type="secondary">
+                              Время наибольшей активности пользователей (на основе истории за 30 дней):
+                            </Text>
+                          </div>
+                          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                            {peakHoursPrediction.peakHours?.map((hour: string, index: number) => (
+                              <div key={hour} style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '12px',
+                                padding: '12px',
+                                backgroundColor: '#e6f7ff',
+                                borderRadius: '8px'
+                              }}>
+                                <div style={{ 
+                                  fontSize: '24px', 
+                                  fontWeight: 'bold',
+                                  color: '#1890ff',
+                                  minWidth: '30px'
+                                }}>
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <Text strong style={{ fontSize: '18px' }}>{hour}</Text>
+                                  <br />
+                                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                                    Пик активности
+                                  </Text>
+                                </div>
+                              </div>
+                            ))}
+                          </Space>
+                          <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#fffbe6', borderRadius: '8px' }}>
+                            <Text type="secondary">
+                              💡 <strong>Рекомендация:</strong> Публикуйте важные обновления и объявления в эти часы для максимального охвата
+                            </Text>
+                          </div>
+                        </Card>
+                      </Col>
+                      
+                      <Col xs={24} md={12}>
+                        <Card 
+                          title="🔧 Лучшее время для техработ"
+                          bordered={false}
+                        >
+                          <div style={{ marginBottom: '16px' }}>
+                            <Text type="secondary">
+                              Время минимальной нагрузки (на основе истории за 30 дней):
+                            </Text>
+                          </div>
+                          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                            {peakHoursPrediction.bestMaintenanceTime?.map((hour: string, index: number) => (
+                              <div key={hour} style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '12px',
+                                padding: '12px',
+                                backgroundColor: '#f6ffed',
+                                borderRadius: '8px'
+                              }}>
+                                <div style={{ 
+                                  fontSize: '24px', 
+                                  fontWeight: 'bold',
+                                  color: '#52c41a',
+                                  minWidth: '30px'
+                                }}>
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <Text strong style={{ fontSize: '18px' }}>{hour}</Text>
+                                  <br />
+                                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                                    Минимальная нагрузка
+                                  </Text>
+                                </div>
+                              </div>
+                            ))}
+                          </Space>
+                          <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#e6fffb', borderRadius: '8px' }}>
+                            <Text type="secondary">
+                              💡 <strong>Рекомендация:</strong> Проводите техническое обслуживание и деплой в эти часы для минимального влияния на пользователей
+                            </Text>
+                          </div>
+                        </Card>
+                      </Col>
+                    </Row>
+                  )}
                 </>
               )}
 
@@ -912,9 +1131,9 @@ const CMSPage: React.FC = () => {
               {activeTab === 'analytics' && (
                 <>
                   <Row gutter={[16, 16]}>
-                    <Col xs={24} lg={12}>
-                      <Card title="Распределение диагнозов" bordered={false}>
-                        <div style={{ height: 450 }}>
+                    <Col xs={24}>
+                      <Card title="Распределение предполагаемых диагнозов на основе первичного опросника" bordered={false}>
+                        <div style={{ height: 500 }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
@@ -923,7 +1142,7 @@ const CMSPage: React.FC = () => {
                                 cy="50%"
                                 labelLine={true}
                                 label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
-                                outerRadius={140}
+                                outerRadius={180}
                                 fill="#8884d8"
                                 dataKey="value"
                               >
@@ -937,7 +1156,10 @@ const CMSPage: React.FC = () => {
                         </div>
                       </Card>
                     </Col>
-                    <Col xs={24} lg={12}>
+                  </Row>
+                  
+                  <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
+                    <Col xs={24}>
                       <Card title="Сопутствующие расстройства при ПРЛ" bordered={false}>
                         <List
                           itemLayout="horizontal"
