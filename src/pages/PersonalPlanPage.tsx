@@ -381,7 +381,7 @@ const PersonalPlanPage: React.FC = () => {
     }
 
     if (!feedbackLimit.canSend) {
-      message.warning(`Достигнут лимит запросов на сегодня (${feedbackLimit.limit} запросов в день). Попробуйте завтра.`);
+      message.warning(`Достигнут лимит запросов (${feedbackLimit.limit} запросов всего).`);
       return;
     }
 
@@ -424,7 +424,7 @@ const PersonalPlanPage: React.FC = () => {
       } else {
         const errorData = await response.json().catch(() => ({}));
         if (response.status === 429) {
-          message.error(errorData.error || 'Достигнут лимит запросов на сегодня (5 запросов в день). Попробуйте завтра.');
+          message.error(errorData.error || 'Достигнут лимит запросов (5 запросов всего).');
           setFeedbackLimit(prev => ({ ...prev, canSend: false, remaining: 0 }));
         } else {
           message.error(errorData.error || 'Ошибка при отправке обратной связи');

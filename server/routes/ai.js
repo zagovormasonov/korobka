@@ -793,39 +793,33 @@ router.get('/session-feedback/history/:sessionId', async (req, res) => {
   }
 });
 
-// Проверить количество запросов за сегодня
+// Проверить общее количество запросов пользователя (за всё время)
 router.get('/session-feedback/limit/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
     console.log(`\n🔢 [FEEDBACK LIMIT] Проверка лимита для sessionId: ${sessionId}`);
     
-    // Получаем начало текущего дня в UTC
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    console.log(`📅 [FEEDBACK LIMIT] Начало дня (UTC): ${today.toISOString()}`);
-    
-    // Подсчитываем количество запросов за сегодня
+    // Подсчитываем ОБЩЕЕ количество запросов пользователя (за всё время)
     const { count, error } = await supabase
       .from('feedback_chat_messages')
       .select('*', { count: 'exact', head: true })
       .eq('session_id', sessionId)
-      .eq('role', 'user')
-      .gte('created_at', today.toISOString());
+      .eq('role', 'user');
 
     if (error) {
       console.error('❌ [FEEDBACK LIMIT] Ошибка проверки лимита:', error);
       return res.status(500).json({ success: false, error: error.message });
     }
 
-    const requestsToday = count || 0;
+    const requestsTotal = count || 0;
     const limit = 5;
-    const remaining = Math.max(0, limit - requestsToday);
+    const remaining = Math.max(0, limit - requestsTotal);
     
-    console.log(`✅ [FEEDBACK LIMIT] Результат: запросов сегодня=${requestsToday}, лимит=${limit}, осталось=${remaining}`);
+    console.log(`✅ [FEEDBACK LIMIT] Результат: всего запросов=${requestsTotal}, лимит=${limit}, осталось=${remaining}`);
 
     res.json({ 
       success: true, 
-      requestsToday, 
+      requestsToday: requestsTotal, // Оставляем имя поля для совместимости с фронтендом
       limit, 
       remaining,
       canSend: remaining > 0
@@ -851,31 +845,27 @@ router.post('/session-feedback', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Сообщение не может быть пустым' });
     }
 
-    // Проверяем ограничение на 5 запросов в день
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    
+    // Проверяем ограничение на 5 запросов ВСЕГО (за всё время)
     console.log('🔢 [FEEDBACK-CHAT] Проверяем лимит для sessionId:', sessionId);
     const { count, error: limitError } = await supabase
       .from('feedback_chat_messages')
       .select('*', { count: 'exact', head: true })
       .eq('session_id', sessionId)
-      .eq('role', 'user')
-      .gte('created_at', today.toISOString());
+      .eq('role', 'user');
 
     if (limitError) {
       console.error('❌ [FEEDBACK-CHAT] Ошибка проверки лимита:', limitError);
       return res.status(500).json({ success: false, error: 'Ошибка проверки лимита' });
     }
 
-    const requestsToday = count || 0;
-    console.log('📊 [FEEDBACK-CHAT] Запросов сегодня:', requestsToday);
+    const requestsTotal = count || 0;
+    console.log('📊 [FEEDBACK-CHAT] Всего запросов пользователя:', requestsTotal);
     
-    if (requestsToday >= 5) {
+    if (requestsTotal >= 5) {
       console.log('⚠️ [FEEDBACK-CHAT] Лимит превышен');
       return res.status(429).json({ 
         success: false, 
-        error: 'Достигнут лимит запросов на сегодня (5 запросов в день). Попробуйте завтра.' 
+        error: 'Достигнут лимит запросов (5 запросов всего).' 
       });
     }
     

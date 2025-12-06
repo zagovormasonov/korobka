@@ -118,7 +118,7 @@ const FeedbackChatPage: React.FC = () => {
     }
 
     if (!feedbackLimit.canSend) {
-      message.warning(`Достигнут лимит запросов на сегодня (${feedbackLimit.limit} запросов в день). Попробуйте завтра.`);
+      message.warning(`Достигнут лимит запросов (${feedbackLimit.limit} запросов всего).`);
       return;
     }
 
@@ -167,7 +167,7 @@ const FeedbackChatPage: React.FC = () => {
         });
         
         if (response.status === 429) {
-          message.error(errorData.error || 'Достигнут лимит запросов на сегодня (5 запросов в день). Попробуйте завтра.');
+          message.error(errorData.error || 'Достигнут лимит запросов (5 запросов всего).');
           setFeedbackLimit(prev => ({ ...prev, canSend: false, remaining: 0 }));
         } else if (response.status === 404) {
           message.error('Данные сессии не найдены. Пожалуйста, пройдите тест заново.');
