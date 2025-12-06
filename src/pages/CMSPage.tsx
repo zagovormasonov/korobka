@@ -283,10 +283,21 @@ const CMSPage: React.FC = () => {
   };
 
   // Обновляем онлайн статус пользователей на основе данных из WebSocket
-  const usersWithUpdatedOnlineStatus = users.map(user => ({
-    ...user,
-    isOnline: onlineSessionIds.includes(user.sessionId)
-  }));
+  const usersWithUpdatedOnlineStatus = users.map(user => {
+    const isOnline = onlineSessionIds.includes(user.sessionId);
+    
+    // Логирование для отладки
+    if (isOnline && !user.isOnline) {
+      console.log(`🟢 [CMS] Пользователь ${user.nickname} (${user.sessionId}) стал онлайн`);
+    } else if (!isOnline && user.isOnline) {
+      console.log(`🔴 [CMS] Пользователь ${user.nickname} (${user.sessionId}) стал офлайн`);
+    }
+    
+    return {
+      ...user,
+      isOnline
+    };
+  });
 
   const filteredUsers = showOnlineOnly 
     ? usersWithUpdatedOnlineStatus.filter(u => u.isOnline) 
