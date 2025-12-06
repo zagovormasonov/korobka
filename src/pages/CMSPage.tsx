@@ -11,7 +11,6 @@ import {
   Button, 
   message, 
   Spin,
-  Badge,
   List
 } from 'antd';
 import { 
@@ -25,9 +24,7 @@ import {
   CartesianGrid, 
   Tooltip, 
   Legend, 
-  ResponsiveContainer,
-  AreaChart,
-  Area
+  ResponsiveContainer
 } from 'recharts';
 import { 
   UserOutlined, 
@@ -41,7 +38,7 @@ import {
 import { apiRequest } from '../config/api';
 
 const { Title, Text, Paragraph } = Typography;
-const { Header, Content, Sider } = Layout;
+const { Content, Sider } = Layout;
 
 // Компонент пульсирующего индикатора
 const PulsingDot = () => (
@@ -181,8 +178,6 @@ const CMSPage: React.FC = () => {
       console.error(e);
     }
   };
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   if (!isAuthenticated) {
     return (
@@ -347,7 +342,7 @@ const CMSPage: React.FC = () => {
                     <Col xs={24} sm={12} lg={6}>
                       <Card bordered={false}>
                         <Statistic
-                          title="Конверсия из начала в покупку"
+                          title="% из начала теста в покупку"
                           value={basicStats?.totalUsers ? ((basicStats.unlockedPlans / basicStats.totalUsers) * 100).toFixed(1) : 0}
                           suffix="%"
                           prefix={<ThunderboltOutlined />}
@@ -423,7 +418,7 @@ const CMSPage: React.FC = () => {
                                 cx="50%"
                                 cy="50%"
                                 labelLine={true}
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
                                 outerRadius={140}
                                 fill="#8884d8"
                                 dataKey="value"
