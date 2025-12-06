@@ -313,5 +313,94 @@ router.get('/stats/funnel', checkAuth, async (req, res) => {
   }
 });
 
+// Список пользователей с аналитикой
+router.get('/users', checkAuth, async (req, res) => {
+  try {
+    console.log('👥 [CMS] Получение списка пользователей');
+    
+    // Получаем всех пользователей из primary_test_results
+    const { data: users, error: usersError } = await supabase
+      .from('primary_test_results')
+      .select('session_id, nickname, dashboard_password, email, created_at, updated_at, answers, personal_plan_unlocked')
+      .order('created_at', { ascending: false });
+
+    if (usersError) throw usersError;
+
+    // Получаем heartbeat события за последние 60 секунд для определения онлайн статуса
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+    const { data: heartbeats } = await supabase
+      .from('analytics_events')
+      .select('session_id')
+      .eq('event_type', 'heartbeat')
+      .gte('created_at', oneMinuteAgo);
+
+    const onlineSessions = new Set(heartbeats?.map(h => h.session_id) || []);
+
+    // Получаем события для всех пользователей (test_start, test_complete, payment_success)
+    const { data: allEvents } = await supabase
+      .from('analytics_events')
+      .select('session_id, event_type, created_at')
+      .in('event_type', ['test_start', 'test_complete', 'payment_success', 'test_question']);
+
+    // Группируем события по session_id
+    const eventsBySession = {};
+    allEvents?.forEach(event => {
+      if (!eventsBySession[event.session_id]) {
+        eventsBySession[event.session_id] = [];
+      }
+      eventsBySession[event.session_id].push(event);
+    });
+
+    // Формируем результат с аналитикой для каждого пользователя
+    const usersWithAnalytics = users?.map(user => {
+      const events = eventsBySession[user.session_id] || [];
+      const hasTestStart = events.some(e => e.event_type === 'test_start');
+      const hasTestComplete = events.some(e => e.event_type === 'test_complete');
+      const hasPayment = events.some(e => e.event_type === 'payment_success');
+      
+      // Подсчитываем количество отвеченных вопросов
+      const questionEvents = events.filter(e => e.event_type === 'test_question');
+      const maxQuestionNumber = questionEvents.length > 0 
+        ? Math.max(...questionEvents.map(e => {
+            // Пытаемся извлечь номер вопроса из метаданных если они есть
+            return 1; // Заглушка, так как metadata не выбрана
+          }))
+        : 0;
+      
+      // Количество ответов из answers массива (более точно)
+      const answersCount = user.answers ? (Array.isArray(user.answers) ? user.answers.length : 0) : 0;
+
+      return {
+        sessionId: user.session_id,
+        nickname: user.nickname || 'Аноним',
+        email: user.email || null,
+        hasPassword: !!user.dashboard_password,
+        password: user.dashboard_password || null, // Будет скрыт на фронте по умолчанию
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        isOnline: onlineSessions.has(user.session_id),
+        personalPlanUnlocked: user.personal_plan_unlocked || false,
+        // Аналитика воронки
+        funnel: {
+          started: hasTestStart || answersCount > 0, // Либо событие, либо есть ответы
+          questionsAnswered: answersCount,
+          completed: hasTestComplete || answersCount >= 20, // Событие или >= 20 ответов
+          paid: hasPayment || user.personal_plan_unlocked
+        }
+      };
+    });
+
+    res.json({
+      success: true,
+      users: usersWithAnalytics || [],
+      total: usersWithAnalytics?.length || 0,
+      online: usersWithAnalytics?.filter(u => u.isOnline).length || 0
+    });
+  } catch (error) {
+    console.error('❌ [CMS] Ошибка получения пользователей:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
 

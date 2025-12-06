@@ -12,7 +12,12 @@ import {
   message, 
   Spin,
   List,
-  Select
+  Select,
+  Table,
+  Tag,
+  Space,
+  Tooltip,
+  Switch
 } from 'antd';
 import { 
   PieChart, 
@@ -23,7 +28,7 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
+  Tooltip as ChartTooltip, 
   Legend, 
   ResponsiveContainer
 } from 'recharts';
@@ -34,7 +39,11 @@ import {
   TeamOutlined, 
   UnlockOutlined,
   HeartOutlined,
-  ThunderboltOutlined
+  ThunderboltOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined
 } from '@ant-design/icons';
 import { apiRequest } from '../config/api';
 
@@ -74,6 +83,11 @@ const CMSPage: React.FC = () => {
   const [funnelData, setFunnelData] = useState<any[]>([]);
   const [diagnosisData, setDiagnosisData] = useState<any>(null);
   const [activeUsers, setActiveUsers] = useState(0);
+  
+  // Данные пользователей
+  const [users, setUsers] = useState<any[]>([]);
+  const [showOnlineOnly, setShowOnlineOnly] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
 
   // Проверка авторизации при загрузке (из localStorage)
   useEffect(() => {
@@ -138,11 +152,12 @@ const CMSPage: React.FC = () => {
       const headers = { 'Authorization': `Bearer ${token}` };
       
       // Параллельная загрузка всех данных
-      const [basicRes, funnelRes, diagnosisRes, activeRes] = await Promise.all([
+      const [basicRes, funnelRes, diagnosisRes, activeRes, usersRes] = await Promise.all([
         apiRequest('api/cms/stats/basic', { headers }),
         apiRequest(`api/cms/stats/funnel?period=${funnelPeriod}`, { headers }),
         apiRequest('api/cms/stats/diagnosis', { headers }),
-        apiRequest('api/cms/stats/active', { headers })
+        apiRequest('api/cms/stats/active', { headers }),
+        apiRequest('api/cms/users', { headers })
       ]);
 
       if (basicRes.ok) {
@@ -163,6 +178,11 @@ const CMSPage: React.FC = () => {
       if (activeRes.ok) {
         const data = await activeRes.json();
         setActiveUsers(data.activeUsers);
+      }
+
+      if (usersRes.ok) {
+        const data = await usersRes.json();
+        setUsers(data.users || []);
       }
 
     } catch (error) {
@@ -203,6 +223,18 @@ const CMSPage: React.FC = () => {
       console.error(e);
     }
   };
+
+  const togglePasswordVisibility = (sessionId: string) => {
+    const newSet = new Set(visiblePasswords);
+    if (newSet.has(sessionId)) {
+      newSet.delete(sessionId);
+    } else {
+      newSet.add(sessionId);
+    }
+    setVisiblePasswords(newSet);
+  };
+
+  const filteredUsers = showOnlineOnly ? users.filter(u => u.isOnline) : users;
 
   if (!isAuthenticated) {
     return (
@@ -271,6 +303,17 @@ const CMSPage: React.FC = () => {
               } : { margin: '4px 8px', borderRadius: '8px' }
             },
             {
+              key: 'users',
+              icon: <UserOutlined />,
+              label: 'Пользователи',
+              style: activeTab === 'users' ? {
+                backgroundColor: '#e6f7ff',
+                color: '#1890ff',
+                borderRadius: '8px',
+                margin: '4px 8px'
+              } : { margin: '4px 8px', borderRadius: '8px' }
+            },
+            {
               key: 'analytics',
               icon: <TeamOutlined />,
               label: 'Аналитика Диагнозов',
@@ -315,6 +358,7 @@ const CMSPage: React.FC = () => {
             <Title level={2} style={{ margin: 0 }}>
               {activeTab === 'overview' && 'Обзор Проекта'}
               {activeTab === 'funnel' && 'Воронка Конверсии'}
+              {activeTab === 'users' && 'Пользователи'}
               {activeTab === 'analytics' && 'Аналитика Диагнозов'}
               {activeTab === 'roadmap' && 'Дорожная карта'}
             </Title>
@@ -394,6 +438,136 @@ const CMSPage: React.FC = () => {
                 </>
               )}
 
+              {/* Пользователи */}
+              {activeTab === 'users' && (
+                <Row gutter={[16, 16]}>
+                  <Col span={24}>
+                    <Card 
+                      title={
+                        <Space>
+                          <span>Список пользователей</span>
+                          <Tag color="blue">{filteredUsers.length} из {users.length}</Tag>
+                        </Space>
+                      }
+                      bordered={false}
+                      extra={
+                        <Space>
+                          <Text>Только онлайн:</Text>
+                          <Switch 
+                            checked={showOnlineOnly} 
+                            onChange={setShowOnlineOnly}
+                          />
+                        </Space>
+                      }
+                    >
+                      <Table
+                        dataSource={filteredUsers}
+                        rowKey="sessionId"
+                        pagination={{ pageSize: 20 }}
+                        scroll={{ x: 1200 }}
+                        columns={[
+                          {
+                            title: 'Статус',
+                            dataIndex: 'isOnline',
+                            key: 'isOnline',
+                            width: 80,
+                            render: (isOnline: boolean) => (
+                              <Tooltip title={isOnline ? 'Онлайн' : 'Офлайн'}>
+                                <Tag color={isOnline ? 'success' : 'default'} icon={isOnline ? <CheckCircleOutlined /> : <CloseCircleOutlined />}>
+                                  {isOnline ? 'Онлайн' : 'Офлайн'}
+                                </Tag>
+                              </Tooltip>
+                            ),
+                            sorter: (a, b) => Number(b.isOnline) - Number(a.isOnline)
+                          },
+                          {
+                            title: 'Никнейм',
+                            dataIndex: 'nickname',
+                            key: 'nickname',
+                            width: 150,
+                            render: (nickname: string) => <Text strong>{nickname}</Text>
+                          },
+                          {
+                            title: 'Пароль',
+                            dataIndex: 'password',
+                            key: 'password',
+                            width: 150,
+                            render: (password: string, record: any) => (
+                              <Space>
+                                {visiblePasswords.has(record.sessionId) ? (
+                                  <Text code>{password || 'Нет'}</Text>
+                                ) : (
+                                  <Text type="secondary">••••••••</Text>
+                                )}
+                                <Button
+                                  size="small"
+                                  icon={visiblePasswords.has(record.sessionId) ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                                  onClick={() => togglePasswordVisibility(record.sessionId)}
+                                />
+                              </Space>
+                            )
+                          },
+                          {
+                            title: 'Воронка',
+                            key: 'funnel',
+                            width: 200,
+                            render: (record: any) => (
+                              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                                <Space size="small">
+                                  {record.funnel.started ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : <CloseCircleOutlined style={{ color: '#d9d9d9' }} />}
+                                  <Text type="secondary" style={{ fontSize: '12px' }}>Начал тест</Text>
+                                </Space>
+                                <Space size="small">
+                                  {record.funnel.completed ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : <CloseCircleOutlined style={{ color: '#d9d9d9' }} />}
+                                  <Text type="secondary" style={{ fontSize: '12px' }}>Завершил тест</Text>
+                                </Space>
+                                <Space size="small">
+                                  {record.funnel.paid ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : <CloseCircleOutlined style={{ color: '#d9d9d9' }} />}
+                                  <Text type="secondary" style={{ fontSize: '12px' }}>Оплатил</Text>
+                                </Space>
+                              </Space>
+                            )
+                          },
+                          {
+                            title: 'Вопросов отвечено',
+                            dataIndex: ['funnel', 'questionsAnswered'],
+                            key: 'questionsAnswered',
+                            width: 120,
+                            render: (answered: number) => (
+                              <Tag color={answered >= 20 ? 'success' : answered > 0 ? 'warning' : 'default'}>
+                                {answered} / 20
+                              </Tag>
+                            ),
+                            sorter: (a, b) => a.funnel.questionsAnswered - b.funnel.questionsAnswered
+                          },
+                          {
+                            title: 'Email',
+                            dataIndex: 'email',
+                            key: 'email',
+                            width: 200,
+                            render: (email: string) => email || <Text type="secondary">—</Text>
+                          },
+                          {
+                            title: 'Дата регистрации',
+                            dataIndex: 'createdAt',
+                            key: 'createdAt',
+                            width: 150,
+                            render: (date: string) => new Date(date).toLocaleDateString('ru-RU', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }),
+                            sorter: (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                          }
+                        ]}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+              )}
+
               {/* Воронка */}
               {activeTab === 'funnel' && (
                 <Row gutter={[16, 16]}>
@@ -424,7 +598,7 @@ const CMSPage: React.FC = () => {
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="name" />
                             <YAxis />
-                            <Tooltip />
+                            <ChartTooltip />
                             <Legend />
                             <Bar dataKey="value" fill="#8884d8" name="Пользователи">
                               {funnelData.map((entry, index) => (
@@ -468,7 +642,7 @@ const CMSPage: React.FC = () => {
                                   <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                               </Pie>
-                              <Tooltip />
+                              <ChartTooltip />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
