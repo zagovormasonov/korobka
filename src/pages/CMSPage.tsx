@@ -399,7 +399,19 @@ const CMSPage: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider theme="light" width={250} style={{ borderRight: '1px solid #f0f0f0' }}>
+      <Sider 
+        theme="light" 
+        width={250} 
+        style={{ 
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          overflowY: 'auto',
+          borderRight: '1px solid #f0f0f0',
+          zIndex: 10
+        }}
+      >
         <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
           <img 
             src="/logo_cms.png" 
@@ -455,17 +467,6 @@ const CMSPage: React.FC = () => {
               } : { margin: '4px 8px', borderRadius: '8px' }
             },
             {
-              key: 'analytics',
-              icon: <TeamOutlined />,
-              label: 'Аналитика Диагнозов',
-              style: activeTab === 'analytics' ? {
-                backgroundColor: '#e6f7ff',
-                color: '#1890ff',
-                borderRadius: '8px',
-                margin: '4px 8px'
-              } : { margin: '4px 8px', borderRadius: '8px' }
-            },
-            {
               key: 'roadmap',
               icon: <ThunderboltOutlined />,
               label: 'Реализовать',
@@ -493,14 +494,13 @@ const CMSPage: React.FC = () => {
         </div>
       </Sider>
       
-      <Layout style={{ background: '#f0f2f5', padding: '24px' }}>
+      <Layout style={{ background: '#f0f2f5', padding: '24px', marginLeft: '250px' }}>
         <Content>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <Title level={2} style={{ margin: 0 }}>
               {activeTab === 'overview' && 'Обзор Проекта'}
               {activeTab === 'funnel' && 'Воронка Конверсии'}
               {activeTab === 'users' && 'Пользователи'}
-              {activeTab === 'analytics' && 'Аналитика Диагнозов'}
               {activeTab === 'roadmap' && 'Дорожная карта'}
             </Title>
             <div style={{ background: 'white', padding: '8px 16px', borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
@@ -943,6 +943,35 @@ const CMSPage: React.FC = () => {
                       </Col>
                     </Row>
                   )}
+
+                  {/* Распределение предполагаемых диагнозов */}
+                  <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
+                    <Col xs={24}>
+                      <Card title="Распределение предполагаемых диагнозов на основе первичного опросника" bordered={false}>
+                        <div style={{ height: 500 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={diagnosisData?.distribution}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={true}
+                                label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
+                                outerRadius={180}
+                                fill="#8884d8"
+                                dataKey="value"
+                              >
+                                {diagnosisData?.distribution.map((entry: any, index: number) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <ChartTooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </Card>
+                    </Col>
+                  </Row>
                 </>
               )}
 
@@ -1125,82 +1154,6 @@ const CMSPage: React.FC = () => {
                     </Card>
                   </Col>
                 </Row>
-              )}
-
-              {/* Аналитика диагнозов */}
-              {activeTab === 'analytics' && (
-                <>
-                  <Row gutter={[16, 16]}>
-                    <Col xs={24}>
-                      <Card title="Распределение предполагаемых диагнозов на основе первичного опросника" bordered={false}>
-                        <div style={{ height: 500 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={diagnosisData?.distribution}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={true}
-                                label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
-                                outerRadius={180}
-                                fill="#8884d8"
-                                dataKey="value"
-                              >
-                                {diagnosisData?.distribution.map((entry: any, index: number) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                              </Pie>
-                              <ChartTooltip />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </Card>
-                    </Col>
-                  </Row>
-                  
-                  <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
-                    <Col xs={24}>
-                      <Card title="Сопутствующие расстройства при ПРЛ" bordered={false}>
-                        <List
-                          itemLayout="horizontal"
-                          dataSource={diagnosisData?.correlations}
-                          renderItem={(item: any) => (
-                            <List.Item>
-                              <List.Item.Meta
-                                avatar={<ThunderboltOutlined style={{ fontSize: '24px', color: '#faad14' }} />}
-                                title={<Text strong>{item.name}</Text>}
-                                description={
-                                  <div>
-                                    <div style={{ 
-                                      height: '8px', 
-                                      background: '#f0f0f0', 
-                                      borderRadius: '4px', 
-                                      marginTop: '8px', 
-                                      overflow: 'hidden' 
-                                    }}>
-                                      <div style={{ 
-                                        width: `${item.value}%`, 
-                                        height: '100%', 
-                                        background: '#faad14', 
-                                        borderRadius: '4px' 
-                                      }} />
-                                    </div>
-                                    <Text type="secondary">{item.value}% пользователей</Text>
-                                  </div>
-                                }
-                              />
-                            </List.Item>
-                          )}
-                        />
-                        <div style={{ marginTop: '20px', padding: '15px', background: '#e6f7ff', borderRadius: '8px' }}>
-                          <Text type="secondary">
-                            Это подтверждает гипотезу о коморбидности: люди с ПРЛ часто имеют сопутствующие депрессивные и тревожные расстройства, но лечат их отдельно.
-                          </Text>
-                        </div>
-                      </Card>
-                    </Col>
-                  </Row>
-                </>
               )}
 
               {/* Дорожная карта */}
