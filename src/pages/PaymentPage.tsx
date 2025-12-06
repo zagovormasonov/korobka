@@ -309,7 +309,7 @@ const PaymentPage: React.FC = () => {
             boxShadow: 'none'
           }}
         >
-          Оплатить 290₽
+          Оплатить 10₽
         </Button>
       </div>
     </div>

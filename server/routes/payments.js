@@ -10,7 +10,7 @@ router.post('/create', async (req, res) => {
   try {
     console.log('💳 Запрос на создание платежа:', req.body);
     
-    const { sessionId, amount = 29000 } = req.body; // 290 рублей = 29000 копеек
+    const { sessionId, amount = 1000 } = req.body; // 10 рублей = 1000 копеек
     
     if (!sessionId) {
       console.error('❌ Отсутствует sessionId');
