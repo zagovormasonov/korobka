@@ -347,7 +347,7 @@ const CMSPage: React.FC = () => {
                     <Col xs={24} sm={12} lg={6}>
                       <Card bordered={false}>
                         <Statistic
-                          title="Конверсия теста в покупку"
+                          title="Конверсия из начала в покупку"
                           value={basicStats?.totalUsers ? ((basicStats.unlockedPlans / basicStats.totalUsers) * 100).toFixed(1) : 0}
                           suffix="%"
                           prefix={<ThunderboltOutlined />}
