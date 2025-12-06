@@ -1059,7 +1059,7 @@ ${historyContext}
     }
 
     console.log('✅ [FEEDBACK-CHAT] Запрос обработан успешно');
-    res.json({ success: true, response: analysis, requestsRemaining: Math.max(0, 4 - requestsToday) });
+    res.json({ success: true, response: analysis, requestsRemaining: Math.max(0, 5 - requestsTotal) });
   } catch (error) {
     console.error('❌ [FEEDBACK-CHAT] Критическая ошибка:', error);
     console.error('❌ [FEEDBACK-CHAT] Stack trace:', error.stack);
