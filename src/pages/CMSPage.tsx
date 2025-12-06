@@ -222,18 +222,58 @@ const CMSPage: React.FC = () => {
           defaultSelectedKeys={['overview']}
           selectedKeys={[activeTab]}
           onClick={({ key }) => setActiveTab(key)}
-          style={{ borderRight: 0 }}
-        >
-          <Menu.Item key="overview" icon={<DashboardOutlined />}>
-            Обзор и Метрики
-          </Menu.Item>
-          <Menu.Item key="funnel" icon={<LineChartOutlined />}>
-            Воронка Продаж
-          </Menu.Item>
-          <Menu.Item key="analytics" icon={<TeamOutlined />}>
-            Аналитика Диагнозов
-          </Menu.Item>
-        </Menu>
+          style={{ 
+            borderRight: 0,
+            backgroundColor: 'transparent'
+          }}
+          theme="light"
+          items={[
+            {
+              key: 'overview',
+              icon: <DashboardOutlined />,
+              label: 'Обзор и Метрики',
+              style: activeTab === 'overview' ? {
+                backgroundColor: '#e6f7ff',
+                color: '#1890ff',
+                borderRadius: '8px',
+                margin: '4px 8px'
+              } : { margin: '4px 8px', borderRadius: '8px' }
+            },
+            {
+              key: 'funnel',
+              icon: <LineChartOutlined />,
+              label: 'Воронка',
+              style: activeTab === 'funnel' ? {
+                backgroundColor: '#e6f7ff',
+                color: '#1890ff',
+                borderRadius: '8px',
+                margin: '4px 8px'
+              } : { margin: '4px 8px', borderRadius: '8px' }
+            },
+            {
+              key: 'analytics',
+              icon: <TeamOutlined />,
+              label: 'Аналитика Диагнозов',
+              style: activeTab === 'analytics' ? {
+                backgroundColor: '#e6f7ff',
+                color: '#1890ff',
+                borderRadius: '8px',
+                margin: '4px 8px'
+              } : { margin: '4px 8px', borderRadius: '8px' }
+            },
+            {
+              key: 'roadmap',
+              icon: <ThunderboltOutlined />,
+              label: 'Реализовать',
+              style: activeTab === 'roadmap' ? {
+                backgroundColor: '#e6f7ff',
+                color: '#1890ff',
+                borderRadius: '8px',
+                margin: '4px 8px'
+              } : { margin: '4px 8px', borderRadius: '8px' }
+            }
+          ]}
+        />
         <div style={{ padding: '20px', position: 'absolute', bottom: 0, width: '100%' }}>
           <Button 
             danger 
@@ -256,6 +296,7 @@ const CMSPage: React.FC = () => {
               {activeTab === 'overview' && 'Обзор Проекта'}
               {activeTab === 'funnel' && 'Воронка Конверсии'}
               {activeTab === 'analytics' && 'Аналитика Диагнозов'}
+              {activeTab === 'roadmap' && 'Дорожная карта'}
             </Title>
             <div style={{ background: 'white', padding: '8px 16px', borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
               <PulsingDot />
@@ -276,7 +317,7 @@ const CMSPage: React.FC = () => {
                     <Col xs={24} sm={12} lg={6}>
                       <Card bordered={false}>
                         <Statistic
-                          title="Всего пользователей"
+                          title="Начали тест"
                           value={basicStats?.totalUsers}
                           prefix={<TeamOutlined />}
                           valueStyle={{ color: '#1890ff' }}
@@ -286,7 +327,7 @@ const CMSPage: React.FC = () => {
                     <Col xs={24} sm={12} lg={6}>
                       <Card bordered={false}>
                         <Statistic
-                          title="Прошли тест"
+                          title="Завершили тест"
                           value={basicStats?.completedTests}
                           prefix={<HeartOutlined />}
                           valueStyle={{ color: '#cf1322' }}
@@ -306,7 +347,7 @@ const CMSPage: React.FC = () => {
                     <Col xs={24} sm={12} lg={6}>
                       <Card bordered={false}>
                         <Statistic
-                          title="Конверсия в покупку"
+                          title="Конверсия теста в покупку"
                           value={basicStats?.totalUsers ? ((basicStats.unlockedPlans / basicStats.totalUsers) * 100).toFixed(1) : 0}
                           suffix="%"
                           prefix={<ThunderboltOutlined />}
@@ -374,16 +415,16 @@ const CMSPage: React.FC = () => {
                   <Row gutter={[16, 16]}>
                     <Col xs={24} lg={12}>
                       <Card title="Распределение диагнозов" bordered={false}>
-                        <div style={{ height: 350 }}>
+                        <div style={{ height: 450 }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
                                 data={diagnosisData?.distribution}
                                 cx="50%"
                                 cy="50%"
-                                labelLine={false}
+                                labelLine={true}
                                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                outerRadius={120}
+                                outerRadius={140}
                                 fill="#8884d8"
                                 dataKey="value"
                               >
@@ -439,6 +480,123 @@ const CMSPage: React.FC = () => {
                     </Col>
                   </Row>
                 </>
+              )}
+
+              {/* Дорожная карта */}
+              {activeTab === 'roadmap' && (
+                <Row gutter={[16, 16]}>
+                  <Col span={24}>
+                    <Card title="📋 Что нужно реализовать дальше" bordered={false}>
+                      <List
+                        itemLayout="vertical"
+                        size="large"
+                        dataSource={[
+                          {
+                            title: '1. Точная аналитика воронки с отслеживанием событий',
+                            description: 'Сейчас воронка работает на основе данных о сессиях и оплатах. Для более точной статистики нужно:',
+                            tasks: [
+                              '✅ Создать таблицу analytics_events в Supabase',
+                              '⚪ Добавить tracking событий на фронтенде (page_visit, test_start, test_complete, payment_init)',
+                              '⚪ Обновить endpoint /api/cms/stats/funnel для работы с реальными событиями',
+                              '⚪ Добавить фильтры по времени (за день, неделю, месяц, всё время)'
+                            ]
+                          },
+                          {
+                            title: '2. Реал-тайм обновление "Прямо сейчас"',
+                            description: 'Сейчас счётчик активных обновляется каждые 30 секунд через polling. Можно улучшить:',
+                            tasks: [
+                              '✅ Текущее решение: polling каждые 30 сек',
+                              '⚪ Вариант улучшения: WebSocket для реал-тайм обновления',
+                              '⚪ Вариант улучшения: Supabase Realtime subscriptions',
+                              '⚪ Или оставить как есть - для CMS polling достаточно'
+                            ]
+                          },
+                          {
+                            title: '3. Точный анализ диагнозов из ответов теста',
+                            description: 'Сейчас статистика диагнозов показывает примерные данные. Для реальных цифр нужно:',
+                            tasks: [
+                              '⚪ Написать алгоритм подсчёта баллов по каждому диагнозу из массива answers',
+                              '⚪ Реализовать функцию analyzeDiagnosis() в server/routes/cms.js',
+                              '⚪ Использовать те же критерии, что и в основном тесте',
+                              '⚪ Показывать реальные проценты коморбидности (ПРЛ + Депрессия и т.д.)'
+                            ]
+                          },
+                          {
+                            title: '4. Расширенная аналитика по времени',
+                            description: 'Добавить графики изменения метрик во времени:',
+                            tasks: [
+                              '⚪ График: количество новых пользователей по дням/неделям',
+                              '⚪ График: динамика конверсии во времени',
+                              '⚪ График: самые активные часы/дни недели',
+                              '⚪ Сравнение текущей недели с прошлой'
+                            ]
+                          },
+                          {
+                            title: '5. Данные о платежах и доходе',
+                            description: 'Финансовая аналитика:',
+                            tasks: [
+                              '⚪ Общий доход (сумма всех успешных платежей)',
+                              '⚪ Средний чек',
+                              '⚪ График дохода по дням',
+                              '⚪ Количество failed/pending платежей',
+                              '⚪ Refund rate (если будут возвраты)'
+                            ]
+                          },
+                          {
+                            title: '6. Экспорт данных',
+                            description: 'Возможность выгрузить данные:',
+                            tasks: [
+                              '⚪ Кнопка "Скачать отчёт" в CSV/Excel',
+                              '⚪ Экспорт графиков в PNG',
+                              '⚪ Автоматическая отправка недельного отчёта на email'
+                            ]
+                          },
+                          {
+                            title: '7. A/B тесты и эксперименты',
+                            description: 'Если захотите тестировать разные версии:',
+                            tasks: [
+                              '⚪ Система для создания A/B тестов',
+                              '⚪ Отслеживание конверсии по вариантам',
+                              '⚪ Статистическая значимость результатов'
+                            ]
+                          }
+                        ]}
+                        renderItem={(item: any) => (
+                          <List.Item>
+                            <List.Item.Meta
+                              title={<Text strong style={{ fontSize: '16px' }}>{item.title}</Text>}
+                              description={
+                                <div>
+                                  <Paragraph style={{ marginTop: '8px', marginBottom: '12px' }}>
+                                    {item.description}
+                                  </Paragraph>
+                                  <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                                    {item.tasks.map((task: string, idx: number) => (
+                                      <li key={idx} style={{ 
+                                        marginBottom: '8px',
+                                        color: task.startsWith('✅') ? '#52c41a' : '#595959',
+                                        fontFamily: 'monospace'
+                                      }}>
+                                        {task}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              }
+                            />
+                          </List.Item>
+                        )}
+                      />
+                      <div style={{ marginTop: '30px', padding: '20px', background: '#fff7e6', borderRadius: '8px', border: '1px solid #ffd591' }}>
+                        <Text strong style={{ color: '#d46b08' }}>💡 Приоритеты:</Text>
+                        <Paragraph style={{ marginTop: '10px', marginBottom: 0 }}>
+                          Рекомендую начать с пунктов 1 и 3 - они дадут самую точную и полезную аналитику. 
+                          Остальные пункты можно реализовывать по мере необходимости.
+                        </Paragraph>
+                      </div>
+                    </Card>
+                  </Col>
+                </Row>
               )}
             </>
           )}
