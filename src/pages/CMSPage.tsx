@@ -79,7 +79,10 @@ const CMSPage: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => {
+    // Восстанавливаем последнюю открытую вкладку из localStorage
+    return localStorage.getItem('cms_active_tab') || 'overview';
+  });
   const [funnelPeriod, setFunnelPeriod] = useState('all'); // all, day, week, month
   
   // Данные статистики
@@ -112,6 +115,11 @@ const CMSPage: React.FC = () => {
       fetchStats(token);
     }
   }, []);
+
+  // Сохранение активной вкладки при изменении
+  useEffect(() => {
+    localStorage.setItem('cms_active_tab', activeTab);
+  }, [activeTab]);
 
   // WebSocket для реал-тайм обновления "активных сейчас"
   useEffect(() => {

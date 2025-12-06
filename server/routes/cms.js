@@ -393,7 +393,7 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
     
     // Группируем данные в зависимости от периода
     if (period === 'day') {
-      // За сутки: по часам (0-23)
+      // За сутки: по часам (0-23) в московском времени (UTC+3)
       const hourlyActivity = new Array(24).fill(0).map((_, hour) => ({
         index: hour,
         label: `${hour}:00`,
@@ -401,8 +401,11 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
       }));
       
       filteredEvents.forEach(event => {
+        // Конвертируем в московское время (UTC+3)
         const date = new Date(event.created_at);
-        const hour = date.getHours();
+        const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+        const hour = moscowDate.getUTCHours();
+        
         hourlyActivity[hour].users.add(event.session_id);
       });
       
@@ -414,7 +417,7 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
       
     } else if (period === 'week') {
       // За неделю: по дням недели (Пн-Вс)
-      const weekDays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+      const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
       const weeklyActivity = weekDays.map((day, index) => ({
         index: index,
         label: day,
@@ -422,8 +425,14 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
       }));
       
       filteredEvents.forEach(event => {
+        // Конвертируем в московское время (UTC+3)
         const date = new Date(event.created_at);
-        const dayOfWeek = date.getDay();
+        const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+        let dayOfWeek = moscowDate.getUTCDay(); // 0=Вс, 1=Пн, ..., 6=Сб
+        
+        // Преобразуем: Вс(0) -> 6, Пн(1) -> 0, ..., Сб(6) -> 5
+        dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        
         weeklyActivity[dayOfWeek].users.add(event.session_id);
       });
       
@@ -434,7 +443,7 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
       }));
       
     } else if (period === 'month') {
-      // За месяц: по дням месяца (1-31)
+      // За месяц: по дням месяца (1-31) в московском времени
       const daysInMonth = 31;
       const monthlyActivity = Array.from({ length: daysInMonth }, (_, i) => ({
         index: i + 1,
@@ -443,8 +452,11 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
       }));
       
       filteredEvents.forEach(event => {
+        // Конвертируем в московское время (UTC+3)
         const date = new Date(event.created_at);
-        const dayOfMonth = date.getDate();
+        const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+        const dayOfMonth = moscowDate.getUTCDate();
+        
         if (dayOfMonth >= 1 && dayOfMonth <= daysInMonth) {
           monthlyActivity[dayOfMonth - 1].users.add(event.session_id);
         }
