@@ -25,6 +25,8 @@ import {
   Cell, 
   BarChart, 
   Bar, 
+  LineChart,
+  Line,
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -43,7 +45,8 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined
+  CloseCircleOutlined,
+  ClockCircleOutlined
 } from '@ant-design/icons';
 import { apiRequest } from '../config/api';
 import { io, Socket } from 'socket.io-client';
@@ -90,6 +93,10 @@ const CMSPage: React.FC = () => {
   const [onlineSessionIds, setOnlineSessionIds] = useState<string[]>([]); // Список онлайн sessionId из WebSocket
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
+  
+  // Данные графика активности
+  const [activityData, setActivityData] = useState<any[]>([]);
+  const [activityPeriod, setActivityPeriod] = useState('day'); // day, week, month
 
   // Проверка авторизации при загрузке (из localStorage)
   useEffect(() => {
@@ -147,6 +154,15 @@ const CMSPage: React.FC = () => {
       fetchFunnelData(token);
     }
   }, [funnelPeriod, isAuthenticated]);
+
+  // Перезагрузка графика активности при изменении периода
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const token = localStorage.getItem('cms_token');
+    if (token) {
+      fetchActivityData(token);
+    }
+  }, [activityPeriod, isAuthenticated]);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -248,6 +264,20 @@ const CMSPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setFunnelData(data.funnel);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchActivityData = async (token: string) => {
+    try {
+      const response = await apiRequest(`api/cms/stats/activity-by-hour?period=${activityPeriod}`, { 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setActivityData(data.data || []);
       }
     } catch (e) {
       console.error(e);
@@ -374,6 +404,17 @@ const CMSPage: React.FC = () => {
               } : { margin: '4px 8px', borderRadius: '8px' }
             },
             {
+              key: 'activity',
+              icon: <ClockCircleOutlined />,
+              label: 'График Активности',
+              style: activeTab === 'activity' ? {
+                backgroundColor: '#e6f7ff',
+                color: '#1890ff',
+                borderRadius: '8px',
+                margin: '4px 8px'
+              } : { margin: '4px 8px', borderRadius: '8px' }
+            },
+            {
               key: 'roadmap',
               icon: <ThunderboltOutlined />,
               label: 'Реализовать',
@@ -409,6 +450,7 @@ const CMSPage: React.FC = () => {
               {activeTab === 'funnel' && 'Воронка Конверсии'}
               {activeTab === 'users' && 'Пользователи'}
               {activeTab === 'analytics' && 'Аналитика Диагнозов'}
+              {activeTab === 'activity' && 'График Активности'}
               {activeTab === 'roadmap' && 'Дорожная карта'}
             </Title>
             <div style={{ background: 'white', padding: '8px 16px', borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
@@ -741,6 +783,87 @@ const CMSPage: React.FC = () => {
                 </>
               )}
 
+              {/* График Активности */}
+              {activeTab === 'activity' && (
+                <Row gutter={[16, 16]}>
+                  <Col span={24}>
+                    <Card 
+                      title="📈 Активность пользователей по времени суток"
+                      bordered={false}
+                      extra={
+                        <Select
+                          value={activityPeriod}
+                          onChange={setActivityPeriod}
+                          style={{ width: 150 }}
+                        >
+                          <Select.Option value="day">За сутки</Select.Option>
+                          <Select.Option value="week">За неделю</Select.Option>
+                          <Select.Option value="month">За месяц</Select.Option>
+                        </Select>
+                      }
+                    >
+                      <div style={{ marginBottom: '16px' }}>
+                        <Text type="secondary">
+                          График показывает, в какое время суток пользователи наиболее активны на сайте (по Москве).
+                          Данные собираются на основе heartbeat событий.
+                        </Text>
+                      </div>
+                      
+                      {activityData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={400}>
+                          <LineChart data={activityData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis 
+                              dataKey="label" 
+                              label={{ value: 'Время суток', position: 'insideBottom', offset: -5 }}
+                            />
+                            <YAxis 
+                              label={{ value: 'Уникальных пользователей', angle: -90, position: 'insideLeft' }}
+                            />
+                            <ChartTooltip 
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  return (
+                                    <div style={{ 
+                                      background: 'white', 
+                                      padding: '10px', 
+                                      border: '1px solid #ccc',
+                                      borderRadius: '4px'
+                                    }}>
+                                      <p style={{ margin: 0 }}>
+                                        <strong>{payload[0].payload.label}</strong>
+                                      </p>
+                                      <p style={{ margin: '4px 0 0 0', color: '#1890ff' }}>
+                                        👥 Пользователей: {payload[0].value}
+                                      </p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Legend />
+                            <Line 
+                              type="monotone" 
+                              dataKey="users" 
+                              name="Уникальных пользователей"
+                              stroke="#1890ff" 
+                              strokeWidth={2}
+                              dot={{ fill: '#1890ff', r: 4 }}
+                              activeDot={{ r: 6 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                          <Text type="secondary">Нет данных для выбранного периода</Text>
+                        </div>
+                      )}
+                    </Card>
+                  </Col>
+                </Row>
+              )}
+
               {/* Дорожная карта */}
               {activeTab === 'roadmap' && (
                 <Row gutter={[16, 16]}>
@@ -762,23 +885,27 @@ const CMSPage: React.FC = () => {
                             ]
                           },
                           {
-                            title: '2. Реал-тайм счётчик "Прямо сейчас"',
-                            description: '✅ РЕАЛИЗОВАНО! Heartbeat система показывает реально онлайн пользователей (±60 сек точность).',
+                            title: '2. Реал-тайм счётчик "Прямо сейчас" + График активности',
+                            description: '✅ ПОЛНОСТЬЮ РЕАЛИЗОВАНО! WebSocket система с мгновенными обновлениями и график активности по часам.',
                             tasks: [
                               '✅ Heartbeat события каждые 30 сек с каждой страницы (кроме /chat и /cms)',
                               '✅ Подсчёт онлайн: heartbeat за последние 60 секунд = реально на сайте',
                               '✅ Умная остановка: не шлёт при свёрнутой вкладке, останавливается при неактивности >2 мин',
-                              '✅ Polling в CMS каждые 30 сек для обновления счётчика',
+                              '✅ WebSocket (socket.io) для МГНОВЕННОГО обновления счётчика онлайн (<1 сек!)',
+                              '✅ Реал-тайм обновление зелёных точек у онлайн пользователей в таблице',
+                              '✅ График активности по времени суток (0-23 часа)',
+                              '✅ Фильтры периода для графика: за сутки / неделю / месяц',
                               '',
-                              '📊 СТАТИСТИКА:',
-                              '  └─ Точность: ±60 секунд (между heartbeat событиями)',
-                              '  └─ Сейчас: Polling каждые 30 сек (оптимально для CMS)',
-                              '  └─ Альтернативы: WebSocket, SSE, Supabase Realtime (избыточны для задачи)',
+                              '📊 ТЕКУЩАЯ АРХИТЕКТУРА:',
+                              '  └─ WebSocket: socket.io для двусторонней связи клиент ↔ сервер',
+                              '  └─ Точность онлайн: мгновенная (при disconnect сразу офлайн)',
+                              '  └─ График: группировка heartbeat событий по часам с уникальными users',
+                              '  └─ Нагрузка: минимальная, данные хранятся в памяти WebSocket сервера',
                               '',
-                              '💡 Можно улучшить (если нужно):',
-                              '⚪ Уменьшить интервал heartbeat до 15 сек (точнее, но больше нагрузка)',
-                              '⚪ WebSocket для мгновенного обновления счётчика в CMS (<1 сек вместо 30 сек)',
-                              '⚪ Показывать график онлайн по времени суток (требует накопление данных)'
+                              '💡 Что можно ещё:',
+                              '⚪ Добавить график по дням недели (понедельник-воскресенье)',
+                              '⚪ Тепловая карта активности (день недели × час дня)',
+                              '⚪ Прогнозирование пиковых часов на основе истории'
                             ]
                           },
                           {

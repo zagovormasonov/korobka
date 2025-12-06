@@ -340,5 +340,74 @@ router.get('/users', checkAuth, async (req, res) => {
   }
 });
 
+// График активности по времени суток
+router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
+  try {
+    const { period = 'day' } = req.query; // day, week, month
+    
+    console.log('📊 [CMS] Получение активности по часам за период:', period);
+    
+    // Определяем временной диапазон
+    let dateFilter = null;
+    const now = new Date();
+    
+    if (period === 'day') {
+      dateFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    } else if (period === 'week') {
+      dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (period === 'month') {
+      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+    
+    // Получаем heartbeat события за выбранный период
+    let query = supabase
+      .from('analytics_events')
+      .select('created_at, session_id')
+      .eq('event_type', 'heartbeat');
+    
+    if (dateFilter) {
+      query = query.gte('created_at', dateFilter.toISOString());
+    }
+    
+    const { data: events, error } = await query;
+    
+    if (error) throw error;
+    
+    // Группируем по часам (0-23)
+    const hourlyActivity = new Array(24).fill(0).map((_, hour) => ({
+      hour: hour,
+      label: `${hour}:00`,
+      users: new Set() // Используем Set для уникальных пользователей
+    }));
+    
+    // Обрабатываем события
+    events?.forEach(event => {
+      const date = new Date(event.created_at);
+      const hour = date.getHours();
+      hourlyActivity[hour].users.add(event.session_id);
+    });
+    
+    // Конвертируем Set в count
+    const activityData = hourlyActivity.map(item => ({
+      hour: item.hour,
+      label: item.label,
+      users: item.users.size,
+      avg: item.users.size // Для совместимости с графиком
+    }));
+    
+    console.log(`✅ [CMS] Данные активности по часам сформированы`);
+    
+    res.json({
+      success: true,
+      data: activityData,
+      period,
+      totalEvents: events?.length || 0
+    });
+  } catch (error) {
+    console.error('❌ [CMS] Ошибка получения активности по часам:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
 
