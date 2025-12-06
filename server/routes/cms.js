@@ -94,7 +94,36 @@ router.get('/stats/basic', checkAuth, async (req, res) => {
 // Активные пользователи ("Прямо сейчас")
 router.get('/stats/active', checkAuth, async (req, res) => {
   try {
-    // Считаем активными тех, кто обновил данные за последние 15 минут
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    
+    // Проверяем наличие таблицы analytics_events
+    const { data: eventsCheck, error: eventsError } = await supabase
+      .from('analytics_events')
+      .select('session_id')
+      .gte('created_at', fiveMinutesAgo)
+      .limit(1);
+    
+    // Если таблица analytics_events есть и не пустая - используем её
+    if (!eventsError && eventsCheck) {
+      console.log('📊 [CMS] Используем analytics_events для подсчёта активных');
+      
+      const { data: recentEvents } = await supabase
+        .from('analytics_events')
+        .select('session_id')
+        .gte('created_at', fiveMinutesAgo);
+      
+      // Уникальные session_id за последние 5 минут
+      const uniqueSessions = new Set(recentEvents?.map(e => e.session_id) || []);
+      
+      return res.json({
+        success: true,
+        activeUsers: uniqueSessions.size,
+        source: 'analytics_events'
+      });
+    }
+    
+    // Fallback: используем старую логику (15 минут на primary_test_results)
+    console.log('⚠️ [CMS] Fallback: используем primary_test_results.updated_at');
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     
     const { count: activeUsers, error } = await supabase
@@ -106,7 +135,8 @@ router.get('/stats/active', checkAuth, async (req, res) => {
 
     res.json({
       success: true,
-      activeUsers: activeUsers || 0
+      activeUsers: activeUsers || 0,
+      source: 'fallback'
     });
   } catch (error) {
     console.error('❌ [CMS] Ошибка получения активных пользователей:', error);
