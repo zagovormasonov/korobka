@@ -771,6 +771,7 @@ router.post('/session-preparation', async (req, res) => {
 router.get('/session-feedback/history/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
+    console.log(`\n📥 [FEEDBACK HISTORY] Загрузка истории для sessionId: ${sessionId}`);
     
     // Получаем историю сообщений из базы
     const { data: messages, error } = await supabase
@@ -780,13 +781,14 @@ router.get('/session-feedback/history/:sessionId', async (req, res) => {
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching chat history:', error);
+      console.error('❌ [FEEDBACK HISTORY] Ошибка загрузки истории:', error);
       return res.status(500).json({ success: false, error: error.message });
     }
 
+    console.log(`✅ [FEEDBACK HISTORY] Загружено сообщений: ${messages?.length || 0}`);
     res.json({ success: true, messages: messages || [] });
   } catch (error) {
-    console.error('Error fetching chat history:', error);
+    console.error('❌ [FEEDBACK HISTORY] Критическая ошибка:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -795,10 +797,12 @@ router.get('/session-feedback/history/:sessionId', async (req, res) => {
 router.get('/session-feedback/limit/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
+    console.log(`\n🔢 [FEEDBACK LIMIT] Проверка лимита для sessionId: ${sessionId}`);
     
     // Получаем начало текущего дня в UTC
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
+    console.log(`📅 [FEEDBACK LIMIT] Начало дня (UTC): ${today.toISOString()}`);
     
     // Подсчитываем количество запросов за сегодня
     const { count, error } = await supabase
@@ -809,13 +813,15 @@ router.get('/session-feedback/limit/:sessionId', async (req, res) => {
       .gte('created_at', today.toISOString());
 
     if (error) {
-      console.error('Error checking limit:', error);
+      console.error('❌ [FEEDBACK LIMIT] Ошибка проверки лимита:', error);
       return res.status(500).json({ success: false, error: error.message });
     }
 
     const requestsToday = count || 0;
     const limit = 5;
     const remaining = Math.max(0, limit - requestsToday);
+    
+    console.log(`✅ [FEEDBACK LIMIT] Результат: запросов сегодня=${requestsToday}, лимит=${limit}, осталось=${remaining}`);
 
     res.json({ 
       success: true, 
@@ -825,7 +831,7 @@ router.get('/session-feedback/limit/:sessionId', async (req, res) => {
       canSend: remaining > 0
     });
   } catch (error) {
-    console.error('Error checking limit:', error);
+    console.error('❌ [FEEDBACK LIMIT] Критическая ошибка:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
