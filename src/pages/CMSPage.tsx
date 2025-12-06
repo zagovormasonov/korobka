@@ -87,6 +87,7 @@ const CMSPage: React.FC = () => {
   
   // Данные пользователей
   const [users, setUsers] = useState<any[]>([]);
+  const [onlineSessionIds, setOnlineSessionIds] = useState<string[]>([]); // Список онлайн sessionId из WebSocket
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
 
@@ -128,12 +129,9 @@ const CMSPage: React.FC = () => {
     });
     
     // Слушаем обновления списка онлайн пользователей
-    socket.on('online_users_update', (onlineSessionIds: string[]) => {
-      console.log('📊 [CMS] Обновление списка онлайн пользователей:', onlineSessionIds.length);
-      // Обновляем список пользователей если мы на вкладке "Пользователи"
-      if (activeTab === 'users') {
-        fetchUsers();
-      }
+    socket.on('online_users_update', (sessionIds: string[]) => {
+      console.log('📊 [CMS] Обновление списка онлайн пользователей:', sessionIds);
+      setOnlineSessionIds(sessionIds);
     });
     
     return () => {
@@ -284,7 +282,15 @@ const CMSPage: React.FC = () => {
     setVisiblePasswords(newSet);
   };
 
-  const filteredUsers = showOnlineOnly ? users.filter(u => u.isOnline) : users;
+  // Обновляем онлайн статус пользователей на основе данных из WebSocket
+  const usersWithUpdatedOnlineStatus = users.map(user => ({
+    ...user,
+    isOnline: onlineSessionIds.includes(user.sessionId)
+  }));
+
+  const filteredUsers = showOnlineOnly 
+    ? usersWithUpdatedOnlineStatus.filter(u => u.isOnline) 
+    : usersWithUpdatedOnlineStatus;
 
   if (!isAuthenticated) {
     return (
