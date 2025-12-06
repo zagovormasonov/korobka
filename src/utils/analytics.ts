@@ -52,3 +52,60 @@ export const getOrCreateSessionId = (): string => {
   return sessionId;
 };
 
+/**
+ * Запустить отправку heartbeat для отслеживания онлайн пользователей
+ * Отправляет событие каждые 30 секунд пока вкладка активна
+ */
+export const startHeartbeat = () => {
+  const sessionId = getOrCreateSessionId();
+  const currentPath = window.location.pathname;
+  
+  // Не отправляем heartbeat для /chat и /cms
+  if (currentPath.startsWith('/chat') || currentPath.startsWith('/cms')) {
+    console.log('📊 [HEARTBEAT] Пропускаем heartbeat для', currentPath);
+    return;
+  }
+  
+  // Отправляем первый heartbeat сразу
+  trackEvent('heartbeat', sessionId, { page: currentPath });
+  
+  // Затем каждые 30 секунд
+  const interval = setInterval(() => {
+    const path = window.location.pathname;
+    
+    // Проверяем что не перешли на /chat или /cms
+    if (path.startsWith('/chat') || path.startsWith('/cms')) {
+      clearInterval(interval);
+      return;
+    }
+    
+    // Проверяем что вкладка активна (не свернута)
+    if (document.visibilityState === 'visible') {
+      trackEvent('heartbeat', sessionId, { page: path });
+    }
+  }, 30000); // 30 секунд
+  
+  // Очищаем interval при закрытии страницы
+  window.addEventListener('beforeunload', () => {
+    clearInterval(interval);
+  });
+  
+  // Останавливаем heartbeat если вкладка неактивна больше 2 минут
+  let lastActiveTime = Date.now();
+  
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      lastActiveTime = Date.now();
+      // Отправляем heartbeat при возвращении на вкладку
+      trackEvent('heartbeat', sessionId, { page: window.location.pathname });
+    } else {
+      // Если вкладка свернута больше 2 минут - останавливаем
+      setTimeout(() => {
+        if (Date.now() - lastActiveTime > 120000) {
+          clearInterval(interval);
+        }
+      }, 120000);
+    }
+  });
+};
+

@@ -91,39 +91,63 @@ router.get('/stats/basic', checkAuth, async (req, res) => {
   }
 });
 
-// Активные пользователи ("Прямо сейчас")
+// Активные пользователи ("Прямо сейчас") - считаем тех, кто онлайн в последнюю минуту
 router.get('/stats/active', checkAuth, async (req, res) => {
   try {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
     
     // Проверяем наличие таблицы analytics_events
     const { data: eventsCheck, error: eventsError } = await supabase
       .from('analytics_events')
       .select('session_id')
-      .gte('created_at', fiveMinutesAgo)
+      .eq('event_type', 'heartbeat')
+      .gte('created_at', oneMinuteAgo)
       .limit(1);
     
-    // Если таблица analytics_events есть и не пустая - используем её
+    // Если таблица analytics_events есть и есть heartbeat события - используем их
     if (!eventsError && eventsCheck) {
-      console.log('📊 [CMS] Используем analytics_events для подсчёта активных');
+      console.log('📊 [CMS] Используем heartbeat события для подсчёта РЕАЛЬНО онлайн пользователей');
       
-      const { data: recentEvents } = await supabase
+      const { data: recentHeartbeats } = await supabase
         .from('analytics_events')
         .select('session_id')
-        .gte('created_at', fiveMinutesAgo);
+        .eq('event_type', 'heartbeat')
+        .gte('created_at', oneMinuteAgo);
       
-      // Уникальные session_id за последние 5 минут
-      const uniqueSessions = new Set(recentEvents?.map(e => e.session_id) || []);
+      // Уникальные session_id с heartbeat за последнюю минуту = реально онлайн
+      const uniqueSessions = new Set(recentHeartbeats?.map(e => e.session_id) || []);
+      
+      console.log(`✅ [CMS] Найдено ${uniqueSessions.size} пользователей онлайн (heartbeat за последние 60 сек)`);
       
       return res.json({
         success: true,
         activeUsers: uniqueSessions.size,
-        source: 'analytics_events'
+        source: 'heartbeat',
+        window_seconds: 60
       });
     }
     
-    // Fallback: используем старую логику (15 минут на primary_test_results)
-    console.log('⚠️ [CMS] Fallback: используем primary_test_results.updated_at');
+    // Fallback: используем старую логику (любые события за последние 5 минут)
+    console.log('⚠️ [CMS] Fallback: используем любые события за 5 минут');
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    
+    const { data: recentEvents } = await supabase
+      .from('analytics_events')
+      .select('session_id')
+      .gte('created_at', fiveMinutesAgo);
+    
+    if (recentEvents) {
+      const uniqueSessions = new Set(recentEvents.map(e => e.session_id));
+      return res.json({
+        success: true,
+        activeUsers: uniqueSessions.size,
+        source: 'events_fallback',
+        window_seconds: 300
+      });
+    }
+    
+    // Последний fallback: primary_test_results
+    console.log('⚠️ [CMS] Last fallback: используем primary_test_results.updated_at');
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     
     const { count: activeUsers, error } = await supabase
@@ -136,7 +160,7 @@ router.get('/stats/active', checkAuth, async (req, res) => {
     res.json({
       success: true,
       activeUsers: activeUsers || 0,
-      source: 'fallback'
+      source: 'legacy_fallback'
     });
   } catch (error) {
     console.error('❌ [CMS] Ошибка получения активных пользователей:', error);

@@ -1,6 +1,8 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
 import ruRU from 'antd/locale/ru_RU';
+import { useEffect } from 'react';
+import { startHeartbeat } from './utils/analytics';
 import HomePage from './pages/HomePage';
 import TestPage from './pages/TestPage';
 import BpdTestPage from './pages/BpdTestPage';
@@ -72,10 +74,25 @@ const customTheme = {
   },
 };
 
+// Компонент для запуска heartbeat
+function HeartbeatTracker() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Запускаем heartbeat только если не на /chat и /cms
+    if (!location.pathname.startsWith('/chat') && !location.pathname.startsWith('/cms')) {
+      startHeartbeat();
+    }
+  }, [location.pathname]);
+  
+  return null;
+}
+
 function App() {
   return (
     <ConfigProvider theme={customTheme} locale={ruRU}>
       <Router>
+        <HeartbeatTracker />
         <div style={{ minHeight: '100vh' }}>
           <Routes>
             <Route path="/" element={<HomePage />} />
