@@ -21,6 +21,7 @@ import { useAuth } from '../hooks/useAuth';
 import TelegramButton from '../components/TelegramButton';
 import Footer from '../components/Footer';
 import { openPdf, downloadPdf } from '../utils/pdfUtils';
+import { trackEvent } from '../utils/analytics';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -136,6 +137,11 @@ const PersonalPlanPage: React.FC = () => {
       // Открываем PDF напрямую по ссылке
       window.open(pdfUrl, '_blank', 'noopener,noreferrer');
       message.success('Персональный план открыт в новой вкладке!');
+      
+      // Tracking: скачали персональный план (PDF #1)
+      if (authData?.sessionId) {
+        await trackEvent('pdf_download', authData.sessionId, { pdf_type: 'personal_plan', pdf_number: 1 });
+      }
     } catch (error) {
       console.error('Error downloading personal plan:', error);
       message.error('Произошла ошибка при скачивании персонального плана');
@@ -153,6 +159,11 @@ const PersonalPlanPage: React.FC = () => {
       // Открываем PDF напрямую по ссылке
       window.open(pdfUrl, '_blank', 'noopener,noreferrer');
       message.success('Подготовка к сеансу открыта в новой вкладке!');
+      
+      // Tracking: скачали подготовку к сеансу (PDF #2)
+      if (authData?.sessionId) {
+        await trackEvent('pdf_download', authData.sessionId, { pdf_type: 'session_preparation', pdf_number: 2 });
+      }
     } catch (error) {
       console.error('Error downloading session preparation:', error);
       message.error('Произошла ошибка при скачивании подготовки к сеансу');
@@ -220,6 +231,14 @@ const PersonalPlanPage: React.FC = () => {
         
         // Очищаем форму
         psychologistForm.resetFields();
+        
+        // Tracking: оставили заявку на психолога
+        if (authData?.sessionId) {
+          await trackEvent('psychologist_request', authData.sessionId, { 
+            name: values.name,
+            contact: values.contact
+          });
+        }
         
         // Сбрасываем анимацию через 3 секунды
         setTimeout(() => {
@@ -317,6 +336,11 @@ const PersonalPlanPage: React.FC = () => {
         
         // Используем утилитарную функцию для открытия PDF
         openPdf(url, 'psychologist-recommendations.pdf', 'Рекомендации для психолога');
+        
+        // Tracking: скачали рекомендации для психолога (PDF #3)
+        if (authData?.sessionId) {
+          await trackEvent('pdf_download', authData.sessionId, { pdf_type: 'psychologist_pdf', pdf_number: 3 });
+        }
       } else {
         const errorData = await response.json();
         message.error(errorData.error || 'Ошибка при скачивании рекомендаций для психолога');

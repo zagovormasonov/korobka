@@ -364,11 +364,40 @@ router.get('/stats/detailed-funnel', checkAuth, async (req, res) => {
     const paymentSuccess = await countUniqueUsers('payment_success');
     const planUnlocked = await countUniqueUsers('plan_unlocked');
     
-    // PDF скачивания (нужно добавить эти события)
+    // PDF скачивания (подсчет уникальных пользователей по количеству скачанных PDFs)
+    const { data: pdfEvents, error: pdfError } = await supabase
+      .from('analytics_events')
+      .select('session_id, metadata')
+      .eq('event_type', 'pdf_download');
+    
+    if (pdfError) throw pdfError;
+    
+    // Группируем по session_id и считаем количество уникальных PDFs
+    const pdfsByUser = {};
+    pdfEvents?.forEach(event => {
+      if (!pdfsByUser[event.session_id]) {
+        pdfsByUser[event.session_id] = new Set();
+      }
+      if (event.metadata?.pdf_number) {
+        pdfsByUser[event.session_id].add(event.metadata.pdf_number);
+      }
+    });
+    
+    // Считаем сколько пользователей скачали 1, 2 или 3 PDF
+    let usersWithOnePdf = 0;
+    let usersWithTwoPdf = 0;
+    let usersWithThreePdf = 0;
+    
+    Object.values(pdfsByUser).forEach(pdfs => {
+      if (pdfs.size >= 1) usersWithOnePdf++;
+      if (pdfs.size >= 2) usersWithTwoPdf++;
+      if (pdfs.size >= 3) usersWithThreePdf++;
+    });
+    
     const pdfDownloads = {
-      one: await countUniqueUsers('pdf_download_1'),
-      two: await countUniqueUsers('pdf_download_2'),
-      three: await countUniqueUsers('pdf_download_3')
+      one: usersWithOnePdf,
+      two: usersWithTwoPdf,
+      three: usersWithThreePdf
     };
     
     // Заявка на психолога

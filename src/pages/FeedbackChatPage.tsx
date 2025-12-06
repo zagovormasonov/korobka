@@ -4,6 +4,7 @@ import { Typography, Input, message, Spin } from 'antd';
 import { ArrowLeftOutlined, SendOutlined, MessageOutlined } from '@ant-design/icons';
 import { apiRequest } from '../config/api';
 import { useAuth } from '../hooks/useAuth';
+import { trackEvent } from '../utils/analytics';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -153,6 +154,14 @@ const FeedbackChatPage: React.FC = () => {
           // Обновляем лимит
           await checkFeedbackLimit();
           message.success('Ответ получен!');
+          
+          // Tracking: использовали обратную связь
+          if (authData?.sessionId) {
+            await trackEvent('feedback_sent', authData.sessionId, { 
+              message_length: userMessage.length,
+              messages_count: chatMessages.length + 2 // +2 для текущего сообщения и ответа
+            });
+          }
         } else {
           message.error(data.error || 'Ошибка при анализе обратной связи');
           // Удаляем сообщение пользователя при ошибке
