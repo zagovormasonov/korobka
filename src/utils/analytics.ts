@@ -84,8 +84,11 @@ export const trackEvent = async (
  * ВАЖНО: Использует тот же sessionId что и в тесте!
  */
 export const getOrCreateSessionId = (): string => {
-  // Приоритет: sessionId из теста (localStorage) > sessionStorage > новый
+  // Приоритет: sessionId из dashboard/test (localStorage) > sessionStorage > новый
   let sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
+  
+  console.log('🔍 [SESSION] Ищем sessionId в localStorage:', localStorage.getItem('sessionId'));
+  console.log('🔍 [SESSION] Ищем sessionId в sessionStorage:', sessionStorage.getItem('sessionId'));
   
   if (!sessionId) {
     // Проверяем testProgress
@@ -95,9 +98,10 @@ export const getOrCreateSessionId = (): string => {
         const data = JSON.parse(testProgress);
         if (data.sessionId) {
           sessionId = data.sessionId;
+          console.log('🔍 [SESSION] Найден sessionId в testProgress:', sessionId);
         }
       } catch (e) {
-        console.error('Ошибка парсинга testProgress:', e);
+        console.error('❌ [SESSION] Ошибка парсинга testProgress:', e);
       }
     }
   }
@@ -106,6 +110,9 @@ export const getOrCreateSessionId = (): string => {
     // Создаём новый только если нигде не нашли
     sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
     sessionStorage.setItem('sessionId', sessionId);
+    console.log('⚠️ [SESSION] Создан НОВЫЙ sessionId:', sessionId);
+  } else {
+    console.log('✅ [SESSION] Используем существующий sessionId:', sessionId);
   }
   
   return sessionId;

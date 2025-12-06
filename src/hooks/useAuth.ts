@@ -27,6 +27,7 @@ export const useAuth = (): UseAuthReturn => {
   const logout = () => {
     localStorage.removeItem('dashboardToken');
     sessionStorage.removeItem('dashboardToken');
+    localStorage.removeItem('sessionId'); // Очищаем sessionId при выходе
     setIsAuthenticated(false);
     setAuthData(null);
     message.success('Вы вышли из системы');
@@ -77,6 +78,11 @@ export const useAuth = (): UseAuthReturn => {
 
       if (data.success && data.sessionId) {
         console.log('✅ [AUTH] Токен валиден, sessionId:', data.sessionId);
+        
+        // ВАЖНО: Сохраняем sessionId в localStorage для WebSocket и аналитики
+        localStorage.setItem('sessionId', data.sessionId);
+        console.log('💾 [AUTH] SessionId сохранён в localStorage:', data.sessionId);
+        
         setAuthData({
           sessionId: data.sessionId,
           nickname: data.nickname || '',
