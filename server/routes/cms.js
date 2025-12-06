@@ -302,6 +302,108 @@ router.get('/stats/diagnosis', checkAuth, async (req, res) => {
   }
 });
 
+// Детальная воронка конверсии с отслеживанием каждого шага
+router.get('/stats/detailed-funnel', checkAuth, async (req, res) => {
+  try {
+    const { period = 'all' } = req.query;
+    
+    console.log(`📊 [CMS] Получение детальной воронки за период: ${period}`);
+    
+    // Вычисляем дату начала для фильтра
+    let dateFilter = null;
+    const now = new Date();
+    
+    if (period === 'day') {
+      dateFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+    } else if (period === 'week') {
+      dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (period === 'month') {
+      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    }
+    
+    // Функция для подсчета уникальных пользователей по событию
+    const countUniqueUsers = async (eventType, additionalFilter = null) => {
+      let query = supabase
+        .from('analytics_events')
+        .select('session_id', { count: 'exact' })
+        .eq('event_type', eventType);
+      
+      if (dateFilter) {
+        query = query.gte('created_at', dateFilter);
+      }
+      
+      if (additionalFilter) {
+        query = additionalFilter(query);
+      }
+      
+      const { data, error } = await query;
+      if (error) return 0;
+      
+      // Уникальные session_id
+      const uniqueSessions = new Set(data?.map(e => e.session_id) || []);
+      return uniqueSessions.size;
+    };
+    
+    // Подсчет по каждому вопросу
+    const questionStats = [];
+    for (let i = 1; i <= 45; i++) {
+      const count = await countUniqueUsers('test_question', (query) => 
+        query.contains('metadata', { question_number: i })
+      );
+      questionStats.push({
+        step: `Вопрос ${i}`,
+        users: count,
+        stage: `question_${i}`
+      });
+    }
+    
+    // Основные этапы
+    const testStart = await countUniqueUsers('test_start');
+    const testComplete = await countUniqueUsers('test_complete');
+    const paymentInit = await countUniqueUsers('payment_init');
+    const paymentSuccess = await countUniqueUsers('payment_success');
+    const planUnlocked = await countUniqueUsers('plan_unlocked');
+    
+    // PDF скачивания (нужно добавить эти события)
+    const pdfDownloads = {
+      one: await countUniqueUsers('pdf_download_1'),
+      two: await countUniqueUsers('pdf_download_2'),
+      three: await countUniqueUsers('pdf_download_3')
+    };
+    
+    // Заявка на психолога
+    const psychologistRequest = await countUniqueUsers('psychologist_request');
+    
+    // Обратная связь
+    const feedbackSent = await countUniqueUsers('feedback_sent');
+    
+    // Формируем детальную воронку
+    const detailedFunnel = [
+      { step: 'Начали тест', users: testStart, stage: 'test_start' },
+      ...questionStats,
+      { step: 'Завершили тест и попали на страницу оплаты', users: testComplete, stage: 'test_complete' },
+      { step: 'Инициировали оплату', users: paymentInit, stage: 'payment_init' },
+      { step: 'Оплатили', users: paymentSuccess, stage: 'payment_success' },
+      { step: 'Получили персональный план', users: planUnlocked, stage: 'plan_unlocked' },
+      { step: 'Скачали 1 PDF', users: pdfDownloads.one, stage: 'pdf_1' },
+      { step: 'Скачали 2 PDF', users: pdfDownloads.two, stage: 'pdf_2' },
+      { step: 'Скачали все 3 PDF', users: pdfDownloads.three, stage: 'pdf_3' },
+      { step: 'Оставили заявку на психолога', users: psychologistRequest, stage: 'psychologist' },
+      { step: 'Использовали обратную связь', users: feedbackSent, stage: 'feedback' }
+    ];
+    
+    res.json({
+      success: true,
+      period,
+      funnel: detailedFunnel,
+      totalSteps: detailedFunnel.length
+    });
+  } catch (error) {
+    console.error('❌ [CMS] Ошибка получения детальной воронки:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Воронка конверсии (с поддержкой фильтров по времени)
 router.get('/stats/funnel', checkAuth, async (req, res) => {
   try {
