@@ -511,17 +511,62 @@ const CMSPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-            {loading && !basicStats ? (
-              <div style={{ textAlign: 'center', padding: '50px' }}>
-                <Spin size="large" tip="Загрузка данных..." />
-              </div>
-            ) : (
+          {loading && !basicStats ? (
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+              <Spin size="large" tip="Загрузка данных..." />
+            </div>
+          ) : (
             <>
               {/* Обзор */}
               {activeTab === 'overview' && (
-                <>
+                <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', height: '100%' }}>
+                  {/* Счётчик планов и мини-воронка */}
                   <Row gutter={[16, 16]}>
+                    <Col xs={24} md={12}>
+                      <Card bordered={false} style={{ height: '100%' }}>
+                        <div style={{ textAlign: 'center', padding: '20px' }}>
+                          <Title level={1} style={{ fontSize: '72px', color: '#1890ff', margin: 0 }}>
+                            {basicStats?.unlockedPlans || 0}
+                          </Title>
+                          <Text type="secondary" style={{ fontSize: '18px' }}>
+                            персональных планов выдано
+                          </Text>
+                        </div>
+                      </Card>
+                    </Col>
+                    <Col xs={24} md={12}>
+                      <Card title="Мини-воронка" bordered={false} style={{ height: '100%' }}>
+                        <ResponsiveContainer width="100%" height={200}>
+                          <BarChart
+                            data={[
+                              { name: 'Начали тест', value: basicStats?.totalUsers || 0, fill: '#8884d8' },
+                              { name: 'Завершили тест', value: basicStats?.completedTests || 0, fill: '#83a6ed' },
+                              { name: 'Получили план', value: basicStats?.unlockedPlans || 0, fill: '#82ca9d' }
+                            ]}
+                            layout="vertical"
+                            margin={{ top: 5, right: 20, left: 5, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" />
+                            <YAxis 
+                              dataKey="name" 
+                              type="category" 
+                              width={120}
+                              tick={{ fontSize: 12 }}
+                            />
+                            <ChartTooltip />
+                            <Bar dataKey="value" name="Пользователи">
+                              {[0, 1, 2].map((index) => (
+                                <Cell key={`cell-${index}`} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </Card>
+                    </Col>
+                  </Row>
+
+                  <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
                     <Col xs={24} sm={12} lg={6}>
                       <Card bordered={false}>
                         <Statistic
@@ -565,43 +610,21 @@ const CMSPage: React.FC = () => {
                     </Col>
                   </Row>
 
-                  <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
-                    <Col span={24}>
-                      <Card title="Счетчик сгенерированных планов" bordered={false}>
-                        <div style={{ textAlign: 'center', padding: '40px' }}>
-                          <Title level={1} style={{ fontSize: '72px', color: '#1890ff', margin: 0 }}>
-                            {basicStats?.unlockedPlans}
-                          </Title>
-                          <Text type="secondary" style={{ fontSize: '18px' }}>
-                            персональных планов выдано пользователям
-                          </Text>
-                        </div>
-                      </Card>
-                    </Col>
-                  </Row>
-
                   {/* График Активности */}
                   <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
                     <Col span={24}>
                       <Card 
                         title={
-                          <Space>
-                            <span>
-                              {activityMetricType === 'active_users' && '📈 Активность пользователей'}
-                              {activityMetricType === 'new_users' && '🆕 Новые пользователи'}
-                              {activityMetricType === 'conversion_rate' && '📊 Динамика конверсии из начала теста в покупку'}
-                            </span>
-                            <Select
-                              value={activityMetricType}
-                              onChange={(value) => setActivityMetricType(value)}
-                              style={{ width: 250 }}
-                              dropdownMatchSelectWidth={false}
-                            >
-                              <Select.Option value="active_users">Активность пользователей</Select.Option>
-                              <Select.Option value="new_users">Новые пользователи</Select.Option>
-                              <Select.Option value="conversion_rate">Динамика конверсии из начала теста в покупку</Select.Option>
-                            </Select>
-                          </Space>
+                          <Select
+                            value={activityMetricType}
+                            onChange={(value) => setActivityMetricType(value)}
+                            style={{ width: 400 }}
+                            dropdownMatchSelectWidth={false}
+                          >
+                            <Select.Option value="active_users">📈 Активность пользователей</Select.Option>
+                            <Select.Option value="new_users">🆕 Новые пользователи</Select.Option>
+                            <Select.Option value="conversion_rate">📊 Динамика конверсии из начала теста в покупку</Select.Option>
+                          </Select>
                         }
                         bordered={false}
                         extra={
@@ -681,34 +704,36 @@ const CMSPage: React.FC = () => {
                           </Space>
                         </div>
 
-                        <div style={{ marginBottom: '16px' }}>
-                          <Space wrap>
-                            <Checkbox 
-                              checked={activityFilters.homepage}
-                              onChange={(e) => setActivityFilters({ ...activityFilters, homepage: e.target.checked })}
-                            >
-                              Главная страница
-                            </Checkbox>
-                            <Checkbox 
-                              checked={activityFilters.test}
-                              onChange={(e) => setActivityFilters({ ...activityFilters, test: e.target.checked })}
-                            >
-                              Тест
-                            </Checkbox>
-                            <Checkbox 
-                              checked={activityFilters.dashboard}
-                              onChange={(e) => setActivityFilters({ ...activityFilters, dashboard: e.target.checked })}
-                            >
-                              Личный кабинет
-                            </Checkbox>
-                            <Checkbox 
-                              checked={activityFilters.other}
-                              onChange={(e) => setActivityFilters({ ...activityFilters, other: e.target.checked })}
-                            >
-                              Остальные страницы
-                            </Checkbox>
-                          </Space>
-                        </div>
+                        {activityMetricType === 'active_users' && (
+                          <div style={{ marginBottom: '16px' }}>
+                            <Space wrap>
+                              <Checkbox 
+                                checked={activityFilters.homepage}
+                                onChange={(e) => setActivityFilters({ ...activityFilters, homepage: e.target.checked })}
+                              >
+                                Главная страница
+                              </Checkbox>
+                              <Checkbox 
+                                checked={activityFilters.test}
+                                onChange={(e) => setActivityFilters({ ...activityFilters, test: e.target.checked })}
+                              >
+                                Тест
+                              </Checkbox>
+                              <Checkbox 
+                                checked={activityFilters.dashboard}
+                                onChange={(e) => setActivityFilters({ ...activityFilters, dashboard: e.target.checked })}
+                              >
+                                Личный кабинет
+                              </Checkbox>
+                              <Checkbox 
+                                checked={activityFilters.other}
+                                onChange={(e) => setActivityFilters({ ...activityFilters, other: e.target.checked })}
+                              >
+                                Остальные страницы
+                              </Checkbox>
+                            </Space>
+                          </div>
+                        )}
                         
                         {activityData.length > 0 ? (
                           <ResponsiveContainer width="100%" height={400}>
@@ -723,7 +748,13 @@ const CMSPage: React.FC = () => {
                                 }}
                               />
                               <YAxis 
-                                label={{ value: 'Уникальных пользователей', angle: -90, position: 'insideLeft' }}
+                                label={{ 
+                                  value: activityMetricType === 'conversion_rate' ? 'Конверсия (%)' : 
+                                         activityMetricType === 'new_users' ? 'Новые пользователи' : 
+                                         'Уникальных пользователей', 
+                                  angle: -90, 
+                                  position: 'insideLeft' 
+                                }}
                               />
                               <ChartTooltip 
                                 content={({ active, payload }) => {
@@ -739,7 +770,9 @@ const CMSPage: React.FC = () => {
                                           <strong>{payload[0].payload.label}</strong>
                                         </p>
                                         <p style={{ margin: '4px 0 0 0', color: '#1890ff' }}>
-                                          👥 Пользователей: {payload[0].value}
+                                          {activityMetricType === 'conversion_rate' ? '📊 Конверсия: ' : '👥 Пользователей: '}
+                                          {payload[0].value}
+                                          {activityMetricType === 'conversion_rate' ? '%' : ''}
                                         </p>
                                       </div>
                                     );
@@ -751,7 +784,11 @@ const CMSPage: React.FC = () => {
                               <Line 
                                 type="monotone" 
                                 dataKey="users" 
-                                name="Уникальных пользователей"
+                                name={
+                                  activityMetricType === 'conversion_rate' ? 'Конверсия (%)' :
+                                  activityMetricType === 'new_users' ? 'Новые пользователи' :
+                                  'Активные пользователи'
+                                }
                                 stroke="#1890ff" 
                                 strokeWidth={2}
                                 dot={{ fill: '#1890ff', r: 4 }}
@@ -993,12 +1030,13 @@ const CMSPage: React.FC = () => {
                       </Card>
                     </Col>
                   </Row>
-                </>
+                </div>
               )}
 
               {/* Пользователи */}
               {activeTab === 'users' && (
-                <Row gutter={[16, 16]}>
+                <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', height: '100%' }}>
+                  <Row gutter={[16, 16]}>
                   <Col span={24}>
                     <Card 
                       title={
@@ -1124,11 +1162,13 @@ const CMSPage: React.FC = () => {
                     </Card>
                   </Col>
                 </Row>
+                </div>
               )}
 
               {/* Детальная воронка */}
               {activeTab === 'funnel' && (
-                <Row gutter={[16, 16]}>
+                <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', height: '100%' }}>
+                  <Row gutter={[16, 16]}>
                   <Col span={24}>
                     <Card 
                       title="Детальная воронка конверсии" 
@@ -1154,20 +1194,21 @@ const CMSPage: React.FC = () => {
                         </Text>
                       </div>
                       
-                      <div style={{ height: Math.max(1200, funnelData.length * 20), paddingLeft: '20px' }}>
+                      <div style={{ height: Math.max(1200, funnelData.length * 20) }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
                             data={funnelData}
                             layout="vertical"
-                            margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                            margin={{ top: 5, right: 30, left: 5, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis type="number" label={{ value: 'Количество пользователей', position: 'insideBottom', offset: -5 }} />
                             <YAxis 
                               dataKey="step" 
                               type="category" 
-                              width={280}
-                              tick={{ fontSize: 11 }}
+                              width={200}
+                              tick={{ fontSize: 10 }}
+                              style={{ textAnchor: 'start' }}
                             />
                             <ChartTooltip 
                               content={({ active, payload }) => {
@@ -1238,11 +1279,13 @@ const CMSPage: React.FC = () => {
                     </Card>
                   </Col>
                 </Row>
+                </div>
               )}
 
               {/* Дорожная карта */}
               {activeTab === 'roadmap' && (
-                <Row gutter={[16, 16]}>
+                <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', height: '100%' }}>
+                  <Row gutter={[16, 16]}>
                   <Col span={24}>
                     <Card title="📋 Что нужно реализовать дальше" bordered={false}>
                       <List
@@ -1335,22 +1378,28 @@ const CMSPage: React.FC = () => {
                             ]
                           },
                           {
-                            title: '5. Расширенная аналитика по времени',
-                            description: '✅ ПОЛНОСТЬЮ РЕАЛИЗОВАНО! Многофункциональный блок с 3 типами метрик.',
+                            title: '5. Расширенная аналитика по времени + UX',
+                            description: '✅ ПОЛНОСТЬЮ РЕАЛИЗОВАНО! Многофункциональный блок с 3 типами метрик и идеальным UX.',
                             tasks: [
                               '✅ График активности пользователей (heartbeat события)',
                               '✅ График новых пользователей (первое событие test_start для каждого session_id)',
                               '✅ График динамики конверсии из начала теста в покупку (% payment_success от test_start)',
-                              '✅ Выпадающий список для переключения между типами метрик',
-                              '✅ Динамическое изменение заголовка блока в зависимости от выбранной метрики',
+                              '✅ Выпадающий список ВМ title (компактный UI) с эмодзи для переключения метрик',
+                              '✅ Динамическое изменение всех элементов графика в зависимости от режима:',
+                              '  └─ Название оси Y (Уникальных пользователей / Новые пользователи / Конверсия %)',
+                              '  └─ Название линии в легенде',
+                              '  └─ Формат данных в tooltip (кол-во или %)',
+                              '  └─ Отображение фильтров страниц (только для "Активность пользователей")',
                               '✅ Поддержка всех периодов: за сутки (часы), за неделю (дни), за месяц (даты)',
                               '✅ Навигация по датам с DatePicker',
-                              '✅ Фильтры по типам страниц (для активности пользователей)',
+                              '✅ Адаптивные фильтры по типам страниц (скрываются для new_users и conversion_rate)',
                               '',
-                              '📊 ТИПЫ МЕТРИК:',
-                              '  ✅ "Активность пользователей" - уникальные пользователи с heartbeat',
-                              '  ✅ "Новые пользователи" - первые визиты (test_start)',
-                              '  ✅ "Динамика конверсии" - % конверсии из начала в покупку',
+                              '🎨 UX УЛУЧШЕНИЯ CMS:',
+                              '  ✅ Исправлен отступ воронки (убран paddingLeft, width YAxis 200px, margin left 5px)',
+                              '  ✅ Счётчик планов поднят вверх в разделе "Обзор"',
+                              '  ✅ Мини-воронка справа от счётчика (3 этапа: начало, завершение, план)',
+                              '  ✅ Независимый скролл разделов - РЕАЛЬНО ИСПРАВЛЕН! Каждый раздел имеет свой div с overflow',
+                              '  ✅ Названия статистики: "Конверсия из начала теста в..."',
                               '',
                               '⚪ Что можно добавить:',
                               '  ⚪ Сравнение текущей недели с прошлой',
@@ -1424,10 +1473,10 @@ const CMSPage: React.FC = () => {
                     </Card>
                   </Col>
                 </Row>
+                </div>
               )}
             </>
           )}
-          </div>
         </Content>
       </Layout>
     </Layout>
