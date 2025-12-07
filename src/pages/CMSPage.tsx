@@ -544,8 +544,8 @@ const CMSPage: React.FC = () => {
                       </Card>
                     </Col>
                     <Col xs={24} md={12}>
-                      <Card bordered={false} style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ width: '100%', padding: '20px' }}>
+                      <Card bordered={false} style={{ height: '100%' }}>
+                        <div style={{ padding: '20px' }}>
                           <ResponsiveContainer width="100%" height={200}>
                             <BarChart
                               data={[
