@@ -40,9 +40,6 @@ import {
   UserOutlined, 
   DashboardOutlined, 
   LineChartOutlined, 
-  TeamOutlined, 
-  UnlockOutlined,
-  HeartOutlined,
   ThunderboltOutlined,
   EyeOutlined,
   EyeInvisibleOutlined,
@@ -1037,11 +1034,11 @@ const CMSPage: React.FC = () => {
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
-                                data={diagnosisData?.distribution}
+                                data={diagnosisData?.distribution as any}
                                 cx="50%"
                                 cy="50%"
                                 labelLine={true}
-                                label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
+                                label={({ name, percent }: { name: string; percent?: number }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
                                 outerRadius={180}
                                 fill="#8884d8"
                                 dataKey="value"
