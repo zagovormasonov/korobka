@@ -31,6 +31,7 @@ router.post('/track', async (req, res) => {
 
     console.log(`📊 [ANALYTICS] Tracking событие: ${eventType} для session ${sessionId}`);
     
+    // Сохраняем событие в analytics_events
     const { data, error } = await supabase
       .from('analytics_events')
       .insert({
@@ -43,6 +44,42 @@ router.post('/track', async (req, res) => {
     if (error) {
       console.error('❌ [ANALYTICS] Ошибка сохранения события:', error);
       throw error;
+    }
+
+    // Если это test_start, создаём запись в primary_test_results (если её ещё нет)
+    if (eventType === 'test_start') {
+      try {
+        // Проверяем, существует ли уже запись для этого sessionId
+        const { data: existingUser, error: checkError } = await supabase
+          .from('primary_test_results')
+          .select('session_id')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = not found, это нормально
+          console.error('❌ [ANALYTICS] Ошибка проверки существующего пользователя:', checkError);
+        } else if (!existingUser) {
+          // Создаём новую запись без answers (пользователь только начал тест)
+          const { error: insertError } = await supabase
+            .from('primary_test_results')
+            .insert({
+              session_id: sessionId,
+              answers: null, // Пока нет ответов
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (insertError) {
+            console.error('❌ [ANALYTICS] Ошибка создания записи пользователя:', insertError);
+            // Не прерываем выполнение, это не критично
+          } else {
+            console.log(`✅ [ANALYTICS] Создана запись для нового пользователя: ${sessionId}`);
+          }
+        }
+      } catch (userError) {
+        console.error('❌ [ANALYTICS] Ошибка при создании записи пользователя:', userError);
+        // Не прерываем выполнение, продолжаем
+      }
     }
 
     res.json({ success: true });

@@ -66,6 +66,66 @@ dayjs.extend(isoWeek);
 const { Title, Text, Paragraph } = Typography;
 const { Content, Sider } = Layout;
 
+// Типы данных
+interface BasicStats {
+  totalUsers: number;
+  completedTests: number;
+  unlockedPlans: number;
+}
+
+interface FunnelDataItem {
+  step: string;
+  users: number;
+  stage: string;
+}
+
+interface DiagnosisDistributionItem {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface DiagnosisData {
+  distribution: DiagnosisDistributionItem[];
+  correlations?: Array<{ name: string; value: number }>;
+}
+
+interface User {
+  sessionId: string;
+  nickname: string;
+  hasPassword: boolean;
+  password: string | null;
+  createdAt: string;
+  updatedAt: string;
+  isOnline: boolean;
+  personalPlanUnlocked: boolean;
+  funnel: {
+    started: boolean;
+    questionsAnswered: number;
+    totalQuestions: number;
+    completed: boolean;
+    paid: boolean;
+  };
+}
+
+interface ActivityDataItem {
+  index: number;
+  label: string;
+  users: number;
+}
+
+interface HeatmapDataItem {
+  day: string;
+  hour: number;
+  users: number;
+}
+
+interface PeakHoursPrediction {
+  peakHours: string[];
+  bestMaintenanceTime: string[];
+  avgUsersPerHour: number;
+}
+
 // Компонент пульсирующего индикатора
 const PulsingDot = () => (
   <div style={{ position: 'relative', display: 'inline-block', width: '10px', height: '10px', marginRight: '8px' }}>
@@ -98,21 +158,21 @@ const CMSPage: React.FC = () => {
   const [funnelPeriod, setFunnelPeriod] = useState('all'); // all, day, week, month
   
   // Данные статистики
-  const [basicStats, setBasicStats] = useState<any>(null);
-  const [funnelData, setFunnelData] = useState<any[]>([]);
-  const [diagnosisData, setDiagnosisData] = useState<any>(null);
+  const [basicStats, setBasicStats] = useState<BasicStats | null>(null);
+  const [funnelData, setFunnelData] = useState<FunnelDataItem[]>([]);
+  const [diagnosisData, setDiagnosisData] = useState<DiagnosisData | null>(null);
   const [activeUsers, setActiveUsers] = useState(0);
   
   // Данные пользователей
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [onlineSessionIds, setOnlineSessionIds] = useState<string[]>([]); // Список онлайн sessionId из WebSocket
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
   
   // Данные графика активности
-  const [activityData, setActivityData] = useState<any[]>([]);
-  const [activityMetricType, setActivityMetricType] = useState('active_users'); // active_users, new_users, conversion_rate
-  const [activityPeriod, setActivityPeriod] = useState('day'); // day, week, month
+  const [activityData, setActivityData] = useState<ActivityDataItem[]>([]);
+  const [activityMetricType, setActivityMetricType] = useState<'active_users' | 'new_users' | 'conversion_rate'>('active_users');
+  const [activityPeriod, setActivityPeriod] = useState<'day' | 'week' | 'month'>('day');
   const [activityDate, setActivityDate] = useState<Dayjs>(dayjs()); // Выбранная дата
   const [activityFilters, setActivityFilters] = useState({
     homepage: true,
@@ -122,8 +182,8 @@ const CMSPage: React.FC = () => {
   });
   
   // Данные тепловой карты и прогнозирования
-  const [heatmapData, setHeatmapData] = useState<any[]>([]);
-  const [peakHoursPrediction, setPeakHoursPrediction] = useState<any>(null);
+  const [heatmapData, setHeatmapData] = useState<HeatmapDataItem[]>([]);
+  const [peakHoursPrediction, setPeakHoursPrediction] = useState<PeakHoursPrediction | null>(null);
 
   // Проверка авторизации при загрузке (из localStorage)
   useEffect(() => {
@@ -986,7 +1046,7 @@ const CMSPage: React.FC = () => {
                                 fill="#8884d8"
                                 dataKey="value"
                               >
-                                {diagnosisData?.distribution.map((entry: any, index: number) => (
+                                {diagnosisData?.distribution.map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                               </Pie>
