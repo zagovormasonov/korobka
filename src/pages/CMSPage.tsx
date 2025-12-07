@@ -1199,16 +1199,15 @@ const CMSPage: React.FC = () => {
                           <BarChart
                             data={funnelData}
                             layout="vertical"
-                            margin={{ top: 5, right: 30, left: 5, bottom: 5 }}
+                            margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis type="number" label={{ value: 'Количество пользователей', position: 'insideBottom', offset: -5 }} />
                             <YAxis 
                               dataKey="step" 
                               type="category" 
-                              width={200}
-                              tick={{ fontSize: 10 }}
-                              style={{ textAnchor: 'start' }}
+                              width={250}
+                              tick={{ fontSize: 11 }}
                             />
                             <ChartTooltip 
                               content={({ active, payload }) => {
