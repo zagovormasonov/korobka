@@ -544,33 +544,35 @@ const CMSPage: React.FC = () => {
                       </Card>
                     </Col>
                     <Col xs={24} md={12}>
-                      <Card bordered={false} style={{ height: '100%' }}>
-                        <ResponsiveContainer width="100%" height={200}>
-                          <BarChart
-                            data={[
-                              { name: 'Начали тест', value: basicStats?.totalUsers || 0, fill: '#8884d8' },
-                              { name: 'Завершили тест', value: basicStats?.completedTests || 0, fill: '#83a6ed' },
-                              { name: 'Получили план', value: basicStats?.unlockedPlans || 0, fill: '#82ca9d' }
-                            ]}
-                            layout="vertical"
-                            margin={{ top: 5, right: 20, left: 5, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis 
-                              dataKey="name" 
-                              type="category" 
-                              width={120}
-                              tick={{ fontSize: 12 }}
-                            />
-                            <ChartTooltip />
-                            <Bar dataKey="value" name="Пользователи">
-                              {[0, 1, 2].map((index) => (
-                                <Cell key={`cell-${index}`} />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
+                      <Card bordered={false} style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '100%', padding: '20px' }}>
+                          <ResponsiveContainer width="100%" height={200}>
+                            <BarChart
+                              data={[
+                                { name: 'Начали тест', value: basicStats?.totalUsers || 0, fill: '#8884d8' },
+                                { name: 'Завершили тест', value: basicStats?.completedTests || 0, fill: '#83a6ed' },
+                                { name: 'Получили план', value: basicStats?.unlockedPlans || 0, fill: '#82ca9d' }
+                              ]}
+                              layout="vertical"
+                              margin={{ top: 10, right: 20, left: 5, bottom: 10 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis type="number" />
+                              <YAxis 
+                                dataKey="name" 
+                                type="category" 
+                                width={120}
+                                tick={{ fontSize: 12 }}
+                              />
+                              <ChartTooltip />
+                              <Bar dataKey="value" name="Пользователи">
+                                {[0, 1, 2].map((index) => (
+                                  <Cell key={`cell-${index}`} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
                       </Card>
                     </Col>
                   </Row>
