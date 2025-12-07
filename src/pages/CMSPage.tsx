@@ -111,6 +111,7 @@ const CMSPage: React.FC = () => {
   
   // Данные графика активности
   const [activityData, setActivityData] = useState<any[]>([]);
+  const [activityMetricType, setActivityMetricType] = useState('active_users'); // active_users, new_users, conversion_rate
   const [activityPeriod, setActivityPeriod] = useState('day'); // day, week, month
   const [activityDate, setActivityDate] = useState<Dayjs>(dayjs()); // Выбранная дата
   const [activityFilters, setActivityFilters] = useState({
@@ -186,14 +187,14 @@ const CMSPage: React.FC = () => {
     }
   }, [funnelPeriod, isAuthenticated]);
 
-  // Перезагрузка графика активности при изменении периода, даты или фильтров
+  // Перезагрузка графика активности при изменении периода, даты, фильтров или типа метрики
   useEffect(() => {
     if (!isAuthenticated) return;
     const token = localStorage.getItem('cms_token');
     if (token) {
       fetchActivityData(token);
     }
-  }, [activityPeriod, activityDate, activityFilters, isAuthenticated]);
+  }, [activityPeriod, activityDate, activityFilters, activityMetricType, isAuthenticated]);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -315,7 +316,7 @@ const CMSPage: React.FC = () => {
       const pagesParam = activeFilters.length > 0 ? activeFilters.join(',') : 'all';
       const dateParam = activityDate.format('YYYY-MM-DD');
       
-      const response = await apiRequest(`api/cms/stats/activity-by-hour?period=${activityPeriod}&pages=${pagesParam}&date=${dateParam}`, { 
+      const response = await apiRequest(`api/cms/stats/activity-by-hour?period=${activityPeriod}&pages=${pagesParam}&date=${dateParam}&metricType=${activityMetricType}`, { 
         headers: { 'Authorization': `Bearer ${token}` } 
       });
       if (response.ok) {
@@ -495,9 +496,9 @@ const CMSPage: React.FC = () => {
         </div>
       </Sider>
       
-      <Layout style={{ background: '#f0f2f5', padding: '24px', marginLeft: '250px' }}>
-        <Content>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <Layout style={{ background: '#f0f2f5', padding: '24px', marginLeft: '250px', height: '100vh', overflow: 'hidden' }}>
+        <Content style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexShrink: 0 }}>
             <Title level={2} style={{ margin: 0 }}>
               {activeTab === 'overview' && 'Обзор Проекта'}
               {activeTab === 'funnel' && 'Воронка Конверсии'}
@@ -510,11 +511,12 @@ const CMSPage: React.FC = () => {
             </div>
           </div>
 
-          {loading && !basicStats ? (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-              <Spin size="large" tip="Загрузка данных..." />
-            </div>
-          ) : (
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+            {loading && !basicStats ? (
+              <div style={{ textAlign: 'center', padding: '50px' }}>
+                <Spin size="large" tip="Загрузка данных..." />
+              </div>
+            ) : (
             <>
               {/* Обзор */}
               {activeTab === 'overview' && (
@@ -582,7 +584,25 @@ const CMSPage: React.FC = () => {
                   <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
                     <Col span={24}>
                       <Card 
-                        title="📈 Активность пользователей"
+                        title={
+                          <Space>
+                            <span>
+                              {activityMetricType === 'active_users' && '📈 Активность пользователей'}
+                              {activityMetricType === 'new_users' && '🆕 Новые пользователи'}
+                              {activityMetricType === 'conversion_rate' && '📊 Динамика конверсии из начала теста в покупку'}
+                            </span>
+                            <Select
+                              value={activityMetricType}
+                              onChange={(value) => setActivityMetricType(value)}
+                              style={{ width: 250 }}
+                              dropdownMatchSelectWidth={false}
+                            >
+                              <Select.Option value="active_users">Активность пользователей</Select.Option>
+                              <Select.Option value="new_users">Новые пользователи</Select.Option>
+                              <Select.Option value="conversion_rate">Динамика конверсии из начала теста в покупку</Select.Option>
+                            </Select>
+                          </Space>
+                        }
                         bordered={false}
                         extra={
                           <Space>
@@ -1134,19 +1154,19 @@ const CMSPage: React.FC = () => {
                         </Text>
                       </div>
                       
-                      <div style={{ height: Math.max(1200, funnelData.length * 20) }}>
+                      <div style={{ height: Math.max(1200, funnelData.length * 20), paddingLeft: '20px' }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
                             data={funnelData}
                             layout="vertical"
-                            margin={{ top: 5, right: 30, left: 200, bottom: 5 }}
+                            margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis type="number" label={{ value: 'Количество пользователей', position: 'insideBottom', offset: -5 }} />
                             <YAxis 
                               dataKey="step" 
                               type="category" 
-                              width={190}
+                              width={280}
                               tick={{ fontSize: 11 }}
                             />
                             <ChartTooltip 
@@ -1191,7 +1211,7 @@ const CMSPage: React.FC = () => {
                         <Row gutter={16}>
                           <Col span={8}>
                             <Statistic 
-                              title="Конверсия в завершение теста" 
+                              title="Конверсия из начала теста в завершение" 
                               value={funnelData[0]?.users > 0 ? ((funnelData[46]?.users / funnelData[0]?.users) * 100).toFixed(1) : 0}
                               suffix="%" 
                               valueStyle={{ color: '#1890ff' }}
@@ -1199,7 +1219,7 @@ const CMSPage: React.FC = () => {
                           </Col>
                           <Col span={8}>
                             <Statistic 
-                              title="Конверсия в покупку" 
+                              title="Конверсия из начала теста в покупку" 
                               value={funnelData[0]?.users > 0 ? ((funnelData[48]?.users / funnelData[0]?.users) * 100).toFixed(1) : 0}
                               suffix="%" 
                               valueStyle={{ color: '#52c41a' }}
@@ -1207,7 +1227,7 @@ const CMSPage: React.FC = () => {
                           </Col>
                           <Col span={8}>
                             <Statistic 
-                              title="Получили полный опыт" 
+                              title="Конверсия из начала теста в полный опыт" 
                               value={funnelData[0]?.users > 0 ? ((funnelData[funnelData.length - 1]?.users / funnelData[0]?.users) * 100).toFixed(1) : 0}
                               suffix="%" 
                               valueStyle={{ color: '#722ed1' }}
@@ -1291,31 +1311,50 @@ const CMSPage: React.FC = () => {
                           },
                           {
                             title: '4. Детальная воронка с прогрессом по вопросам',
-                            description: '✅ РЕАЛИЗОВАНО! Детальная вертикальная воронка с каждым этапом пути пользователя.',
+                            description: '✅ ПОЛНОСТЬЮ РЕАЛИЗОВАНО! Детальная вертикальная воронка с каждым этапом и полным tracking.',
                             tasks: [
                               '✅ Сбор данных о каждом вопросе (question_number, progress_percent)',
                               '✅ График вертикальный: 51+ этапов (начало → 45 вопросов → оплата → план → PDFs → психолог → обратная связь)',
                               '✅ Переключенные оси: этапы вниз (Y), количество вправо (X)',
+                              '✅ Отступ 20px от левой границы блока, читаемые названия этапов',
                               '✅ Конверсия по каждому этапу в tooltip',
                               '✅ Цветовая градация от синего к зеленому',
-                              '✅ Статистика: конверсия в завершение теста, покупку, полный опыт',
+                              '✅ Статистика: конверсия из начала теста в завершение, покупку, полный опыт',
                               '',
-                              '📊 ОТСЛЕЖИВАЕМЫЕ СОБЫТИЯ:',
+                              '📊 ОТСЛЕЖИВАЕМЫЕ СОБЫТИЯ (ВСЕ РЕАЛИЗОВАНЫ):',
                               '  ✅ test_start, test_question (×45), test_complete',
                               '  ✅ payment_init, payment_success, plan_unlocked',
-                              '  ⚪ pdf_download_1/2/3 - нужно добавить tracking',
-                              '  ⚪ psychologist_request - нужно добавить tracking',
-                              '  ⚪ feedback_sent - нужно добавить tracking'
+                              '  ✅ pdf_download с metadata (pdf_type, pdf_number) - 3 типа PDFs',
+                              '  ✅ psychologist_request - заявка на подбор психолога',
+                              '  ✅ feedback_sent - обратная связь на сеансы',
+                              '',
+                              '🎨 UX УЛУЧШЕНИЯ:',
+                              '  ✅ Фиксированное левое меню (не скроллится)',
+                              '  ✅ Независимый скролл каждого раздела (без влияния друг на друга)',
+                              '  ✅ Корректное позиционирование графика воронки'
                             ]
                           },
                           {
                             title: '5. Расширенная аналитика по времени',
-                            description: 'Добавить графики изменения метрик во времени:',
+                            description: '✅ ПОЛНОСТЬЮ РЕАЛИЗОВАНО! Многофункциональный блок с 3 типами метрик.',
                             tasks: [
-                              '⚪ График: количество новых пользователей по дням/неделям',
-                              '⚪ График: динамика конверсии во времени',
-                              '⚪ График: самые активные часы/дни недели',
-                              '⚪ Сравнение текущей недели с прошлой'
+                              '✅ График активности пользователей (heartbeat события)',
+                              '✅ График новых пользователей (первое событие test_start для каждого session_id)',
+                              '✅ График динамики конверсии из начала теста в покупку (% payment_success от test_start)',
+                              '✅ Выпадающий список для переключения между типами метрик',
+                              '✅ Динамическое изменение заголовка блока в зависимости от выбранной метрики',
+                              '✅ Поддержка всех периодов: за сутки (часы), за неделю (дни), за месяц (даты)',
+                              '✅ Навигация по датам с DatePicker',
+                              '✅ Фильтры по типам страниц (для активности пользователей)',
+                              '',
+                              '📊 ТИПЫ МЕТРИК:',
+                              '  ✅ "Активность пользователей" - уникальные пользователи с heartbeat',
+                              '  ✅ "Новые пользователи" - первые визиты (test_start)',
+                              '  ✅ "Динамика конверсии" - % конверсии из начала в покупку',
+                              '',
+                              '⚪ Что можно добавить:',
+                              '  ⚪ Сравнение текущей недели с прошлой',
+                              '  ⚪ Прогноз трендов на основе истории'
                             ]
                           },
                           {
@@ -1388,6 +1427,7 @@ const CMSPage: React.FC = () => {
               )}
             </>
           )}
+          </div>
         </Content>
       </Layout>
     </Layout>

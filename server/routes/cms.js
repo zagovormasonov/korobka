@@ -615,9 +615,9 @@ router.get('/users', checkAuth, async (req, res) => {
 // График активности по времени
 router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
   try {
-    const { period = 'day', pages = 'all', date } = req.query;
+    const { period = 'day', pages = 'all', date, metricType = 'active_users' } = req.query;
     
-    console.log('📊 [CMS] Получение активности за период:', period, 'дата:', date, 'страницы:', pages);
+    console.log('📊 [CMS] Получение активности за период:', period, 'дата:', date, 'страницы:', pages, 'тип метрики:', metricType);
     
     // Определяем временной диапазон на основе выбранной даты
     const selectedDate = date ? new Date(date) : new Date();
@@ -651,23 +651,72 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
       endDate = new Date(endDate.getTime() - 3 * 60 * 60 * 1000);
     }
     
-    // Получаем heartbeat события за выбранный период
-    let query = supabase
-      .from('analytics_events')
-      .select('created_at, session_id, page_url')
-      .eq('event_type', 'heartbeat')
-      .gte('created_at', startDate.toISOString())
-      .lt('created_at', endDate.toISOString());
+    // Получаем события за выбранный период в зависимости от типа метрики
+    let events = [];
     
-    const { data: events, error } = await query;
+    if (metricType === 'active_users') {
+      // Активность пользователей - heartbeat события
+      let query = supabase
+        .from('analytics_events')
+        .select('created_at, session_id, page_url')
+        .eq('event_type', 'heartbeat')
+        .gte('created_at', startDate.toISOString())
+        .lt('created_at', endDate.toISOString());
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      events = data || [];
+      
+    } else if (metricType === 'new_users') {
+      // Новые пользователи - первое событие test_start для каждого session_id
+      const { data, error } = await supabase
+        .from('analytics_events')
+        .select('created_at, session_id')
+        .eq('event_type', 'test_start')
+        .gte('created_at', startDate.toISOString())
+        .lt('created_at', endDate.toISOString())
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      
+      // Фильтруем - только первое событие для каждого session_id
+      const seenSessions = new Set();
+      events = (data || []).filter(event => {
+        if (seenSessions.has(event.session_id)) return false;
+        seenSessions.add(event.session_id);
+        return true;
+      });
+      
+    } else if (metricType === 'conversion_rate') {
+      // Динамика конверсии - нужно получить test_start и payment_success
+      const { data: testStarts, error: error1 } = await supabase
+        .from('analytics_events')
+        .select('created_at, session_id')
+        .eq('event_type', 'test_start')
+        .gte('created_at', startDate.toISOString())
+        .lt('created_at', endDate.toISOString());
+      
+      const { data: payments, error: error2 } = await supabase
+        .from('analytics_events')
+        .select('created_at, session_id')
+        .eq('event_type', 'payment_success')
+        .gte('created_at', startDate.toISOString())
+        .lt('created_at', endDate.toISOString());
+      
+      if (error1 || error2) throw error1 || error2;
+      
+      // Сохраняем оба набора данных для дальнейшей обработки
+      events = {
+        testStarts: testStarts || [],
+        payments: payments || []
+      };
+    }
     
-    if (error) throw error;
-    
-    // Фильтруем события по страницам, если указаны фильтры
-    let filteredEvents = events || [];
-    if (pages && pages !== 'all') {
+    // Фильтруем события по страницам, если указаны фильтры (только для active_users)
+    let filteredEvents = events;
+    if (metricType === 'active_users' && pages && pages !== 'all') {
       const pageFilters = pages.split(',');
-      filteredEvents = events?.filter(event => {
+      filteredEvents = events.filter(event => {
         const url = event.page_url || '';
         
         if (pageFilters.includes('homepage') && url === '/') return true;
@@ -676,7 +725,7 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
         if (pageFilters.includes('other') && url !== '/' && !url.startsWith('/test') && !url.startsWith('/bpd-test') && !url.startsWith('/dashboard') && !url.startsWith('/personal-plan') && !url.startsWith('/feedback-chat')) return true;
         
         return false;
-      }) || [];
+      });
     }
     
     let activityData = [];
@@ -684,79 +733,176 @@ router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
     // Группируем данные в зависимости от периода
     if (period === 'day') {
       // За сутки: по часам (0-23) в московском времени (UTC+3)
-      const hourlyActivity = new Array(24).fill(0).map((_, hour) => ({
-        index: hour,
-        label: `${hour}:00`,
-        users: new Set()
-      }));
-      
-      filteredEvents.forEach(event => {
-        // Конвертируем в московское время (UTC+3)
-        const date = new Date(event.created_at);
-        const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
-        const hour = moscowDate.getUTCHours();
+      if (metricType === 'conversion_rate') {
+        const hourlyData = new Array(24).fill(0).map((_, hour) => ({
+          index: hour,
+          label: `${hour}:00`,
+          testStarts: new Set(),
+          payments: new Set()
+        }));
         
-        hourlyActivity[hour].users.add(event.session_id);
-      });
-      
-      activityData = hourlyActivity.map(item => ({
-        index: item.index,
-        label: item.label,
-        users: item.users.size
-      }));
+        filteredEvents.testStarts?.forEach(event => {
+          const date = new Date(event.created_at);
+          const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+          const hour = moscowDate.getUTCHours();
+          hourlyData[hour].testStarts.add(event.session_id);
+        });
+        
+        filteredEvents.payments?.forEach(event => {
+          const date = new Date(event.created_at);
+          const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+          const hour = moscowDate.getUTCHours();
+          hourlyData[hour].payments.add(event.session_id);
+        });
+        
+        activityData = hourlyData.map(item => ({
+          index: item.index,
+          label: item.label,
+          users: item.testStarts.size > 0 ? Math.round((item.payments.size / item.testStarts.size) * 100) : 0
+        }));
+      } else {
+        const hourlyActivity = new Array(24).fill(0).map((_, hour) => ({
+          index: hour,
+          label: `${hour}:00`,
+          users: new Set()
+        }));
+        
+        filteredEvents.forEach(event => {
+          // Конвертируем в московское время (UTC+3)
+          const date = new Date(event.created_at);
+          const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+          const hour = moscowDate.getUTCHours();
+          
+          hourlyActivity[hour].users.add(event.session_id);
+        });
+        
+        activityData = hourlyActivity.map(item => ({
+          index: item.index,
+          label: item.label,
+          users: item.users.size
+        }));
+      }
       
     } else if (period === 'week') {
       // За неделю: по дням недели (Пн-Вс)
       const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-      const weeklyActivity = weekDays.map((day, index) => ({
-        index: index,
-        label: day,
-        users: new Set()
-      }));
       
-      filteredEvents.forEach(event => {
-        // Конвертируем в московское время (UTC+3)
-        const date = new Date(event.created_at);
-        const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
-        let dayOfWeek = moscowDate.getUTCDay(); // 0=Вс, 1=Пн, ..., 6=Сб
+      if (metricType === 'conversion_rate') {
+        const weeklyData = weekDays.map((day, index) => ({
+          index: index,
+          label: day,
+          testStarts: new Set(),
+          payments: new Set()
+        }));
         
-        // Преобразуем: Вс(0) -> 6, Пн(1) -> 0, ..., Сб(6) -> 5
-        dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        filteredEvents.testStarts?.forEach(event => {
+          const date = new Date(event.created_at);
+          const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+          let dayOfWeek = moscowDate.getUTCDay();
+          dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+          weeklyData[dayOfWeek].testStarts.add(event.session_id);
+        });
         
-        weeklyActivity[dayOfWeek].users.add(event.session_id);
-      });
-      
-      activityData = weeklyActivity.map(item => ({
-        index: item.index,
-        label: item.label,
-        users: item.users.size
-      }));
+        filteredEvents.payments?.forEach(event => {
+          const date = new Date(event.created_at);
+          const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+          let dayOfWeek = moscowDate.getUTCDay();
+          dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+          weeklyData[dayOfWeek].payments.add(event.session_id);
+        });
+        
+        activityData = weeklyData.map(item => ({
+          index: item.index,
+          label: item.label,
+          users: item.testStarts.size > 0 ? Math.round((item.payments.size / item.testStarts.size) * 100) : 0
+        }));
+      } else {
+        const weeklyActivity = weekDays.map((day, index) => ({
+          index: index,
+          label: day,
+          users: new Set()
+        }));
+        
+        filteredEvents.forEach(event => {
+          // Конвертируем в московское время (UTC+3)
+          const date = new Date(event.created_at);
+          const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+          let dayOfWeek = moscowDate.getUTCDay(); // 0=Вс, 1=Пн, ..., 6=Сб
+          
+          // Преобразуем: Вс(0) -> 6, Пн(1) -> 0, ..., Сб(6) -> 5
+          dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+          
+          weeklyActivity[dayOfWeek].users.add(event.session_id);
+        });
+        
+        activityData = weeklyActivity.map(item => ({
+          index: item.index,
+          label: item.label,
+          users: item.users.size
+        }));
+      }
       
     } else if (period === 'month') {
       // За месяц: по дням месяца (1-31) в московском времени
       const daysInMonth = 31;
-      const monthlyActivity = Array.from({ length: daysInMonth }, (_, i) => ({
-        index: i + 1,
-        label: `${i + 1}`,
-        users: new Set()
-      }));
       
-      filteredEvents.forEach(event => {
-        // Конвертируем в московское время (UTC+3)
-        const date = new Date(event.created_at);
-        const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
-        const dayOfMonth = moscowDate.getUTCDate();
+      if (metricType === 'conversion_rate') {
+        const monthlyData = Array.from({ length: daysInMonth }, (_, i) => ({
+          index: i + 1,
+          label: `${i + 1}`,
+          testStarts: new Set(),
+          payments: new Set()
+        }));
         
-        if (dayOfMonth >= 1 && dayOfMonth <= daysInMonth) {
-          monthlyActivity[dayOfMonth - 1].users.add(event.session_id);
-        }
-      });
-      
-      activityData = monthlyActivity.map(item => ({
-        index: item.index,
-        label: item.label,
-        users: item.users.size
-      }));
+        filteredEvents.testStarts?.forEach(event => {
+          const date = new Date(event.created_at);
+          const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+          const dayOfMonth = moscowDate.getUTCDate();
+          
+          if (dayOfMonth >= 1 && dayOfMonth <= daysInMonth) {
+            monthlyData[dayOfMonth - 1].testStarts.add(event.session_id);
+          }
+        });
+        
+        filteredEvents.payments?.forEach(event => {
+          const date = new Date(event.created_at);
+          const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+          const dayOfMonth = moscowDate.getUTCDate();
+          
+          if (dayOfMonth >= 1 && dayOfMonth <= daysInMonth) {
+            monthlyData[dayOfMonth - 1].payments.add(event.session_id);
+          }
+        });
+        
+        activityData = monthlyData.map(item => ({
+          index: item.index,
+          label: item.label,
+          users: item.testStarts.size > 0 ? Math.round((item.payments.size / item.testStarts.size) * 100) : 0
+        }));
+      } else {
+        const monthlyActivity = Array.from({ length: daysInMonth }, (_, i) => ({
+          index: i + 1,
+          label: `${i + 1}`,
+          users: new Set()
+        }));
+        
+        filteredEvents.forEach(event => {
+          // Конвертируем в московское время (UTC+3)
+          const date = new Date(event.created_at);
+          const moscowDate = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+          const dayOfMonth = moscowDate.getUTCDate();
+          
+          if (dayOfMonth >= 1 && dayOfMonth <= daysInMonth) {
+            monthlyActivity[dayOfMonth - 1].users.add(event.session_id);
+          }
+        });
+        
+        activityData = monthlyActivity.map(item => ({
+          index: item.index,
+          label: item.label,
+          users: item.users.size
+        }));
+      }
     }
     
     console.log(`✅ [CMS] Данные активности сформированы: ${activityData.length} точек`);
