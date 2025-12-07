@@ -531,11 +531,20 @@ const CMSPage: React.FC = () => {
                           <Text type="secondary" style={{ fontSize: '18px' }}>
                             персональных планов выдано
                           </Text>
+                          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #f0f0f0' }}>
+                            <Statistic
+                              title="% из начала теста в покупку"
+                              value={basicStats?.totalUsers ? ((basicStats.unlockedPlans / basicStats.totalUsers) * 100).toFixed(1) : 0}
+                              suffix="%"
+                              prefix={<ThunderboltOutlined />}
+                              valueStyle={{ color: '#722ed1', fontSize: '24px' }}
+                            />
+                          </div>
                         </div>
                       </Card>
                     </Col>
                     <Col xs={24} md={12}>
-                      <Card title="Мини-воронка" bordered={false} style={{ height: '100%' }}>
+                      <Card bordered={false} style={{ height: '100%' }}>
                         <ResponsiveContainer width="100%" height={200}>
                           <BarChart
                             data={[
@@ -562,50 +571,6 @@ const CMSPage: React.FC = () => {
                             </Bar>
                           </BarChart>
                         </ResponsiveContainer>
-                      </Card>
-                    </Col>
-                  </Row>
-
-                  <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
-                    <Col xs={24} sm={12} lg={6}>
-                      <Card bordered={false}>
-                        <Statistic
-                          title="Начали тест"
-                          value={basicStats?.totalUsers}
-                          prefix={<TeamOutlined />}
-                          valueStyle={{ color: '#1890ff' }}
-                        />
-                      </Card>
-                    </Col>
-                    <Col xs={24} sm={12} lg={6}>
-                      <Card bordered={false}>
-                        <Statistic
-                          title="Завершили тест"
-                          value={basicStats?.completedTests}
-                          prefix={<HeartOutlined />}
-                          valueStyle={{ color: '#cf1322' }}
-                        />
-                      </Card>
-                    </Col>
-                    <Col xs={24} sm={12} lg={6}>
-                      <Card bordered={false}>
-                        <Statistic
-                          title="Купили план"
-                          value={basicStats?.unlockedPlans}
-                          prefix={<UnlockOutlined />}
-                          valueStyle={{ color: '#3f8600' }}
-                        />
-                      </Card>
-                    </Col>
-                    <Col xs={24} sm={12} lg={6}>
-                      <Card bordered={false}>
-                        <Statistic
-                          title="% из начала теста в покупку"
-                          value={basicStats?.totalUsers ? ((basicStats.unlockedPlans / basicStats.totalUsers) * 100).toFixed(1) : 0}
-                          suffix="%"
-                          prefix={<ThunderboltOutlined />}
-                          valueStyle={{ color: '#722ed1' }}
-                        />
                       </Card>
                     </Col>
                   </Row>
