@@ -5,11 +5,10 @@ import { CheckCircleOutlined, CopyOutlined, UserOutlined, LockOutlined } from '@
 import { apiRequest } from '../config/api';
 import Silk from '../components/Silk';
 import { useThemeColor } from '../hooks/useThemeColor';
-import { trackEvent } from '../utils/analytics';
 
 const { Title, Text, Paragraph } = Typography;
 
-const PaymentSuccessPage: React.FC = () => {
+const RegistrationPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -30,12 +29,6 @@ const PaymentSuccessPage: React.FC = () => {
     if (sessionId) {
       // Просто проверяем, что сессия валидна
       setLoading(false);
-      
-      // Tracking: успешная оплата
-      trackEvent('payment_success', sessionId, { 
-        amount: 10,
-        payment_method: 'tinkoff'
-      });
     } else {
       setError('Неверные параметры');
       setLoading(false);
@@ -101,14 +94,14 @@ const PaymentSuccessPage: React.FC = () => {
 
       if (data.success) {
         setDashboardToken(data.dashboardToken);
-        message.success('Данные успешно сохранены! Переходим в личный кабинет...');
+        message.success('Данные успешно сохранены!');
         
         // Сохраняем токен и автоматически логиним пользователя
         sessionStorage.setItem('dashboardToken', data.dashboardToken);
         
-        // Перенаправляем в личный кабинет через 1 секунду
+        // Перенаправляем на страницу подписки на бота
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate(`/telegram-bot?sessionId=${sessionId}`);
         }, 1000);
       } else {
         message.error(data.error || 'Ошибка при сохранении данных');
@@ -274,7 +267,7 @@ const PaymentSuccessPage: React.FC = () => {
                 }} 
               />
               <Title level={2} style={{ color: '#333', marginBottom: '8px', fontFamily: 'Comfortaa, sans-serif', fontSize: '24px' }}>
-                Оплата прошла успешно!
+                Создайте аккаунт
               </Title>
             </div>
 
@@ -495,7 +488,7 @@ const PaymentSuccessPage: React.FC = () => {
                 marginTop: '20px',
                 color: '#999999'
               }}>
-                <Text>Переходим в личный кабинет...</Text>
+                <Text>Переходим дальше...</Text>
               </div>
             )}
           </>
@@ -505,4 +498,5 @@ const PaymentSuccessPage: React.FC = () => {
   );
 };
 
-export default PaymentSuccessPage;
+export default RegistrationPage;
+

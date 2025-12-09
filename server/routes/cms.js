@@ -588,15 +588,12 @@ router.get('/users', checkAuth, async (req, res) => {
       
       // Подсчитываем количество отвеченных вопросов
       const questionEvents = events.filter(e => e.event_type === 'test_question');
-      const maxQuestionNumber = questionEvents.length > 0 
-        ? Math.max(...questionEvents.map(e => {
-            // Пытаемся извлечь номер вопроса из метаданных если они есть
-            return 1; // Заглушка, так как metadata не выбрана
-          }))
-        : 0;
       
-      // Количество ответов из answers массива (более точно)
-      const answersCount = user.answers ? (Array.isArray(user.answers) ? user.answers.length : 0) : 0;
+      // Количество ответов: используем количество событий test_question для анонимов,
+      // или answers.length если есть сохраненные ответы (более точно)
+      const answersCount = user.answers && Array.isArray(user.answers) && user.answers.length > 0
+        ? user.answers.length
+        : questionEvents.length; // Для анонимов используем количество событий
 
       return {
         sessionId: user.session_id,

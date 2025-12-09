@@ -9,6 +9,8 @@ import BpdTestPage from './pages/BpdTestPage';
 import TestInfoPage from './pages/TestInfoPage';
 import PaymentPage from './pages/PaymentPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import RegistrationPage from './pages/RegistrationPage';
+import TelegramBotPage from './pages/TelegramBotPage';
 import DashboardPage from './pages/DashboardPage';
 import DashboardTokenPage from './pages/DashboardTokenPage';
 import DashboardLoginPage from './pages/DashboardLoginPage';
@@ -97,6 +99,8 @@ function App() {
             <Route path="/bpd_test" element={<BpdTestPage />} />
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/payment-success" element={<PaymentSuccessPage />} />
+            <Route path="/registration" element={<RegistrationPage />} />
+            <Route path="/telegram-bot" element={<TelegramBotPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/personal-plan" element={<PersonalPlanPage />} />
             <Route path="/lk/login" element={<DashboardLoginPage />} />

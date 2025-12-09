@@ -448,6 +448,12 @@ router.post('/mascot-message/dashboard', async (req, res) => {
     // Анализируем ответы и определяем рекомендуемые тесты
     const recommendedTests = await analyzeAndRecommendTests(answers);
     
+    // Проверяем, что recommendedTests - массив
+    if (!Array.isArray(recommendedTests)) {
+      console.error('❌ [AI] recommendedTests не является массивом:', recommendedTests);
+      throw new Error('Failed to get recommended tests');
+    }
+    
     const prompt = `Проведи комплексное исследование психологического профиля пользователя и создай персонализированное мотивирующее сообщение.
 
 ИССЛЕДОВАТЕЛЬСКАЯ ЗАДАЧА:

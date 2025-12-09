@@ -308,35 +308,6 @@ const TestPage: React.FC = () => {
     }
   }, [currentQuestionIndex, questions]);
 
-  const createCredentialsAndLogin = async () => {
-    const autoNickname = `user_${sessionId.slice(0, 8)}`;
-    const autoPassword = `idn-${Math.random().toString(36).slice(2, 8)}`;
-
-    try {
-      const response = await apiRequest('api/dashboard/create-credentials', {
-        method: 'POST',
-        body: JSON.stringify({
-          sessionId,
-          nickname: autoNickname,
-          password: autoPassword
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.dashboardToken) {
-        sessionStorage.setItem('dashboardToken', data.dashboardToken);
-        trackEvent('free_access', sessionId, { source: 'primary_test_auto_credentials' });
-        message.success('Доступ к личному кабинету открыт');
-      } else {
-        message.warning('Не удалось автоматически создать доступ. Попробуйте войти через форму /lk/login.');
-      }
-    } catch (error) {
-      console.error('❌ Ошибка при создании учетных данных:', error);
-      message.warning('Не удалось создать учетные данные. Попробуйте войти через форму /lk/login.');
-    }
-  };
-
   const handleSubmit = async () => {
     setLoading(true);
 
@@ -382,7 +353,7 @@ const TestPage: React.FC = () => {
       console.log('📥 Ответ сервера:', response.status, response.statusText);
 
       if (response.ok) {
-        console.log('✅ Тест успешно отправлен, переходим в личный кабинет');
+        console.log('✅ Тест успешно отправлен, переходим к оплате');
         
         // Tracking: завершение теста
         trackEvent('test_complete', sessionId, {
@@ -392,16 +363,15 @@ const TestPage: React.FC = () => {
         });
         
         clearLocalStorage(); // Очищаем сохраненные данные после успешной отправки
-        await createCredentialsAndLogin();
-        navigate(`/dashboard`);
+        navigate(`/registration?sessionId=${sessionId}`);
       } else {
         const errorText = await response.text();
         console.error('❌ Ошибка сервера:', response.status, errorText);
-        navigate(`/dashboard`);
+        navigate(`/payment?sessionId=${sessionId}`);
       }
     } catch (error) {
       console.error('❌ Ошибка сети:', error);
-      navigate(`/dashboard`);
+      navigate(`/payment?sessionId=${sessionId}`);
     } finally {
       setLoading(false);
     }
