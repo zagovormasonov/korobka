@@ -602,6 +602,9 @@ router.get('/users', checkAuth, async (req, res) => {
     }
 
     // Формируем результат с аналитикой для каждого пользователя
+    // Счетчик для нумерации анонимов
+    let anonymousCounter = 0;
+    
     const usersWithAnalytics = users?.map(user => {
       const events = eventsBySession[user.session_id] || [];
       const hasTestStart = events.some(e => e.event_type === 'test_start');
@@ -617,9 +620,16 @@ router.get('/users', checkAuth, async (req, res) => {
         ? user.answers.length
         : questionEvents.length; // Для анонимов используем количество событий
 
+      // Формируем никнейм: если нет nickname, используем нумерованный "Аноним"
+      let displayNickname = user.nickname;
+      if (!displayNickname) {
+        anonymousCounter++;
+        displayNickname = `Аноним ${anonymousCounter}`;
+      }
+
       return {
         sessionId: user.session_id,
-        nickname: user.nickname || 'Аноним',
+        nickname: displayNickname,
         hasPassword: !!user.dashboard_password,
         password: user.dashboard_password || null, // Будет скрыт на фронте по умолчанию
         createdAt: user.created_at,
