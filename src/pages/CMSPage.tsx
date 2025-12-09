@@ -218,6 +218,8 @@ const CMSPage: React.FC = () => {
     
     socket.on('connect', () => {
       console.log('✅ [CMS] WebSocket подключен');
+      // Запрашиваем актуальный список онлайн пользователей при подключении
+      fetchActiveUsers();
     });
     
     // Слушаем обновления счётчика онлайн пользователей
@@ -344,6 +346,11 @@ const CMSPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setActiveUsers(data.activeUsers);
+        // Устанавливаем список онлайн sessionId для обновления статуса в таблице
+        if (data.onlineSessionIds) {
+          console.log('📊 [CMS] Установлен начальный список онлайн пользователей:', data.onlineSessionIds.length);
+          setOnlineSessionIds(data.onlineSessionIds);
+        }
       }
     } catch (e) {
       console.error(e);
