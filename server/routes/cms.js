@@ -345,14 +345,31 @@ router.get('/stats/detailed-funnel', checkAuth, async (req, res) => {
     };
     
     // Подсчет по каждому вопросу
+    // Получаем все события test_question и фильтруем по номеру вопроса в коде
+    const { data: allQuestionEvents, error: questionEventsError } = await supabase
+      .from('analytics_events')
+      .select('session_id, metadata')
+      .eq('event_type', 'test_question');
+    
+    if (dateFilter && allQuestionEvents) {
+      // Фильтруем по дате в коде
+      allQuestionEvents = allQuestionEvents.filter(e => new Date(e.created_at) >= new Date(dateFilter));
+    }
+    
     const questionStats = [];
     for (let i = 1; i <= 45; i++) {
-      const count = await countUniqueUsers('test_question', (query) => 
-        query.contains('metadata', { question_number: i })
-      );
+      // Фильтруем события по номеру вопроса из metadata
+      const questionEvents = (allQuestionEvents || []).filter(e => {
+        if (!e.metadata) return false;
+        const metadata = typeof e.metadata === 'string' ? JSON.parse(e.metadata) : e.metadata;
+        return metadata.question_number === i;
+      });
+      
+      // Уникальные session_id для этого вопроса
+      const uniqueSessions = new Set(questionEvents.map(e => e.session_id));
       questionStats.push({
         step: `Вопрос ${i}`,
-        users: count,
+        users: uniqueSessions.size,
         stage: `question_${i}`
       });
     }

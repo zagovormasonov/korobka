@@ -47,6 +47,8 @@ const BpdTestPage: React.FC = () => {
         const testData = JSON.parse(savedData);
         if (testData.sessionId) {
           console.log('🔄 Восстановлен sessionId из localStorage:', testData.sessionId);
+          // Сохраняем sessionId в localStorage для WebSocket heartbeat
+          localStorage.setItem('sessionId', testData.sessionId);
           return testData.sessionId;
         }
       } catch (error) {
@@ -55,6 +57,8 @@ const BpdTestPage: React.FC = () => {
     }
     const newSessionId = searchParams.get('sessionId') || uuidv4();
     console.log('🆕 Создан новый sessionId:', newSessionId);
+    // Сохраняем sessionId в localStorage для WebSocket heartbeat
+    localStorage.setItem('sessionId', newSessionId);
     return newSessionId;
   });
   
