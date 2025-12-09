@@ -353,7 +353,7 @@ const TestPage: React.FC = () => {
       console.log('📥 Ответ сервера:', response.status, response.statusText);
 
       if (response.ok) {
-        console.log('✅ Тест успешно отправлен, переходим к оплате');
+        console.log('✅ Тест успешно отправлен, переходим к регистрации');
         
         // Tracking: завершение теста
         trackEvent('test_complete', sessionId, {
@@ -367,11 +367,11 @@ const TestPage: React.FC = () => {
       } else {
         const errorText = await response.text();
         console.error('❌ Ошибка сервера:', response.status, errorText);
-        navigate(`/payment?sessionId=${sessionId}`);
+        navigate(`/registration?sessionId=${sessionId}`);
       }
     } catch (error) {
       console.error('❌ Ошибка сети:', error);
-      navigate(`/payment?sessionId=${sessionId}`);
+      navigate(`/registration?sessionId=${sessionId}`);
     } finally {
       setLoading(false);
     }

@@ -367,17 +367,17 @@ const BpdTestPage: React.FC = () => {
       console.log('📥 Ответ сервера:', response.status, response.statusText);
 
       if (response.ok) {
-        console.log('✅ Тест успешно отправлен, переходим к оплате');
+        console.log('✅ Тест успешно отправлен, переходим к регистрации');
         clearLocalStorage(); // Очищаем сохраненные данные после успешной отправки
         navigate(`/registration?sessionId=${sessionId}`);
       } else {
         const errorText = await response.text();
         console.error('❌ Ошибка сервера:', response.status, errorText);
-        navigate(`/payment?sessionId=${sessionId}`);
+        navigate(`/registration?sessionId=${sessionId}`);
       }
     } catch (error) {
       console.error('❌ Ошибка сети:', error);
-      navigate(`/payment?sessionId=${sessionId}`);
+      navigate(`/registration?sessionId=${sessionId}`);
     } finally {
       setLoading(false);
     }
