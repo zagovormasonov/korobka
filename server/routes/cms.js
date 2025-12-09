@@ -346,14 +346,19 @@ router.get('/stats/detailed-funnel', checkAuth, async (req, res) => {
     
     // Подсчет по каждому вопросу
     // Получаем все события test_question и фильтруем по номеру вопроса в коде
-    const { data: allQuestionEvents, error: questionEventsError } = await supabase
+    let questionQuery = supabase
       .from('analytics_events')
-      .select('session_id, metadata')
+      .select('session_id, metadata, created_at')
       .eq('event_type', 'test_question');
     
-    if (dateFilter && allQuestionEvents) {
-      // Фильтруем по дате в коде
-      allQuestionEvents = allQuestionEvents.filter(e => new Date(e.created_at) >= new Date(dateFilter));
+    if (dateFilter) {
+      questionQuery = questionQuery.gte('created_at', dateFilter);
+    }
+    
+    const { data: allQuestionEvents, error: questionEventsError } = await questionQuery;
+    
+    if (questionEventsError) {
+      console.error('❌ [CMS] Ошибка получения событий test_question:', questionEventsError);
     }
     
     const questionStats = [];
