@@ -5,6 +5,7 @@ import { ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useThemeColor } from '../hooks/useThemeColor';
+import { trackEvent } from '../utils/analytics';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -166,6 +167,15 @@ const BpdTestPage: React.FC = () => {
       const data = await response.json();
       console.log('📋 Загружено вопросов:', data.length);
       setQuestions(data);
+      
+      // Tracking: начало теста (только если это первый запуск, а не восстановление)
+      const savedData = localStorage.getItem('testProgress');
+      if (!savedData || JSON.parse(savedData).currentQuestionIndex === 0) {
+        trackEvent('test_start', sessionId, { 
+          test_type: 'primary',
+          total_questions: data.length 
+        });
+      }
     } catch (error) {
       console.error('Error fetching questions:', error);
     }

@@ -561,6 +561,24 @@ router.get('/users', checkAuth, async (req, res) => {
       eventsBySession[event.session_id].push(event);
     });
 
+    // Получаем последнее событие для каждого пользователя (для определения последнего визита)
+    // Используем любые события из analytics_events
+    // Получаем все события, отсортированные по дате, и берем первое для каждого session_id
+    const { data: allLastVisitEvents } = await supabase
+      .from('analytics_events')
+      .select('session_id, created_at')
+      .order('created_at', { ascending: false });
+
+    // Создаем мапу последних визитов по session_id (берем первое вхождение для каждого session_id)
+    const lastVisitBySession = {};
+    if (allLastVisitEvents) {
+      allLastVisitEvents.forEach(event => {
+        if (!lastVisitBySession[event.session_id]) {
+          lastVisitBySession[event.session_id] = event.created_at;
+        }
+      });
+    }
+
     // Формируем результат с аналитикой для каждого пользователя
     const usersWithAnalytics = users?.map(user => {
       const events = eventsBySession[user.session_id] || [];
@@ -587,6 +605,7 @@ router.get('/users', checkAuth, async (req, res) => {
         password: user.dashboard_password || null, // Будет скрыт на фронте по умолчанию
         createdAt: user.created_at,
         updatedAt: user.updated_at,
+        lastVisit: lastVisitBySession[user.session_id] || null, // Последний визит из analytics_events
         isOnline: onlineSessions.has(user.session_id),
         personalPlanUnlocked: user.personal_plan_unlocked || false,
         // Аналитика воронки

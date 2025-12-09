@@ -95,6 +95,7 @@ interface User {
   password: string | null;
   createdAt: string;
   updatedAt: string;
+  lastVisit: string | null;
   isOnline: boolean;
   personalPlanUnlocked: boolean;
   funnel: {
@@ -1104,6 +1105,29 @@ const CMSPage: React.FC = () => {
                               minute: '2-digit'
                             }),
                             sorter: (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                          },
+                          {
+                            title: 'Последний визит',
+                            dataIndex: 'lastVisit',
+                            key: 'lastVisit',
+                            width: 150,
+                            render: (date: string | null) => {
+                              if (!date) {
+                                return <Text type="secondary">Неизвестно</Text>;
+                              }
+                              return new Date(date).toLocaleDateString('ru-RU', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              });
+                            },
+                            sorter: (a, b) => {
+                              const dateA = a.lastVisit ? new Date(a.lastVisit).getTime() : 0;
+                              const dateB = b.lastVisit ? new Date(b.lastVisit).getTime() : 0;
+                              return dateB - dateA;
+                            }
                           },
                           {
                             title: 'Никнейм',
