@@ -204,11 +204,29 @@ const BpdTestPage: React.FC = () => {
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
       saveCurrentAnswer();
+      
+      // Tracking: ответ на вопрос
+      trackEvent('test_question', sessionId, {
+        test_type: 'primary',
+        question_number: currentQuestionIndex + 1,
+        total_questions: questions.length,
+        progress_percent: Math.round(((currentQuestionIndex + 1) / questions.length) * 100)
+      });
+      
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       resetCurrentState();
     } else {
       // Сохраняем текущий ответ перед завершением
       saveCurrentAnswer();
+      
+      // Tracking: последний вопрос
+      trackEvent('test_question', sessionId, {
+        test_type: 'primary',
+        question_number: questions.length,
+        total_questions: questions.length,
+        progress_percent: 100
+      });
+      
       handleSubmit();
     }
   };
