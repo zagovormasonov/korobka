@@ -22,6 +22,7 @@ const PaymentSuccessPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const sessionId = searchParams.get('sessionId');
+  const isFreeAccess = searchParams.get('free') === '1';
   
   // Устанавливаем цвет статус-бара для градиентного фона
   useThemeColor('#FFED82');
@@ -31,16 +32,20 @@ const PaymentSuccessPage: React.FC = () => {
       // Просто проверяем, что сессия валидна
       setLoading(false);
       
-      // Tracking: успешная оплата
-      trackEvent('payment_success', sessionId, { 
-        amount: 10,
-        payment_method: 'tinkoff'
-      });
+      // Tracking: если бесплатный доступ — фиксируем отдельное событие, иначе оплату
+      if (isFreeAccess) {
+        trackEvent('free_access', sessionId, { source: 'primary_test' });
+      } else {
+        trackEvent('payment_success', sessionId, { 
+          amount: 10,
+          payment_method: 'tinkoff'
+        });
+      }
     } else {
       setError('Неверные параметры');
       setLoading(false);
     }
-  }, [sessionId]);
+  }, [sessionId, isFreeAccess]);
 
   const handleFirstStep = async () => {
     if (!nickname || !password || !confirmPassword) {

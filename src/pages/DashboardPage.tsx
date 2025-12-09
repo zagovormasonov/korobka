@@ -16,7 +16,8 @@ import {
   UserOutlined, 
   FileTextOutlined, 
   MessageOutlined,
-  CheckOutlined
+  CheckOutlined,
+  BulbOutlined
 } from '@ant-design/icons';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
@@ -1824,6 +1825,22 @@ const DashboardPage: React.FC = () => {
                     lineHeight: '1.5'
                   }}>
                     Перейди по ссылке каждого теста, пройди тест на сайте партнёра, вернись сюда в личный кабинет и впиши результаты теста в поле ввода результатов. Когда результаты всех тестов будут занесены, мы составим для тебя персональный план
+                  </Text>
+                </div>
+                
+                <div style={{ 
+                  marginBottom: '24px', 
+                  padding: '16px 18px', 
+                  backgroundColor: '#fff9e6', 
+                  borderRadius: '12px', 
+                  border: '1px solid #ffe7b8',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px'
+                }}>
+                  <BulbOutlined style={{ color: '#faad14', fontSize: '18px', marginTop: '2px' }} />
+                  <Text style={{ color: '#7B8794', lineHeight: '1.5' }}>
+                    Результаты тестов носят ознакомительный характер и не являются диагнозом. Окончательное заключение может сделать только специалист.
                   </Text>
                 </div>
                 
