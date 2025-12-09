@@ -654,6 +654,15 @@ router.get('/users', checkAuth, async (req, res) => {
         }
       }
 
+      const isUserOnline = onlineSessions.has(user.session_id);
+      
+      // Логирование для отладки онлайн статуса анонимов
+      if (!user.nickname && isUserOnline) {
+        console.log(`🟢 [CMS] Аноним онлайн: ${displayNickname} (${user.session_id})`);
+      } else if (!user.nickname && !isUserOnline) {
+        console.log(`🔴 [CMS] Аноним офлайн: ${displayNickname} (${user.session_id})`);
+      }
+      
       return {
         sessionId: user.session_id,
         nickname: displayNickname,
@@ -662,7 +671,7 @@ router.get('/users', checkAuth, async (req, res) => {
         createdAt: user.created_at,
         updatedAt: user.updated_at,
         lastVisit: lastVisitBySession[user.session_id] || null, // Последний визит из analytics_events
-        isOnline: onlineSessions.has(user.session_id),
+        isOnline: isUserOnline,
         personalPlanUnlocked: user.personal_plan_unlocked || false,
         // Аналитика воронки
         funnel: {
