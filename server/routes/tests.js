@@ -327,6 +327,8 @@ router.post('/primary/submit', async (req, res) => {
         dashboard_token: dashboardToken,
         dashboard_password: dashboardPassword,
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'session_id'
       })
       .select()
       .single();

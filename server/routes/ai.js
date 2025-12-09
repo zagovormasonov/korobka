@@ -278,6 +278,30 @@ ${JSON.stringify(answers)}
 
     const message = await callGeminiAI(prompt, 1200);
     
+    // Генерируем рекомендуемые тесты для payment страницы
+    const recommendedTests = await analyzeAndRecommendTests(answers);
+    
+    // Проверяем, что recommendedTests - массив
+    if (!Array.isArray(recommendedTests)) {
+      console.error('❌ [AI] recommendedTests не является массивом:', recommendedTests);
+      // Используем пустой массив как fallback
+      const fallbackTests = [];
+      
+      // Сохраняем только сообщение без тестов
+      const { error: updateError } = await supabase
+        .from('primary_test_results')
+        .update({ 
+          lumi_dashboard_message: message
+        })
+        .eq('session_id', sessionId);
+
+      if (updateError) {
+        console.error('⚠️ [MASCOT-MESSAGE] Ошибка при сохранении сообщения:', updateError);
+      }
+      
+      return res.json({ success: true, message, recommendedTests: fallbackTests, cached: false });
+    }
+    
     // Сохраняем сгенерированное сообщение и список тестов в БД
     console.log('💾 [MASCOT-MESSAGE] Сохраняем сообщение Луми и список тестов в БД...');
     const { error: updateError } = await supabase
