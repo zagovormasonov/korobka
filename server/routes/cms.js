@@ -566,7 +566,11 @@ router.get('/users', checkAuth, async (req, res) => {
     if (usersError) throw usersError;
 
     // Получаем онлайн пользователей из WebSocket (реал-тайм!)
-    const onlineSessions = new Set(getOnlineUsers());
+    const onlineUsersList = getOnlineUsers();
+    const onlineSessions = new Set(onlineUsersList);
+    
+    console.log('👥 [CMS] Онлайн пользователей из WebSocket:', onlineUsersList.length);
+    console.log('👥 [CMS] Список онлайн sessionId:', onlineUsersList.slice(0, 10)); // Первые 10 для отладки
 
     // Получаем события для всех пользователей (test_start, test_complete, payment_success)
     const { data: allEvents } = await supabase
@@ -601,10 +605,26 @@ router.get('/users', checkAuth, async (req, res) => {
       });
     }
 
-    // Формируем результат с аналитикой для каждого пользователя
-    // Счетчик для нумерации анонимов
-    let anonymousCounter = 0;
+    // Получаем всех анонимов (включая удаленных) для правильной нумерации
+    // Нумерация должна быть постоянной и не переиспользоваться
+    const { data: allAnonymousUsers } = await supabase
+      .from('primary_test_results')
+      .select('session_id, created_at')
+      .is('nickname', null)
+      .order('created_at', { ascending: true }); // Сортируем по дате создания
     
+    // Создаем мапу: session_id -> номер анонима (на основе позиции среди всех анонимов)
+    const anonymousNumberMap = {};
+    if (allAnonymousUsers) {
+      allAnonymousUsers.forEach((anon, index) => {
+        anonymousNumberMap[anon.session_id] = index + 1; // Номер начинается с 1
+      });
+    }
+    
+    console.log('📊 [CMS] Всего анонимов в БД:', allAnonymousUsers?.length || 0);
+    console.log('📊 [CMS] Мапа номеров анонимов:', Object.keys(anonymousNumberMap).length);
+    
+    // Формируем результат с аналитикой для каждого пользователя
     const usersWithAnalytics = users?.map(user => {
       const events = eventsBySession[user.session_id] || [];
       const hasTestStart = events.some(e => e.event_type === 'test_start');
@@ -621,10 +641,17 @@ router.get('/users', checkAuth, async (req, res) => {
         : questionEvents.length; // Для анонимов используем количество событий
 
       // Формируем никнейм: если нет nickname, используем нумерованный "Аноним"
+      // Номер присваивается на основе позиции среди всех анонимов по дате создания
       let displayNickname = user.nickname;
       if (!displayNickname) {
-        anonymousCounter++;
-        displayNickname = `Аноним ${anonymousCounter}`;
+        const anonymousNumber = anonymousNumberMap[user.session_id];
+        if (anonymousNumber) {
+          displayNickname = `Аноним ${anonymousNumber}`;
+        } else {
+          // Если не нашли в мапе (не должно происходить), используем временный номер
+          displayNickname = `Аноним (временный)`;
+          console.warn('⚠️ [CMS] Аноним не найден в мапе номеров:', user.session_id);
+        }
       }
 
       return {
