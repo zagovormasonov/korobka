@@ -632,12 +632,12 @@ router.post('/personal-plan', async (req, res) => {
     const userEmail = primaryTest.email;
     console.log('📧 [PERSONAL-PLAN] Email пользователя:', userEmail || 'не указан');
 
-    // Получаем результаты дополнительных тестов по email
-    console.log('🔍 [PERSONAL-PLAN] Получаем дополнительные тесты из БД...');
+    // Получаем результаты дополнительных тестов по session_id (как в других эндпоинтах)
+    console.log('🔍 [PERSONAL-PLAN] Получаем дополнительные тесты из БД по session_id...');
     const { data: additionalTests, error: additionalError } = await supabase
       .from('additional_test_results')
       .select('test_type, answers')
-      .eq('email', userEmail);
+      .eq('session_id', sessionId);
 
     console.log('📊 [PERSONAL-PLAN] Дополнительные тесты:', {
       hasTests: !!additionalTests,
