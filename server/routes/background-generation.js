@@ -399,9 +399,15 @@ async function generateDocumentsInBackground(sessionId) {
 // Скачать готовый персональный план
 router.get('/download/personal-plan/:sessionId', async (req, res) => {
   try {
+    console.log('📥 [DOWNLOAD-PERSONAL-PLAN] Получен запрос на скачивание персонального плана');
+    console.log('📥 [DOWNLOAD-PERSONAL-PLAN] SessionId из params:', req.params.sessionId);
+    console.log('📥 [DOWNLOAD-PERSONAL-PLAN] Полный путь:', req.path);
+    console.log('📥 [DOWNLOAD-PERSONAL-PLAN] Метод:', req.method);
+    
     const { sessionId } = req.params;
     
     if (!sessionId) {
+      console.error('❌ [DOWNLOAD-PERSONAL-PLAN] SessionId не передан');
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
 
