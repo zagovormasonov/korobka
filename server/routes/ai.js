@@ -152,13 +152,29 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       body: JSON.stringify(requestBody)
     });
     
+    console.log('📥 [GEMINI-3.0] Статус ответа от v1beta API:', response.status, response.statusText);
+    
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+      const errorText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        errorData = { error: errorText };
+      }
       console.error('❌ [GEMINI-3.0] v1beta API вернул ошибку:', response.status, JSON.stringify(errorData));
-      throw new Error(`v1beta API error: ${JSON.stringify(errorData)}`);
+      throw new Error(`v1beta API error (${response.status}): ${JSON.stringify(errorData)}`);
     }
     
-    const data = await response.json();
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('❌ [GEMINI-3.0] Ошибка парсинга JSON ответа:', parseError);
+      console.error('❌ [GEMINI-3.0] Текст ответа (первые 500 символов):', responseText.substring(0, 500));
+      throw new Error(`Failed to parse v1beta API response: ${parseError.message}`);
+    }
     console.log('📥 [GEMINI-3.0] Получен ответ от v1beta API, структура:', {
       hasCandidates: !!data.candidates,
       candidatesLength: data.candidates?.length || 0,
