@@ -216,23 +216,35 @@ const DashboardPage: React.FC = () => {
       
       // Запускаем генерацию, если она еще не запущена
       console.log('🚀 [DASHBOARD] Запускаем генерацию документов...');
+      console.log('🚀 [DASHBOARD] SessionId для запуска:', authData?.sessionId);
+      
+      // Сначала показываем анимацию
+      setIsGenerating(true);
+      setGenerationStep(0);
+      
       try {
         const startResponse = await apiRequest('api/background-generation/start', {
           method: 'POST',
           body: JSON.stringify({ sessionId: authData?.sessionId }),
         });
         
+        console.log('📥 [DASHBOARD] Ответ от start API:', startResponse.status);
+        
         if (startResponse.ok) {
-          console.log('✅ [DASHBOARD] Генерация запущена, показываем анимацию');
-          setIsGenerating(true);
-          setGenerationStep(0);
+          const startData = await startResponse.json();
+          console.log('✅ [DASHBOARD] Генерация запущена, данные:', startData);
+          
+          // Запускаем мониторинг статуса
           monitorGenerationStatus();
         } else {
-          console.error('❌ [DASHBOARD] Ошибка запуска генерации:', startResponse.status);
+          const errorText = await startResponse.text();
+          console.error('❌ [DASHBOARD] Ошибка запуска генерации:', startResponse.status, errorText);
+          setIsGenerating(false);
           message.error('Ошибка при запуске генерации документов');
         }
       } catch (startError) {
-        console.error('❌ [DASHBOARD] Ошибка при запуске генерации:', startError);
+        console.error('❌ [DASHBOARD] Исключение при запуске генерации:', startError);
+        setIsGenerating(false);
         message.error('Ошибка при запуске генерации документов');
       }
     } catch (error) {
