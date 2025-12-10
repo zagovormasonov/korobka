@@ -126,23 +126,41 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       console.log('🌐 Прокси отключен, используем прямое подключение');
     }
     
-    // Создаем клиент Google AI
-    console.log('🔧 Создаем клиент Google AI...');
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = "gemini-2.5-pro"; // Стабильная версия 2.5 Pro
-    console.log(`🤖 Получаем модель ${modelName}...`);
-    const model = genAI.getGenerativeModel({ model: modelName });
+    // Используем Gemini 3.0 Pro через v1beta API (как в chat.js)
+    console.log('🔧 Используем Gemini 3.0 Pro через v1beta API...');
+    const modelName = 'models/gemini-3-pro-preview';
     
-    console.log('🚀 Отправляем запрос к Gemini через SDK...');
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
+    
+    const requestBody = {
+      contents: [{
+        parts: [{ text: prompt }]
+      }],
+      generationConfig: {
+        maxOutputTokens: maxTokens || 8192
+      }
+    };
+    
+    console.log('🚀 Отправляем запрос к v1beta API...');
     console.log('⏱️ Время начала:', new Date().toISOString());
     
-    const result = await model.generateContent(prompt);
-    console.log('📦 Результат получен, обрабатываем ответ...');
-    const response = await result.response;
-    console.log('📝 Извлекаем текст из ответа...');
-    const text = response.text();
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
     
-    console.log('✅ Gemini API ответ получен через SDK, длина:', text.length, 'символов');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`v1beta API error: ${JSON.stringify(errorData)}`);
+    }
+    
+    const data = await response.json();
+    const text = data.candidates[0].content.parts[0].text;
+    
+    console.log('✅ Gemini 3.0 Pro ответ получен через v1beta API, длина:', text.length, 'символов');
     console.log('⏱️ Время окончания:', new Date().toISOString());
     return text;
     
