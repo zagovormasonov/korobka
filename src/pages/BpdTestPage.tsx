@@ -671,7 +671,7 @@ const BpdTestPage: React.FC = () => {
             type={currentAnswer ? "primary" : "default"}
             icon={<ArrowRightOutlined />} 
             onClick={handleNext}
-            disabled={!currentAnswer}
+            disabled={!currentAnswer && !(question.id === 42 || question.id === 43)}
             loading={loading}
               size="large"
             className={currentQuestionIndex === questions.length - 1 ? 'finish-button' : ''}
