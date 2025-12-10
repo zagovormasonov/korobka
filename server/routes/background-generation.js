@@ -22,7 +22,7 @@ router.post('/start', async (req, res) => {
     // Проверяем статус генерации
     const { data: existingData, error: fetchError } = await supabase
       .from('primary_test_results')
-      .select('documents_generation_started, documents_generation_completed')
+      .select('documents_generation_started, documents_generation_completed, personal_plan_generated, session_preparation_generated, psychologist_pdf_generated')
       .eq('session_id', sessionId)
       .single();
 
@@ -37,17 +37,27 @@ router.post('/start', async (req, res) => {
       return res.json({ 
         success: true, 
         message: 'Generation already completed',
-        status: 'completed'
+        status: 'completed',
+        documents: {
+          personal_plan: existingData.personal_plan_generated || false,
+          session_preparation: existingData.session_preparation_generated || false,
+          psychologist_pdf: existingData.psychologist_pdf_generated || false
+        }
       });
     }
 
-    // Если генерация уже запущена, но не завершена - возвращаем статус in_progress
+    // Если генерация уже запущена, но не завершена - возвращаем статус in_progress с информацией о документах
     if (existingData.documents_generation_started) {
       console.log('⏳ [BACKGROUND-GENERATION] Генерация уже запущена для sessionId:', sessionId);
       return res.json({ 
         success: true, 
         message: 'Generation already in progress',
-        status: 'in_progress'
+        status: 'in_progress',
+        documents: {
+          personal_plan: existingData.personal_plan_generated || false,
+          session_preparation: existingData.session_preparation_generated || false,
+          psychologist_pdf: existingData.psychologist_pdf_generated || false
+        }
       });
     }
 

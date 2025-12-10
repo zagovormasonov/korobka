@@ -234,6 +234,25 @@ const DashboardPage: React.FC = () => {
           const startData = await startResponse.json();
           console.log('✅ [DASHBOARD] Генерация запущена, данные:', startData);
           
+          // Обновляем шаг генерации на основе готовых документов
+          if (startData.status === 'in_progress' && startData.documents) {
+            let currentStep = 0;
+            if (startData.documents.personal_plan) currentStep = 1;
+            if (startData.documents.session_preparation) currentStep = 2;
+            if (startData.documents.psychologist_pdf) currentStep = 3;
+            setGenerationStep(currentStep);
+            console.log('📊 [DASHBOARD] Обновлен шаг генерации на основе готовых документов:', currentStep);
+          }
+          
+          // Если генерация уже завершена, перенаправляем на персональный план
+          if (startData.status === 'completed') {
+            console.log('✅ [DASHBOARD] Генерация уже завершена, перенаправляем на персональный план');
+            setIsGenerating(false);
+            message.success('Документы уже готовы!');
+            navigate('/personal-plan');
+            return;
+          }
+          
           // Запускаем мониторинг статуса
           monitorGenerationStatus();
         } else {
