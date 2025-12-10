@@ -685,26 +685,9 @@ router.post('/additional/save-result', async (req, res) => {
 
     console.log('✅ Результат теста сохранен в БД');
     
-    // Запускаем фоновую генерацию всех документов после прохождения тестов
-    console.log('🔄 [BACKGROUND-GENERATION] Запускаем фоновую генерацию всех документов...');
-    try {
-      const baseUrl = process.env.BACKEND_URL || `http://127.0.0.1:${process.env.PORT || 5000}`;
-      const backgroundResponse = await fetch(`${baseUrl}/api/background-generation/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-        signal: AbortSignal.timeout(10000), // 10 секунд timeout для запуска
-      });
-      
-      if (backgroundResponse.ok) {
-        console.log('✅ [BACKGROUND-GENERATION] Фоновая генерация успешно запущена');
-      } else {
-        console.error('⚠️ [BACKGROUND-GENERATION] Ошибка запуска фоновой генерации:', backgroundResponse.status);
-      }
-    } catch (backgroundError) {
-      console.error('⚠️ [BACKGROUND-GENERATION] Ошибка при запуске фоновой генерации:', backgroundError.message);
-      // Не прерываем основной процесс, так как результат теста уже сохранен
-    }
+    // НЕ запускаем генерацию здесь - она запустится только после того, как пользователь
+    // введет ВСЕ результаты дополнительных тестов и нажмет кнопку "Перейти к персональному плану"
+    console.log('ℹ️ [BACKGROUND-GENERATION] Генерация документов будет запущена после нажатия финальной кнопки');
     
     res.json({ success: true, data: result.data });
   } catch (error) {
