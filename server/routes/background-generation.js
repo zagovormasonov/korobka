@@ -31,21 +31,28 @@ router.post('/start', async (req, res) => {
       return res.status(500).json({ success: false, error: 'Failed to fetch session data' });
     }
 
-    if (existingData.documents_generation_started) {
-      console.log('⚠️ [BACKGROUND-GENERATION] Генерация уже запущена для sessionId:', sessionId);
+    if (existingData.documents_generation_started && !existingData.documents_generation_completed) {
+      console.log('⚠️ [BACKGROUND-GENERATION] Генерация уже запущена, но не завершена для sessionId:', sessionId);
+      console.log('🔄 [BACKGROUND-GENERATION] Принудительно перезапускаем генерацию...');
       
-      // Если генерация не завершена, принудительно запускаем её снова
-      if (!existingData.documents_generation_completed) {
-        console.log('🔄 [BACKGROUND-GENERATION] Принудительно перезапускаем генерацию...');
-        generateDocumentsInBackground(sessionId).catch(error => {
-          console.error('❌ [BACKGROUND-GENERATION] Ошибка в принудительной генерации:', error);
-        });
-      }
+      // Принудительно перезапускаем генерацию
+      generateDocumentsInBackground(sessionId).catch(error => {
+        console.error('❌ [BACKGROUND-GENERATION] Ошибка в принудительной генерации:', error);
+      });
       
       return res.json({ 
         success: true, 
-        message: 'Generation already started',
-        status: existingData.documents_generation_completed ? 'completed' : 'in_progress'
+        message: 'Generation restarted',
+        status: 'in_progress'
+      });
+    }
+    
+    if (existingData.documents_generation_completed) {
+      console.log('✅ [BACKGROUND-GENERATION] Генерация уже завершена для sessionId:', sessionId);
+      return res.json({ 
+        success: true, 
+        message: 'Generation already completed',
+        status: 'completed'
       });
     }
 
