@@ -19,7 +19,7 @@ router.post('/start', async (req, res) => {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
 
-    // Проверяем, не запущена ли уже генерация
+    // Проверяем статус генерации
     const { data: existingData, error: fetchError } = await supabase
       .from('primary_test_results')
       .select('documents_generation_started, documents_generation_completed')
@@ -31,22 +31,7 @@ router.post('/start', async (req, res) => {
       return res.status(500).json({ success: false, error: 'Failed to fetch session data' });
     }
 
-    if (existingData.documents_generation_started && !existingData.documents_generation_completed) {
-      console.log('⚠️ [BACKGROUND-GENERATION] Генерация уже запущена, но не завершена для sessionId:', sessionId);
-      console.log('🔄 [BACKGROUND-GENERATION] Принудительно перезапускаем генерацию...');
-      
-      // Принудительно перезапускаем генерацию
-      generateDocumentsInBackground(sessionId).catch(error => {
-        console.error('❌ [BACKGROUND-GENERATION] Ошибка в принудительной генерации:', error);
-      });
-      
-      return res.json({ 
-        success: true, 
-        message: 'Generation restarted',
-        status: 'in_progress'
-      });
-    }
-    
+    // Если генерация уже завершена - возвращаем статус
     if (existingData.documents_generation_completed) {
       console.log('✅ [BACKGROUND-GENERATION] Генерация уже завершена для sessionId:', sessionId);
       return res.json({ 
@@ -56,6 +41,19 @@ router.post('/start', async (req, res) => {
       });
     }
 
+    // Если генерация уже запущена, но не завершена - возвращаем статус in_progress
+    if (existingData.documents_generation_started) {
+      console.log('⏳ [BACKGROUND-GENERATION] Генерация уже запущена для sessionId:', sessionId);
+      return res.json({ 
+        success: true, 
+        message: 'Generation already in progress',
+        status: 'in_progress'
+      });
+    }
+
+    // Генерация еще не запускалась - запускаем её
+    console.log('🚀 [BACKGROUND-GENERATION] Запускаем генерацию для sessionId:', sessionId);
+    
     // Отмечаем, что генерация началась
     const { error: updateError } = await supabase
       .from('primary_test_results')
@@ -72,7 +70,6 @@ router.post('/start', async (req, res) => {
 
     // Запускаем фоновую генерацию (не ждем завершения)
     console.log('🚀 [BACKGROUND-GENERATION] Запускаем функцию generateDocumentsInBackground...');
-    console.log('🚀 [BACKGROUND-GENERATION] SessionId для генерации:', sessionId);
     generateDocumentsInBackground(sessionId).catch(error => {
       console.error('❌ [BACKGROUND-GENERATION] Ошибка в фоновой генерации:', error);
     });
