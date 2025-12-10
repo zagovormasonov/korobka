@@ -680,14 +680,32 @@ router.post('/personal-plan', async (req, res) => {
       console.log('✅ [PERSONAL-PLAN] Промпт успешно прочитан, длина:', promptTemplate.length);
       console.log('✅ [PERSONAL-PLAN] Пример плана прочитан, длина:', examplePlan.length);
       
+      // Проверяем наличие данных перед формированием промпта
+      console.log('📊 [PERSONAL-PLAN] Проверка данных перед формированием промпта:');
+      console.log('📊 [PERSONAL-PLAN] Пол пользователя:', userGender);
+      console.log('📊 [PERSONAL-PLAN] Количество ответов первичного теста:', primaryAnswers?.length || 0);
+      console.log('📊 [PERSONAL-PLAN] Первые 3 ответа:', primaryAnswers?.slice(0, 3));
+      console.log('📊 [PERSONAL-PLAN] Результаты доп. тестов:', secondaryTestResults?.substring(0, 200));
+      
+      if (!primaryAnswers || primaryAnswers.length === 0) {
+        console.error('❌ [PERSONAL-PLAN] КРИТИЧЕСКАЯ ОШИБКА: Нет ответов первичного теста!');
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Primary test answers are required for plan generation' 
+        });
+      }
+      
       // Формируем финальный промпт, заменяя переменные
+      const userAnswersJson = JSON.stringify(primaryAnswers, null, 2);
       const prompt = promptTemplate
         .replace('{user_gender}', userGender)
-        .replace('{user_answers}', JSON.stringify(primaryAnswers))
+        .replace('{user_answers}', userAnswersJson)
         .replace('{secondary_test_results}', secondaryTestResults)
         .replace('{example_personal_plan}', examplePlan);
 
       console.log('📝 [PERSONAL-PLAN] Финальный промпт сформирован, длина:', prompt.length);
+      console.log('📝 [PERSONAL-PLAN] Первые 500 символов промпта:', prompt.substring(0, 500));
+      console.log('📝 [PERSONAL-PLAN] Содержит ли промпт данные пользователя:', prompt.includes(userAnswersJson.substring(0, 50)));
       console.log('🚀 [PERSONAL-PLAN] Вызываем Gemini API...');
       
       const plan = await callGeminiAI(prompt, 16000);
