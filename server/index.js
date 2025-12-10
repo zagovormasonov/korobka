@@ -191,9 +191,11 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(projectRoot, 'dist')));
   
   // SPA fallback - все остальные запросы (не API) возвращают index.html
-  app.get('*', (req, res) => {
-    // Не перенаправляем API запросы
+  app.get('*', (req, res, next) => {
+    // Не перенаправляем API запросы - они должны обрабатываться роутерами выше
     if (req.path.startsWith('/api/')) {
+      // Если это API запрос, но он не был обработан роутерами, возвращаем 404
+      // Но только если это GET запрос (POST/PUT/DELETE обрабатываются роутерами)
       return res.status(404).json({ error: 'API endpoint not found' });
     }
     
