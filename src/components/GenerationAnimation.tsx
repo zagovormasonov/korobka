@@ -179,11 +179,6 @@ const GenerationAnimation: React.FC<GenerationAnimationProps> = ({
           <Text style={{ color: '#1890FF', fontSize: '14px', fontWeight: '500' }}>
             ⏱️ Генерация может занять до 7 минут
           </Text>
-          <div style={{ marginTop: '8px' }}>
-            <Text style={{ color: '#1890FF', fontSize: '12px' }}>
-              Каждый документ создается на основе предыдущего для максимальной персонализации
-            </Text>
-          </div>
         </div>
       </div>
     </div>
