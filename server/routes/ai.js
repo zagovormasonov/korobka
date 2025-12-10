@@ -153,12 +153,36 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+      console.error('❌ [GEMINI-3.0] v1beta API вернул ошибку:', response.status, JSON.stringify(errorData));
       throw new Error(`v1beta API error: ${JSON.stringify(errorData)}`);
     }
     
     const data = await response.json();
+    console.log('📥 [GEMINI-3.0] Получен ответ от v1beta API, структура:', {
+      hasCandidates: !!data.candidates,
+      candidatesLength: data.candidates?.length || 0,
+      hasError: !!data.error
+    });
+    
+    // Проверяем наличие candidates и обработываем возможные ошибки
+    if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+      console.error('❌ [GEMINI-3.0] Нет candidates в ответе:', JSON.stringify(data, null, 2));
+      throw new Error(`v1beta API returned no candidates: ${JSON.stringify(data)}`);
+    }
+    
+    // Проверяем наличие content и parts
+    if (!data.candidates[0].content || !data.candidates[0].content.parts || data.candidates[0].content.parts.length === 0) {
+      console.error('❌ [GEMINI-3.0] Нет content.parts в ответе:', JSON.stringify(data.candidates[0], null, 2));
+      throw new Error(`v1beta API returned invalid candidate structure: ${JSON.stringify(data.candidates[0])}`);
+    }
+    
     const text = data.candidates[0].content.parts[0].text;
+    
+    if (!text) {
+      console.error('❌ [GEMINI-3.0] Нет text в ответе:', JSON.stringify(data.candidates[0].content.parts[0], null, 2));
+      throw new Error(`v1beta API returned no text in response`);
+    }
     
     console.log('✅ Gemini 3.0 Pro ответ получен через v1beta API, длина:', text.length, 'символов');
     console.log('⏱️ Время окончания:', new Date().toISOString());
