@@ -408,6 +408,16 @@ const DashboardPage: React.FC = () => {
   
   // Состояние для Modal с формой подбора психолога
   const [psychologistFormModalVisible, setPsychologistFormModalVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Отслеживание размера экрана для адаптивности Modal
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Состояния для фоновой генерации
   const [isGenerating, setIsGenerating] = useState(false);
@@ -2099,19 +2109,19 @@ const DashboardPage: React.FC = () => {
           open={psychologistFormModalVisible}
           onCancel={() => setPsychologistFormModalVisible(false)}
           footer={null}
-          width={700}
+          width={isMobile ? '95%' : 700}
           centered
           styles={{
             content: {
               borderRadius: '20px',
-              padding: '30px',
+              padding: isMobile ? '20px' : '30px',
               maxHeight: '90vh',
               overflow: 'auto'
             },
             body: {
               maxHeight: 'calc(90vh - 120px)',
               overflow: 'auto',
-              padding: '0'
+              padding: isMobile ? '10px' : '20px'
             }
           }}
           style={{
@@ -2123,7 +2133,8 @@ const DashboardPage: React.FC = () => {
             minHeight: '500px',
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'flex-start'
+            alignItems: 'flex-start',
+            padding: isMobile ? '10px' : '20px'
           }}>
             <iframe 
               src="https://forms.yandex.ru/u/693b277feb614619417efad0?iframe=1" 
