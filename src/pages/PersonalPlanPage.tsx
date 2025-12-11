@@ -6,7 +6,8 @@ import {
   Input, 
   Form, 
   message,
-  Space
+  Space,
+  Modal
 } from 'antd'; 
 import { apiRequest } from '../config/api'; 
 import { 
@@ -42,6 +43,9 @@ const PersonalPlanPage: React.FC = () => {
   const [psychologistRequestSent, setPsychologistRequestSent] = useState(false); // Анимация отправки заявки
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  
+  // Состояние для Modal с формой подбора психолога
+  const [psychologistFormModalVisible, setPsychologistFormModalVisible] = useState(false);
   
   // Состояния для проверки готовности документов
   const [documentsStatus, setDocumentsStatus] = useState({
@@ -674,85 +678,23 @@ const PersonalPlanPage: React.FC = () => {
               </Title>
             </div>
             
-            <Form
-              form={psychologistForm}
-              onFinish={handlePsychologistRequest}
-              layout="vertical"
+            <Button 
+              type="primary" 
+              onClick={() => setPsychologistFormModalVisible(true)}
+              style={{
+                width: '100%',
+                height: '45px',
+                borderRadius: '22px',
+                backgroundColor: '#4F958B',
+                borderColor: '#4F958B',
+                color: '#ffffff',
+                fontSize: '16px',
+                fontWeight: '500',
+                marginTop: '20px'
+              }}
             >
-              <Form.Item
-                name="name"
-                label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Имя</span>}
-                rules={[{ required: true, message: 'Введите ваше имя' }]}
-              >
-                <Input 
-                  placeholder="Ваше имя" 
-                  style={{ 
-                    borderRadius: '12px',
-                    height: '40px'
-                  }}
-                />
-              </Form.Item>
-              <Form.Item
-                name="phone"
-                label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Телефон</span>}
-                rules={[{ required: true, message: 'Введите номер телефона' }]}
-              >
-                <Input 
-                  placeholder="+7 (999) 123-45-67" 
-                  style={{ 
-                    borderRadius: '12px',
-                    height: '40px'
-                  }}
-                />
-              </Form.Item>
-              <Form.Item
-                name="email"
-                label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Email</span>}
-                rules={[
-                  { required: true, message: 'Введите email' },
-                  { type: 'email', message: 'Введите корректный email' }
-                ]}
-              >
-                <Input 
-                  placeholder="example@email.com" 
-                  style={{ 
-                    borderRadius: '12px',
-                    height: '40px'
-                  }}
-                />
-              </Form.Item>
-              <Form.Item
-                name="telegramUsername"
-                label={<span style={{ color: '#2C3E50', fontWeight: '500' }}>Telegram (необязательно)</span>}
-              >
-                <Input 
-                  placeholder="username или @username" 
-                  style={{ 
-                    borderRadius: '12px',
-                    height: '40px'
-                  }}
-                />
-              </Form.Item>
-              <Button 
-                type="primary" 
-                htmlType="submit"
-                style={{
-                  width: '100%',
-                  height: '45px',
-                  borderRadius: '22px',
-                  backgroundColor: psychologistRequestSent ? '#52c41a' : '#4F958B',
-                  borderColor: psychologistRequestSent ? '#52c41a' : '#4F958B',
-                  color: '#ffffff',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease',
-                  transform: psychologistRequestSent ? 'scale(0.95)' : 'scale(1)'
-                }}
-                icon={psychologistRequestSent ? <CheckOutlined /> : null}
-              >
-                {psychologistRequestSent ? 'Заявка отправлена!' : 'Оставить заявку'}
-              </Button>
-            </Form>
+              Оставить заявку
+            </Button>
           </div>
 
           {/* Session Preparation Card */}
@@ -954,6 +896,61 @@ const PersonalPlanPage: React.FC = () => {
         
         {/* Футер со ссылками */}
         <Footer />
+        
+        {/* Модальное окно с формой подбора психолога (Яндекс.Формы) */}
+        <Modal
+          title={
+            <span style={{ 
+              color: '#2C3E50', 
+              fontSize: '18px', 
+              fontWeight: '600' 
+            }}>
+              Заявка на подбор психолога
+            </span>
+          }
+          open={psychologistFormModalVisible}
+          onCancel={() => setPsychologistFormModalVisible(false)}
+          footer={null}
+          width={700}
+          centered
+          styles={{
+            content: {
+              borderRadius: '20px',
+              padding: '30px',
+              maxHeight: '90vh',
+              overflow: 'auto'
+            },
+            body: {
+              maxHeight: 'calc(90vh - 120px)',
+              overflow: 'auto',
+              padding: '0'
+            }
+          }}
+          style={{
+            top: '20px'
+          }}
+        >
+          <div style={{ 
+            width: '100%', 
+            minHeight: '500px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-start'
+          }}>
+            <iframe 
+              src="https://forms.yandex.ru/u/693b277feb614619417efad0?iframe=1" 
+              frameBorder="0" 
+              name="ya-form-693b277feb614619417efad0" 
+              width="100%" 
+              style={{
+                minHeight: '500px',
+                border: 'none',
+                borderRadius: '12px'
+              }}
+              title="Форма подбора психолога"
+            />
+          </div>
+        </Modal>
       </div>
     </div>
   );
