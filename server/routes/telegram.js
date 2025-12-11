@@ -14,55 +14,12 @@ router.post('/psychologist-request', async (req, res) => {
     
     console.log('🎯 [TELEGRAM-PSYCHOLOGIST-REQUEST] Начало обработки заявки:', { sessionId, name });
     
-    // Проверяем лимит заявок в час (максимум 3 заявки)
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const { data: recentRequests, error: countError } = await supabase
-      .from('psychologist_requests')
-      .select('id')
-      .eq('session_id', sessionId)
-      .gte('created_at', oneHourAgo.toISOString());
-    
-    if (countError) {
-      console.error('❌ [TELEGRAM] Ошибка проверки лимита заявок:', countError);
-      return res.status(500).json({ success: false, error: 'Ошибка проверки лимита заявок' });
-    }
-    
-    if (recentRequests && recentRequests.length >= 3) {
-      console.log('⚠️ [TELEGRAM] Превышен лимит заявок:', { sessionId, count: recentRequests.length });
-      return res.status(429).json({ 
-        success: false, 
-        error: 'Превышен лимит заявок',
-        message: 'Вы уже отправили максимальное количество заявок (3) за последний час. Следующую заявку можно будет отправить через час.',
-        retryAfter: 3600 // секунды до следующей возможности
-      });
-    }
-    
-    console.log('✅ [TELEGRAM] Лимит заявок не превышен:', { sessionId, count: recentRequests?.length || 0 });
+    // НЕ проверяем лимит заявок и НЕ сохраняем в БД для соблюдения закона о персональных данных
+    // Данные отправляются только в Telegram
     
     // Генерируем номер заявки
     const requestNumber = `REQ-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     console.log('📋 [TELEGRAM] Номер заявки:', requestNumber);
-    
-    // Сохраняем заявку в базу данных
-    const { data, error } = await supabase
-      .from('psychologist_requests')
-      .insert({
-        session_id: sessionId,
-        name: name,
-        phone: phone,
-        email: email,
-        telegram_username: telegramUsername,
-        request_number: requestNumber,
-        utm_source: utmSource,
-        utm_medium: utmMedium,
-        utm_campaign: utmCampaign,
-        utm_term: utmTerm,
-        utm_content: utmContent
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
     
     // Отправляем уведомление в Telegram
     const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -183,20 +140,14 @@ ${utmContent ? `📝 Контент: ${utmContent}` : ''}` : '';
 });
 
 // Получить заявки на подбор психолога
+// ОТКЛЮЧЕНО: заявки больше не сохраняются в БД для соблюдения закона о персональных данных
+// Данные доступны только в Telegram
 router.get('/psychologist-requests', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('psychologist_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    
-    res.json({ success: true, data });
-  } catch (error) {
-    console.error('Error fetching psychologist requests:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+  res.json({ 
+    success: true, 
+    data: [],
+    message: 'Заявки больше не сохраняются в БД. Данные доступны только в Telegram.'
+  });
 });
 
 // Отправить уведомление о завершении теста

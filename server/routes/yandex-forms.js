@@ -1,6 +1,5 @@
 import express from 'express';
 import TelegramBot from 'node-telegram-bot-api';
-import { supabase } from '../index.js';
 
 const router = express.Router();
 
@@ -72,28 +71,8 @@ async function handleYandexFormSubmission(data) {
     const requestNumber = `REQ-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     console.log('📋 [YANDEX-FORMS] Номер заявки:', requestNumber);
     
-    // Сохраняем заявку в базу данных
-    // Для заявок из Яндекс.Форм session_id может быть null или генерироваться
-    const sessionId = `yandex-form-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    const { error: insertError } = await supabase
-      .from('psychologist_requests')
-      .insert({
-        session_id: sessionId,
-        name: name,
-        phone: phone,
-        email: email,
-        telegram_username: telegramUsername || null,
-        request_number: requestNumber,
-        status: 'pending'
-      });
-    
-    if (insertError) {
-      console.error('❌ [YANDEX-FORMS] Ошибка сохранения в БД:', insertError);
-      // Продолжаем выполнение, даже если не удалось сохранить в БД
-    } else {
-      console.log('✅ [YANDEX-FORMS] Заявка сохранена в БД');
-    }
+    // НЕ сохраняем заявку в базу данных для соблюдения закона о персональных данных
+    // Данные отправляются только в Telegram
     
     // Отправляем уведомление в Telegram
     const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -115,7 +94,6 @@ async function handleYandexFormSubmission(data) {
 📞 Телефон: ${phone}
 📧 Email: ${email}
 💬 Telegram: ${formattedTelegramUsername}
-🆔 Session ID: ${sessionId}
 ⏰ Время: ${new Date().toLocaleString('ru-RU')}
 📝 Источник: Яндекс.Формы`;
 
