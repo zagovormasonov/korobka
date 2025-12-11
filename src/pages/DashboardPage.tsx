@@ -406,19 +406,6 @@ const DashboardPage: React.FC = () => {
   const [currentTestId, setCurrentTestId] = useState<number | null>(null);
   const [modalText, setModalText] = useState('');
   
-  // Состояние для Modal с формой подбора психолога
-  const [psychologistFormModalVisible, setPsychologistFormModalVisible] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  
-  // Отслеживание размера экрана для адаптивности Modal
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  
   // Состояния для фоновой генерации
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
@@ -1383,17 +1370,25 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <Title level={4} style={{ 
                     color: '#2C3E50', 
-                    marginBottom: '0',
+                    marginBottom: '15px',
                     fontSize: '18px',
                     fontWeight: '600'
                   }}>
                     Подбор психолога
                   </Title>
                 </div>
-                
+                <Text style={{ 
+                  color: '#7B8794', 
+                  fontSize: '14px',
+                  display: 'block',
+                  marginBottom: '25px',
+                  lineHeight: '1.5'
+                }}>
+                  Оставь заявку, и мы подберём психологов под твою ситуацию и бюджет
+                </Text>
                 <Button 
                   type="primary" 
-                  onClick={() => setPsychologistFormModalVisible(true)}
+                  onClick={() => window.open('https://forms.yandex.ru/u/693b277feb614619417efad0', '_blank')}
                   style={{
                     width: '100%',
                     height: '45px',
@@ -1402,8 +1397,7 @@ const DashboardPage: React.FC = () => {
                     borderColor: '#4F958B',
                     color: '#ffffff',
                     fontSize: '16px',
-                    fontWeight: '500',
-                    marginTop: '20px'
+                    fontWeight: '500'
                   }}
                 >
                   Оставить заявку
@@ -2091,62 +2085,6 @@ const DashboardPage: React.FC = () => {
                 resize: 'none',
                 marginBottom: '20px'
               }}
-            />
-          </div>
-        </Modal>
-        
-        {/* Модальное окно с формой подбора психолога (Яндекс.Формы) */}
-        <Modal
-          title={
-            <span style={{ 
-              color: '#2C3E50', 
-              fontSize: '18px', 
-              fontWeight: '600' 
-            }}>
-              Заявка на подбор психолога
-            </span>
-          }
-          open={psychologistFormModalVisible}
-          onCancel={() => setPsychologistFormModalVisible(false)}
-          footer={null}
-          width={isMobile ? '95%' : 700}
-          centered
-          styles={{
-            content: {
-              borderRadius: '20px',
-              padding: isMobile ? '20px' : '30px',
-              maxHeight: '90vh',
-              overflow: 'auto'
-            },
-            body: {
-              maxHeight: 'calc(90vh - 120px)',
-              overflow: 'auto',
-              padding: isMobile ? '10px' : '20px'
-            }
-          }}
-          style={{
-            top: '20px'
-          }}
-        >
-          <div style={{ 
-            width: '100%', 
-            minHeight: '500px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
-            padding: isMobile ? '10px' : '20px'
-          }}>
-            <iframe 
-              src="https://forms.yandex.ru/u/693b277feb614619417efad0?iframe=1" 
-              frameBorder="0" 
-              name="ya-form-693b277feb614619417efad0" 
-              width="100%" 
-              style={{
-                minHeight: '500px',
-                border: 'none',
-                borderRadius: '12px'
-              }}
-              title="Форма подбора психолога"
             />
           </div>
         </Modal>
