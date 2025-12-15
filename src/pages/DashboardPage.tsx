@@ -1353,9 +1353,9 @@ const DashboardPage: React.FC = () => {
                 backgroundColor: 'white',
                 borderRadius: '20px',
                 padding: '30px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                textAlign: 'center'
               }}>
-                <div style={{ textAlign: 'center', marginBottom: '25px' }}>
                   <div style={{
                     width: '60px',
                     height: '60px',
@@ -1370,13 +1370,12 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <Title level={4} style={{ 
                     color: '#2C3E50', 
-                    marginBottom: '15px',
+                  marginBottom: '15px',
                     fontSize: '18px',
                     fontWeight: '600'
                   }}>
                     Подбор психолога
                   </Title>
-                </div>
                 <Text style={{ 
                   color: '#7B8794', 
                   fontSize: '14px',
@@ -1386,22 +1385,22 @@ const DashboardPage: React.FC = () => {
                 }}>
                   Оставь заявку, и мы подберём психологов под твою ситуацию и бюджет
                 </Text>
-                <Button 
-                  type="primary" 
+                  <Button 
+                    type="primary" 
                   onClick={() => window.open('https://forms.yandex.ru/u/693b277feb614619417efad0', '_blank')}
-                  style={{
-                    width: '100%',
-                    height: '45px',
-                    borderRadius: '22px',
+                    style={{
+                      width: '100%',
+                      height: '45px',
+                      borderRadius: '22px',
                     backgroundColor: '#4F958B',
                     borderColor: '#4F958B',
-                    color: '#ffffff',
-                    fontSize: '16px',
+                      color: '#ffffff',
+                      fontSize: '16px',
                     fontWeight: '500'
-                  }}
-                >
+                    }}
+                  >
                   Оставить заявку
-                </Button>
+                  </Button>
               </div>
 
               {/* Session Preparation Card */}
@@ -1697,15 +1696,15 @@ const DashboardPage: React.FC = () => {
             {/* Section title - показываем только после загрузки тестов */}
             {showTests && recommendedTests.length > 0 && (
               <>
-                <Title level={3} style={{ 
-                  color: '#2C3E50',
-                  fontSize: '24px',
-                  fontWeight: '600',
+            <Title level={3} style={{ 
+              color: '#2C3E50',
+              fontSize: '24px',
+              fontWeight: '600',
                   marginBottom: '20px',
-                  textAlign: 'center'
-                }}>
-                  Рекомендуемые тесты
-                </Title>
+              textAlign: 'center'
+            }}>
+              Рекомендуемые тесты
+            </Title>
                 
                 {/* Плашка с предупреждением */}
                 <div style={{

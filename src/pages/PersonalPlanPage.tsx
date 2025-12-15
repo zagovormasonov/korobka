@@ -649,30 +649,29 @@ const PersonalPlanPage: React.FC = () => {
             backgroundColor: 'white',
             borderRadius: '20px',
             padding: '30px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center'
           }}>
-            <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                backgroundColor: '#E8F5F3',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 20px auto'
-              }}>
-                <UserOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
-              </div>
-              <Title level={4} style={{ 
-                color: '#2C3E50', 
-                marginBottom: '15px',
-                fontSize: '18px',
-                fontWeight: '600'
-              }}>
-                Подбор психолога
-              </Title>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              backgroundColor: '#E8F5F3',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto'
+            }}>
+              <UserOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
             </div>
+            <Title level={4} style={{ 
+              color: '#2C3E50', 
+              marginBottom: '15px',
+              fontSize: '18px',
+              fontWeight: '600'
+            }}>
+              Подбор психолога
+            </Title>
             <Text style={{ 
               color: '#7B8794', 
               fontSize: '14px',
