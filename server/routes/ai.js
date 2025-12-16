@@ -162,6 +162,54 @@ async function callGeminiAI(prompt, maxTokens = 2000) {
       } catch (e) {
         errorData = { error: errorText };
       }
+      
+      // Обработка ошибки 429 (Rate Limit Exceeded)
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 5000; // По умолчанию 5 секунд
+        
+        console.warn(`⚠️ [GEMINI-3.0] Превышен лимит запросов (429). Retry-After: ${retryAfter || 'не указан'}`);
+        console.warn(`⏳ [GEMINI-3.0] Ждем ${waitTime / 1000}с перед retry...`);
+        
+        // Ждем перед повторной попыткой (максимум 10 секунд)
+        await new Promise(resolve => setTimeout(resolve, Math.min(waitTime, 10000)));
+        
+        // Пробуем еще раз (только один retry)
+        console.log('🔄 [GEMINI-3.0] Повторная попытка после задержки...');
+        const retryResponse = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (!retryResponse.ok) {
+          const retryErrorText = await retryResponse.text();
+          let retryErrorData;
+          try {
+            retryErrorData = JSON.parse(retryErrorText);
+          } catch (e) {
+            retryErrorData = { error: retryErrorText };
+          }
+          console.error('❌ [GEMINI-3.0] Повторная попытка также не удалась:', retryResponse.status, JSON.stringify(retryErrorData));
+          throw new Error(`v1beta API error (${retryResponse.status}): Превышен лимит запросов. Попробуйте позже.`);
+        }
+        
+        // Если retry успешен, продолжаем обработку
+        const retryData = await retryResponse.json();
+        if (!retryData.candidates || !Array.isArray(retryData.candidates) || retryData.candidates.length === 0 ||
+            !retryData.candidates[0].content || !retryData.candidates[0].content.parts ||
+            !Array.isArray(retryData.candidates[0].content.parts) || retryData.candidates[0].content.parts.length === 0 ||
+            !retryData.candidates[0].content.parts[0].text) {
+          console.error('❌ [GEMINI-3.0] Неожиданная структура ответа от v1beta API после retry:', JSON.stringify(retryData));
+          throw new Error('Неожиданная структура ответа от Gemini 3.0 Pro v1beta API');
+        }
+        const text = retryData.candidates[0].content.parts[0].text;
+        console.log('✅ [GEMINI-3.0] Retry успешен, получен ответ, длина:', text.length);
+        return text;
+      }
+      
       console.error('❌ [GEMINI-3.0] v1beta API вернул ошибку:', response.status, JSON.stringify(errorData));
       throw new Error(`v1beta API error (${response.status}): ${JSON.stringify(errorData)}`);
     }

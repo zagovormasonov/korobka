@@ -187,6 +187,27 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
           
           if (!response.ok) {
             const errorData = await response.json();
+            
+            // Обработка ошибки 429 (Rate Limit Exceeded)
+            if (response.status === 429) {
+              const retryAfter = response.headers.get('Retry-After');
+              const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 5000; // По умолчанию 5 секунд
+              
+              console.warn(`⚠️ [${requestId}] Превышен лимит запросов (429) для ${modelName}. Retry-After: ${retryAfter || 'не указан'}`);
+              console.warn(`⏳ [${requestId}] Пробуем следующую модель или ждем ${waitTime / 1000}с...`);
+              
+              // Если это первая модель (gemini-3-pro-preview), пробуем следующую без задержки
+              // Если это последняя модель, пробуем retry с задержкой
+              if (models.indexOf(modelName) === 0) {
+                // Это первая модель, просто пробуем следующую
+                throw new Error(`Rate limit exceeded for ${modelName}, trying next model`);
+              } else {
+                // Это не первая модель, пробуем retry с задержкой
+                await new Promise(resolve => setTimeout(resolve, Math.min(waitTime, 10000))); // Максимум 10 секунд
+                throw new Error(`Rate limit exceeded for ${modelName}, retry after delay`);
+              }
+            }
+            
             throw new Error(`v1beta API error: ${JSON.stringify(errorData)}`);
           }
           
@@ -286,11 +307,22 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
         return; // Явный return чтобы не продолжать выполнение
         
       } catch (modelError) {
-        console.error(`❌ Ошибка с ${modelName}:`, {
-          message: modelError.message,
-          status: modelError.status,
-          statusText: modelError.statusText
-        });
+        // Проверяем, является ли ошибка 429 (Rate Limit)
+        const isRateLimit = modelError.message?.includes('429') || 
+                           modelError.message?.includes('RESOURCE_EXHAUSTED') ||
+                           modelError.message?.includes('Rate limit exceeded') ||
+                           modelError.status === 429;
+        
+        if (isRateLimit) {
+          console.warn(`⚠️ [${requestId}] Превышен лимит запросов (429) для ${modelName}`);
+          console.warn(`🔄 [${requestId}] Пробуем следующую модель...`);
+        } else {
+          console.error(`❌ Ошибка с ${modelName}:`, {
+            message: modelError.message,
+            status: modelError.status,
+            statusText: modelError.statusText
+          });
+        }
         lastError = modelError;
         // Продолжаем со следующей моделью
       }
@@ -304,6 +336,19 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
     
     // Проверяем, не отправлен ли уже ответ
     if (!res.headersSent) {
+      // Проверяем, является ли ошибка 429 (Rate Limit)
+      const isRateLimit = error.message?.includes('429') || 
+                         error.message?.includes('RESOURCE_EXHAUSTED') ||
+                         error.message?.includes('Rate limit exceeded');
+      
+      if (isRateLimit) {
+        return res.status(429).json({
+          success: false,
+          error: 'Превышен лимит запросов к AI. Пожалуйста, подождите немного и попробуйте снова через несколько секунд.',
+          retryAfter: 10 // Рекомендуем повторить через 10 секунд
+        });
+      }
+      
       return res.status(500).json({
         success: false,
         error: error.message || 'Произошла ошибка при обработке запроса'
