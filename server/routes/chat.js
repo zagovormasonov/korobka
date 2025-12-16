@@ -340,17 +340,16 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
                        error.message?.includes('RESOURCE_EXHAUSTED') ||
                        error.message?.includes('Rate limit exceeded');
     
-    // Отправляем ошибку в Telegram (кроме 429, это не критично)
-    if (!isRateLimit) {
-      sendErrorToTelegram(error, {
-        route: '/api/chat/message',
-        requestId: requestId,
-        message: message?.substring(0, 100),
-        filesCount: files?.length || 0
-      }).catch(err => {
-        console.error('❌ Не удалось отправить ошибку в Telegram:', err);
-      });
-    }
+    // Отправляем ошибку в Telegram (включая 429)
+    sendErrorToTelegram(error, {
+      route: '/api/chat/message',
+      requestId: requestId,
+      message: message?.substring(0, 100),
+      filesCount: files?.length || 0,
+      isRateLimit: isRateLimit
+    }).catch(err => {
+      console.error('❌ Не удалось отправить ошибку в Telegram:', err);
+    });
     
     // Проверяем, не отправлен ли уже ответ
     if (!res.headersSent) {
