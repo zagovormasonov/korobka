@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { initializeWebSocket, getOnlineUsers, getOnlineCount } from './websocket.js';
+import { sendErrorToTelegram } from './utils/telegram-errors.js';
 import testRoutes from './routes/tests.js';
 import paymentRoutes from './routes/payments.js';
 import aiRoutes from './routes/ai.js';
@@ -236,6 +237,54 @@ app.get('/api/health/database', async (req, res) => {
   }
 });
 
+// Глобальный обработчик ошибок Express (должен быть после всех роутов)
+app.use((error, req, res, next) => {
+  console.error('❌ [GLOBAL-ERROR-HANDLER] Ошибка:', error);
+  
+  // Отправляем ошибку в Telegram
+  sendErrorToTelegram(error, {
+    route: req.path,
+    method: req.method,
+    body: req.body ? JSON.stringify(req.body).substring(0, 500) : 'нет body',
+    query: Object.keys(req.query).length > 0 ? JSON.stringify(req.query) : 'нет query',
+    ip: req.ip,
+    userAgent: req.get('user-agent')
+  }).catch(err => {
+    console.error('❌ Не удалось отправить ошибку в Telegram:', err);
+  });
+  
+  // Отправляем ответ клиенту
+  if (!res.headersSent) {
+    res.status(error.status || 500).json({
+      success: false,
+      error: error.message || 'Внутренняя ошибка сервера'
+    });
+  }
+});
+
+// Обработчик необработанных ошибок процесса
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ [UNHANDLED-REJECTION] Необработанное отклонение промиса:', reason);
+  sendErrorToTelegram(
+    reason instanceof Error ? reason : new Error(String(reason)),
+    { 
+      type: 'unhandledRejection', 
+      promise: String(promise).substring(0, 200)
+    }
+  ).catch(err => {
+    console.error('❌ Не удалось отправить ошибку в Telegram:', err);
+  });
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ [UNCAUGHT-EXCEPTION] Необработанное исключение:', error);
+  sendErrorToTelegram(error, { type: 'uncaughtException' }).catch(err => {
+    console.error('❌ Не удалось отправить ошибку в Telegram:', err);
+  });
+  // Критическая ошибка - завершаем процесс
+  process.exit(1);
+});
+
 // Создаем HTTP сервер для socket.io
 const httpServer = createServer(app);
 
@@ -250,6 +299,7 @@ httpServer.listen(PORT, '0.0.0.0', async () => {
   console.log(`🔌 WebSocket сервер активен`);
   console.log(`🌐 Frontend: ${FRONTEND_URL || 'не задан (FRONTEND_URL)'}`);
   console.log(`🔧 Backend API: ${process.env.BACKEND_URL || `http://127.0.0.1:${PORT}`}`);
+  console.log(`📱 Telegram уведомления об ошибках: ${process.env.TELEGRAM_CHAT_ID ? 'включены' : 'отключены (TELEGRAM_CHAT_ID не установлен)'}`);
   
   // Проверяем подключение к Supabase
   await testSupabaseConnection();

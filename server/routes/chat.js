@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { readFileSync, unlinkSync, mkdirSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
+import { sendErrorToTelegram } from '../utils/telegram-errors.js';
 
 const router = express.Router();
 
@@ -334,13 +335,25 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
   } catch (error) {
     console.error('❌ Ошибка в чате:', error);
     
+    // Проверяем, является ли ошибка 429 (Rate Limit)
+    const isRateLimit = error.message?.includes('429') || 
+                       error.message?.includes('RESOURCE_EXHAUSTED') ||
+                       error.message?.includes('Rate limit exceeded');
+    
+    // Отправляем ошибку в Telegram (кроме 429, это не критично)
+    if (!isRateLimit) {
+      sendErrorToTelegram(error, {
+        route: '/api/chat/message',
+        requestId: requestId,
+        message: message?.substring(0, 100),
+        filesCount: files?.length || 0
+      }).catch(err => {
+        console.error('❌ Не удалось отправить ошибку в Telegram:', err);
+      });
+    }
+    
     // Проверяем, не отправлен ли уже ответ
     if (!res.headersSent) {
-      // Проверяем, является ли ошибка 429 (Rate Limit)
-      const isRateLimit = error.message?.includes('429') || 
-                         error.message?.includes('RESOURCE_EXHAUSTED') ||
-                         error.message?.includes('Rate limit exceeded');
-      
       if (isRateLimit) {
         return res.status(429).json({
           success: false,

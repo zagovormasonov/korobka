@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../index.js';
+import { sendErrorToTelegram } from '../utils/telegram-errors.js';
 
 const router = express.Router();
 
@@ -389,6 +390,15 @@ async function generateDocumentsInBackground(sessionId) {
     console.error('❌ [BACKGROUND-GENERATION] SessionId:', sessionId);
     console.error('❌ [BACKGROUND-GENERATION] Error name:', error.name);
     console.error('❌ [BACKGROUND-GENERATION] Error message:', error.message);
+    
+    // Отправляем ошибку в Telegram
+    sendErrorToTelegram(error, {
+      route: 'background-generation',
+      sessionId: sessionId,
+      stage: 'document generation'
+    }).catch(err => {
+      console.error('❌ Не удалось отправить ошибку в Telegram:', err);
+    });
     
     // Отмечаем ошибку в БД
     try {
