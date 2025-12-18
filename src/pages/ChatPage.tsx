@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Input, Button, Upload, message as antMessage, Spin, Card, Typography, Space, Tag } from 'antd';
+import { Input, Button, Upload, message as antMessage, Spin, Space, Tag, Tooltip } from 'antd';
 import { SendOutlined, PaperClipOutlined, FileImageOutlined, FilePdfOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { API_BASE_URL } from '../config/api';
 
 const { TextArea } = Input;
-const { Title, Text } = Typography;
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,10 +18,18 @@ const ChatPage: React.FC = () => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false));
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Мобильная адаптация
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // Загружаем историю чата из localStorage при инициализации
   useEffect(() => {
@@ -213,103 +220,80 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '20px'
-    }}>
-      <div style={{
-        maxWidth: '1000px',
-        margin: '0 auto',
-        height: 'calc(100vh - 40px)',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* Заголовок */}
-        <Card
-          style={{
-            marginBottom: '20px',
-            borderRadius: '16px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <Title level={2} style={{ margin: 0, color: '#667eea' }}>
-                💬 Чат с Gemini 3.0 Pro
-              </Title>
-              <Text type="secondary">
-                Задавайте вопросы и загружайте изображения или PDF для анализа
-              </Text>
-            </div>
-            {messages.length > 0 && (
-              <Button
-                danger
-                icon={<DeleteOutlined />}
-                onClick={clearChat}
-              >
-                Очистить чат
-              </Button>
-            )}
-          </div>
-        </Card>
-
-        {/* Область сообщений */}
-        <Card
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        overflow: 'hidden',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}
+    >
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          maxWidth: '1000px',
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          boxSizing: 'border-box',
+          padding: isMobile ? '12px' : '16px'
+        }}
+      >
+        {/* Сообщения (единственная зона скролла) */}
+        <div
           style={{
             flex: 1,
-            marginBottom: '20px',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            padding: isMobile ? '8px' : '12px',
             borderRadius: '16px',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
-          }}
-          bodyStyle={{
-            flex: 1,
-            overflow: 'auto',
-            padding: '24px',
-            display: 'flex',
-            flexDirection: 'column'
+            background: 'rgba(255,255,255,0.18)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)'
           }}
         >
           {messages.length === 0 ? (
-            <div style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              color: '#999'
-            }}>
-              <div style={{ fontSize: '64px', marginBottom: '16px' }}>💭</div>
-              <Title level={4} type="secondary">
-                Начните диалог с Gemini
-              </Title>
-              <Text type="secondary">
-                Отправьте сообщение или загрузите файл для анализа
-              </Text>
+            <div
+              style={{
+                minHeight: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                color: 'rgba(255,255,255,0.85)',
+                textAlign: 'center',
+                padding: '24px 12px'
+              }}
+            >
+              <div style={{ fontSize: '56px', marginBottom: '8px' }}>💭</div>
+              <div style={{ fontSize: '16px', opacity: 0.9 }}>Напиши сообщение или прикрепи файл</div>
+              <div style={{ fontSize: '13px', opacity: 0.75, marginTop: '6px' }}>
+                Enter — отправить, Shift+Enter — новая строка
+              </div>
             </div>
           ) : (
-            <div style={{ flex: 1 }}>
+            <div>
               {messages.map((msg, index) => (
                 <div
                   key={index}
                   style={{
-                    marginBottom: '16px',
+                    marginBottom: '12px',
                     display: 'flex',
                     justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
                   }}
                 >
                   <div
                     style={{
-                      maxWidth: '70%',
-                      padding: '12px 16px',
+                      maxWidth: isMobile ? '85%' : '70%',
+                      padding: isMobile ? '10px 12px' : '12px 16px',
                       borderRadius: '16px',
-                      background: msg.role === 'user'
-                        ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                        : '#f0f2f5',
-                      color: msg.role === 'user' ? '#fff' : '#000'
+                      background:
+                        msg.role === 'user'
+                          ? 'rgba(255,255,255,0.18)'
+                          : 'rgba(255,255,255,0.85)',
+                      color: msg.role === 'user' ? '#ffffff' : '#1f1f1f',
+                      boxShadow: '0 6px 18px rgba(0,0,0,0.10)'
                     }}
                   >
                     {msg.files && msg.files.length > 0 && (
@@ -318,7 +302,7 @@ const ChatPage: React.FC = () => {
                           <Tag
                             key={idx}
                             icon={file.type === 'application/pdf' ? <FilePdfOutlined /> : <FileImageOutlined />}
-                            color={msg.role === 'user' ? 'purple' : 'default'}
+                            color={msg.role === 'user' ? 'default' : 'default'}
                             style={{ marginBottom: '4px' }}
                           >
                             {file.name}
@@ -328,12 +312,10 @@ const ChatPage: React.FC = () => {
                     )}
                     <div
                       style={{
-                        margin: 0,
-                        color: msg.role === 'user' ? '#fff' : '#000',
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word',
                         fontSize: '14px',
-                        lineHeight: '1.5'
+                        lineHeight: '1.55'
                       }}
                     >
                       {msg.content}
@@ -341,36 +323,42 @@ const ChatPage: React.FC = () => {
                   </div>
                 </div>
               ))}
+
               {loading && (
-                <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
                   <div
                     style={{
-                      padding: '12px 16px',
+                      padding: '10px 12px',
                       borderRadius: '16px',
-                      background: '#f0f2f5'
+                      background: 'rgba(255,255,255,0.85)',
+                      boxShadow: '0 6px 18px rgba(0,0,0,0.10)'
                     }}
                   >
-                    <Space>
+                    <Space size={8}>
                       <Spin size="small" />
-                      <Text type="secondary">Gemini думает...</Text>
+                      <span style={{ color: '#333' }}>Думаю…</span>
                     </Space>
                   </div>
                 </div>
               )}
+
               <div ref={messagesEndRef} />
             </div>
           )}
-        </Card>
+        </div>
 
-        {/* Область ввода */}
-        <Card
+        {/* Ввод (фиксирован снизу внутри fixed-экрана) */}
+        <div
           style={{
+            marginTop: '12px',
+            padding: '10px',
             borderRadius: '16px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+            background: 'rgba(255,255,255,0.85)',
+            boxShadow: '0 10px 28px rgba(0,0,0,0.12)'
           }}
         >
           {fileList.length > 0 && (
-            <div style={{ marginBottom: '12px' }}>
+            <div style={{ marginBottom: '10px' }}>
               <Space wrap>
                 {fileList.map(file => (
                   <Tag
@@ -386,7 +374,8 @@ const ChatPage: React.FC = () => {
               </Space>
             </div>
           )}
-          <Space.Compact style={{ width: '100%' }}>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
             <Upload
               fileList={fileList}
               onChange={({ fileList }) => setFileList(fileList)}
@@ -395,33 +384,47 @@ const ChatPage: React.FC = () => {
               multiple
               accept="image/*,.pdf"
             >
-              <Button
-                icon={<PaperClipOutlined />}
-                size="large"
-                style={{ height: '50px' }}
-              />
+              <Tooltip title="Прикрепить файл">
+                <Button icon={<PaperClipOutlined />} size="large" style={{ height: '44px' }} />
+              </Tooltip>
             </Upload>
+
             <TextArea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Введите сообщение... (Enter для отправки, Shift+Enter для новой строки)"
-              autoSize={{ minRows: 1, maxRows: 4 }}
-              style={{ height: '50px', resize: 'none' }}
+              placeholder="Сообщение…"
+              autoSize={{ minRows: 1, maxRows: isMobile ? 4 : 5 }}
+              style={{ resize: 'none' }}
               disabled={loading}
             />
-            <Button
-              type="primary"
-              icon={<SendOutlined />}
-              size="large"
-              onClick={handleSend}
-              loading={loading}
-              style={{ height: '50px' }}
-            >
-              Отправить
-            </Button>
-          </Space.Compact>
-        </Card>
+
+            <Tooltip title="Отправить">
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                size="large"
+                onClick={handleSend}
+                loading={loading}
+                style={{ height: '44px', minWidth: '44px' }}
+                aria-label="Отправить"
+              />
+            </Tooltip>
+
+            {messages.length > 0 && (
+              <Tooltip title="Очистить чат">
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  size="large"
+                  onClick={clearChat}
+                  style={{ height: '44px', minWidth: '44px' }}
+                  aria-label="Очистить чат"
+                />
+              </Tooltip>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
