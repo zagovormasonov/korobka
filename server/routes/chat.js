@@ -112,9 +112,10 @@ router.post('/image', upload.single('image'), async (req, res) => {
 
     uploadedFiles.push(imageFile.path);
 
-    // ВАЖНО: точное имя модели “nano banana pro” выясняется через /api/chat/models.
-    // Здесь — безопасный дефолт + возможность переопределить через переменную окружения.
-    const modelName = process.env.NANO_BANANA_PRO_MODEL || 'models/gemini-2.0-flash-exp-image-generation';
+    // Nano Banana Pro (по вашему уточнению): gemini-3-pro-image-preview.
+    // Важно: API ожидает формат "models/<id>", поэтому нормализуем значение.
+    const rawModel = process.env.NANO_BANANA_PRO_MODEL || 'gemini-3-pro-image-preview';
+    const modelName = rawModel.startsWith('models/') ? rawModel : `models/${rawModel}`;
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
 
     const parts = [

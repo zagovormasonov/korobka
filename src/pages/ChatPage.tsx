@@ -11,6 +11,7 @@ interface Message {
   content: string;
   files?: Array<{ name: string; type: string }>;
   image?: { mimeType: string; dataUrl: string; fileName?: string };
+  model?: string;
 }
 
 const ChatPage: React.FC = () => {
@@ -154,7 +155,8 @@ const ChatPage: React.FC = () => {
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.response
+        content: data.response,
+        model: data.model
       };
 
       console.log('📝 Добавляю сообщение в чат:', {
@@ -279,6 +281,7 @@ const ChatPage: React.FC = () => {
       const assistantMessage: Message = {
         role: 'assistant',
         content: 'Готово. Сгенерировал изображение:',
+        model: data.model,
         image: {
           mimeType,
           dataUrl,
@@ -391,6 +394,11 @@ const ChatPage: React.FC = () => {
                       boxShadow: '0 6px 18px rgba(0,0,0,0.10)'
                     }}
                   >
+                    {msg.role === 'assistant' && msg.model && (
+                      <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '6px' }}>
+                        Модель: {msg.model}
+                      </div>
+                    )}
                     {msg.files && msg.files.length > 0 && (
                       <div style={{ marginBottom: '8px' }}>
                         {msg.files.map((file, idx) => (
