@@ -191,7 +191,11 @@ const ChatPage: React.FC = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      if (nanoBananaMode) {
+        handleSendNanoBanana();
+      } else {
+        handleSend();
+      }
     }
   };
 
