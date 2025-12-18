@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Input, Button, Upload, message as antMessage, Spin, Space, Tag, Tooltip } from 'antd';
+import { Input, Button, Upload, message as antMessage, Spin, Space, Tag, Tooltip, Checkbox } from 'antd';
 import { SendOutlined, PaperClipOutlined, FileImageOutlined, FilePdfOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { API_BASE_URL } from '../config/api';
@@ -10,6 +10,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   files?: Array<{ name: string; type: string }>;
+  image?: { mimeType: string; dataUrl: string; fileName?: string };
 }
 
 const ChatPage: React.FC = () => {
@@ -19,6 +20,7 @@ const ChatPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false));
+  const [nanoBananaMode, setNanoBananaMode] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -192,6 +194,19 @@ const ChatPage: React.FC = () => {
   };
 
   const beforeUpload = (file: File) => {
+    if (nanoBananaMode) {
+      if (!file.type.startsWith('image/')) {
+        antMessage.error('В режиме nano banana pro можно загружать только изображения');
+        return false;
+      }
+      const isLt20M = file.size / 1024 / 1024 < 20;
+      if (!isLt20M) {
+        antMessage.error('Файл должен быть меньше 20MB');
+        return false;
+      }
+      return false;
+    }
+
     const isValidType = 
       file.type.startsWith('image/') || 
       file.type === 'application/pdf';
@@ -208,6 +223,86 @@ const ChatPage: React.FC = () => {
     }
 
     return false; // Предотвращаем автоматическую загрузку
+  };
+
+  const handleSendNanoBanana = async () => {
+    if (loading) return;
+    if (!inputValue.trim()) {
+      antMessage.warning('Введите промпт для генерации изображения');
+      return;
+    }
+    const imageFile = fileList.find(f => (f.type || '').startsWith('image/'))?.originFileObj;
+    if (!imageFile) {
+      antMessage.warning('Прикрепите изображение (1 шт.)');
+      return;
+    }
+
+    const userMessage: Message = {
+      role: 'user',
+      content: inputValue,
+      files: fileList.map(file => ({ name: file.name, type: file.type || 'unknown' }))
+    };
+
+    const promptText = inputValue;
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('prompt', promptText);
+      formData.append('image', imageFile);
+
+      const response = await fetch(`${API_BASE_URL}/api/chat/image`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const responseText = await response.text();
+      if (!response.ok) {
+        throw new Error(`Ошибка сервера: ${response.status} - ${responseText.substring(0, 200)}`);
+      }
+
+      let data: any;
+      try { data = JSON.parse(responseText); } catch {
+        throw new Error('Сервер вернул некорректный ответ');
+      }
+      if (!data.success) {
+        throw new Error(data.error || 'Не удалось сгенерировать изображение');
+      }
+
+      const mimeType = data.image?.mimeType || 'image/png';
+      const base64 = data.image?.data;
+      if (!base64) throw new Error('Сервер не вернул изображение');
+
+      const dataUrl = `data:${mimeType};base64,${base64}`;
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: 'Готово. Сгенерировал изображение:',
+        image: {
+          mimeType,
+          dataUrl,
+          fileName: `nano-banana.${mimeType.split('/')[1] || 'png'}`
+        }
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+      setFileList([]);
+    } catch (error: any) {
+      console.error('Ошибка генерации изображения:', error);
+      antMessage.error(error.message || 'Не удалось сгенерировать изображение');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadDataUrl = (dataUrl: string, fileName: string) => {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
 
   const clearChat = () => {
@@ -320,6 +415,29 @@ const ChatPage: React.FC = () => {
                     >
                       {msg.content}
                     </div>
+
+                    {msg.image?.dataUrl && (
+                      <div style={{ marginTop: '10px' }}>
+                        <img
+                          src={msg.image.dataUrl}
+                          alt="Сгенерированное изображение"
+                          style={{
+                            width: '100%',
+                            maxWidth: '420px',
+                            borderRadius: '12px',
+                            display: 'block'
+                          }}
+                        />
+                        <div style={{ marginTop: '8px' }}>
+                          <Button
+                            size="small"
+                            onClick={() => downloadDataUrl(msg.image!.dataUrl, msg.image!.fileName || 'image.png')}
+                          >
+                            Скачать
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -357,6 +475,18 @@ const ChatPage: React.FC = () => {
             boxShadow: '0 10px 28px rgba(0,0,0,0.12)'
           }}
         >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <Checkbox
+              checked={nanoBananaMode}
+              onChange={(e) => {
+                setNanoBananaMode(e.target.checked);
+                setFileList([]); // чтобы не мешать PDF/мультифайлы режимам
+              }}
+            >
+              nano banana pro (генерация изображения)
+            </Checkbox>
+          </div>
+
           {fileList.length > 0 && (
             <div style={{ marginBottom: '10px' }}>
               <Space wrap>
@@ -404,7 +534,7 @@ const ChatPage: React.FC = () => {
                 type="primary"
                 icon={<SendOutlined />}
                 size="large"
-                onClick={handleSend}
+                onClick={nanoBananaMode ? handleSendNanoBanana : handleSend}
                 loading={loading}
                 style={{ height: '44px', minWidth: '44px' }}
                 aria-label="Отправить"

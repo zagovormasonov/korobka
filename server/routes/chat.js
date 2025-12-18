@@ -55,6 +55,148 @@ function fileToGenerativePart(filePath, mimeType) {
   };
 }
 
+// Список доступных моделей (чтобы понять, как именно называется "nano banana pro" в вашем проекте)
+router.get('/models', async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ success: false, error: 'GEMINI_API_KEY не установлен' });
+    }
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    const text = await response.text();
+    if (!response.ok) {
+      return res.status(response.status).json({ success: false, error: text });
+    }
+
+    const data = JSON.parse(text);
+    const models = (data.models || []).map(m => ({
+      name: m.name,
+      displayName: m.displayName,
+      supportedGenerationMethods: m.supportedGenerationMethods
+    }));
+
+    res.json({ success: true, models });
+  } catch (error) {
+    console.error('❌ [CHAT-MODELS] Ошибка получения списка моделей:', error);
+    sendErrorToTelegram(error, { route: '/api/chat/models' }).catch(() => {});
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Режим генерации изображений ("nano banana pro"): 1 картинка + текст -> картинка
+router.post('/image', upload.single('image'), async (req, res) => {
+  const uploadedFiles = [];
+  const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ success: false, error: 'GEMINI_API_KEY не установлен' });
+    }
+
+    const prompt = (req.body?.prompt || '').toString();
+    const imageFile = req.file;
+
+    if (!prompt.trim()) {
+      return res.status(400).json({ success: false, error: 'Нужно указать промпт' });
+    }
+
+    if (!imageFile) {
+      return res.status(400).json({ success: false, error: 'Нужно прикрепить изображение' });
+    }
+
+    if (!imageFile.mimetype?.startsWith('image/')) {
+      return res.status(400).json({ success: false, error: 'В режиме генерации изображений можно загружать только изображения' });
+    }
+
+    uploadedFiles.push(imageFile.path);
+
+    // ВАЖНО: точное имя модели “nano banana pro” выясняется через /api/chat/models.
+    // Здесь — безопасный дефолт + возможность переопределить через переменную окружения.
+    const modelName = process.env.NANO_BANANA_PRO_MODEL || 'models/gemini-2.0-flash-exp-image-generation';
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
+
+    const parts = [
+      { text: prompt },
+      fileToGenerativePart(imageFile.path, imageFile.mimetype)
+    ];
+
+    const requestBody = {
+      contents: [{ parts }],
+      generationConfig: {
+        // image generation обычно не требует большого текста
+        maxOutputTokens: 1024
+      }
+    };
+
+    console.log(`🖼️ [${requestId}] Генерация изображения:`, {
+      modelName,
+      promptLen: prompt.length,
+      mimeType: imageFile.mimetype,
+      sizeMb: (imageFile.size / 1024 / 1024).toFixed(2)
+    });
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    });
+
+    const responseText = await response.text();
+    if (!response.ok) {
+      // Пытаемся дать понятную ошибку (429/404/прочее)
+      let errorJson;
+      try { errorJson = JSON.parse(responseText); } catch { errorJson = { error: responseText }; }
+      const msg = `v1beta API error: ${JSON.stringify(errorJson)}`;
+      console.error(`❌ [${requestId}] Ошибка генерации изображения:`, response.status, msg);
+      return res.status(response.status).json({
+        success: false,
+        error: msg,
+        hint: 'Открой /api/chat/models и проверь точное имя модели для image generation. Затем задай NANO_BANANA_PRO_MODEL в Render.'
+      });
+    }
+
+    let data;
+    try { data = JSON.parse(responseText); } catch {
+      return res.status(500).json({ success: false, error: 'Не удалось распарсить ответ модели' });
+    }
+
+    // Ищем image inlineData в parts ответа
+    const partsOut = data?.candidates?.[0]?.content?.parts || [];
+    const imagePart = partsOut.find(p => p.inlineData?.mimeType?.startsWith('image/') && p.inlineData?.data);
+    if (!imagePart) {
+      console.error(`❌ [${requestId}] В ответе нет изображения. Ответ:`, JSON.stringify(data)?.substring(0, 800));
+      return res.status(500).json({
+        success: false,
+        error: 'Модель не вернула изображение. Возможно, эта модель не поддерживает генерацию картинок через generateContent.'
+      });
+    }
+
+    res.json({
+      success: true,
+      model: modelName,
+      image: {
+        mimeType: imagePart.inlineData.mimeType,
+        data: imagePart.inlineData.data
+      }
+    });
+  } catch (error) {
+    console.error('❌ [CHAT-IMAGE] Ошибка:', error);
+    sendErrorToTelegram(error, { route: '/api/chat/image', requestId }).catch(() => {});
+    res.status(500).json({ success: false, error: error.message });
+  } finally {
+    for (const filePath of uploadedFiles) {
+      try {
+        unlinkSync(filePath);
+        console.log('🗑️ Файл удален:', filePath);
+      } catch (err) {
+        console.error('⚠️ Не удалось удалить файл:', filePath, err);
+      }
+    }
+  }
+});
+
 // Роут для отправки сообщения в чат
 router.post('/message', upload.array('files', 10), async (req, res) => {
   const uploadedFiles = [];
