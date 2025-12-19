@@ -21,6 +21,7 @@ import ConsentPage from './pages/ConsentPage';
 import ChatPage from './pages/ChatPage';
 import FeedbackChatPage from './pages/FeedbackChatPage';
 import CMSPage from './pages/CMSPage';
+import AdditionalTestPage from './pages/AdditionalTestPage';
 
 const customTheme = {
   algorithm: theme.defaultAlgorithm,
@@ -97,6 +98,7 @@ function App() {
             <Route path="/test" element={<TestPage />} />
             <Route path="/test-info" element={<TestInfoPage />} />
             <Route path="/bpd_test" element={<BpdTestPage />} />
+            <Route path="/additional-test/:testId" element={<AdditionalTestPage />} />
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/payment-success" element={<PaymentSuccessPage />} />
             <Route path="/registration" element={<RegistrationPage />} />
