@@ -154,17 +154,30 @@ const AdditionalTestPage: React.FC = () => {
     setIsSubmitting(true);
     const score = calculateScore();
     
+    // Проверяем, является ли это демо-сессией (тестовая страница)
+    const isDemoSession = sessionId.startsWith('test-demo-');
+    
+    if (isDemoSession) {
+      // Для демо-сессии не отправляем на сервер, просто показываем успех
+      console.log('🧪 [DEMO] Демо-режим, пропускаем сохранение в БД. Результат:', score);
+      localStorage.removeItem(`test_progress_${testId}`);
+      setIsCompleted(true);
+      message.success(`Тест завершён! Результат: ${score} баллов`);
+      setIsSubmitting(false);
+      return;
+    }
+    
     try {
       const response = await apiRequest('api/tests/additional/save', {
-        method: 'POST',
-        body: JSON.stringify({
+          method: 'POST',
+          body: JSON.stringify({
           sessionId,
           testName: config.name,
           testUrl: config.source?.url || '',
           testResult: score,
           answers: answers
-        })
-      });
+          })
+        });
 
       if (response.ok) {
         localStorage.removeItem(`test_progress_${testId}`);
@@ -202,7 +215,7 @@ const AdditionalTestPage: React.FC = () => {
           marks[sliderMax] = String(sliderMax);
         }
         
-        return (
+    return (
           <div style={{ padding: '20px 10px' }}>
             <Slider
               min={sliderMin}
@@ -218,21 +231,21 @@ const AdditionalTestPage: React.FC = () => {
                 {marks[sliderValue] || sliderValue}
               </Text>
             </div>
-          </div>
-        );
-        
+      </div>
+    );
+
       case 'multiple':
         const selectedValues = Array.isArray(answers[currentQuestion.id]) 
           ? answers[currentQuestion.id] as number[] 
           : [];
-        
-        return (
+
+  return (
           <Checkbox.Group
             value={selectedValues}
             onChange={(values) => handleMultipleAnswer(values as number[])}
             style={{ width: '100%' }}
-          >
-            <Space direction="vertical" style={{ width: '100%' }}>
+              >
+                <Space direction="vertical" style={{ width: '100%' }}>
               {currentQuestion.options.map(option => (
                 <Checkbox
                   key={option.value}
@@ -247,10 +260,10 @@ const AdditionalTestPage: React.FC = () => {
                   }}
                 >
                   {option.label}
-                </Checkbox>
-              ))}
-            </Space>
-          </Checkbox.Group>
+                    </Checkbox>
+                  ))}
+                </Space>
+              </Checkbox.Group>
         );
         
       case 'single':
@@ -286,6 +299,9 @@ const AdditionalTestPage: React.FC = () => {
   };
 
   if (isCompleted) {
+    const isDemoSession = sessionId?.startsWith('test-demo-');
+    const finalScore = calculateScore();
+    
     return (
       <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
         <Content style={{ padding: '40px 20px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -293,17 +309,21 @@ const AdditionalTestPage: React.FC = () => {
             <Result
               status="success"
               title="Тест завершен!"
-              subTitle={`Вы успешно прошли ${config.title}. Результаты уже доступны в вашем личном кабинете.`}
+              subTitle={
+                isDemoSession 
+                  ? `Вы набрали ${finalScore} баллов в тесте "${config.title}". Это демо-режим — результаты не сохранены.`
+                  : `Вы успешно прошли ${config.title}. Результаты уже доступны в вашем личном кабинете.`
+              }
               extra={[
                 <Button 
                   type="primary" 
-                  key="dashboard" 
+                  key="back" 
                   size="large" 
                   icon={<HomeOutlined />}
-                  onClick={() => navigate(`/dashboard?sessionId=${sessionId}`)}
+                  onClick={() => navigate(isDemoSession ? '/test-of-the-tests' : `/dashboard?sessionId=${sessionId}`)}
                   style={{ borderRadius: 12, height: 45, background: '#4F958B', borderColor: '#4F958B' }}
                 >
-                  Вернуться в кабинет
+                  {isDemoSession ? 'Вернуться к списку тестов' : 'Вернуться в кабинет'}
                 </Button>
               ]}
             />
@@ -336,7 +356,7 @@ const AdditionalTestPage: React.FC = () => {
                 style={{ marginBottom: 10 }}
               />
               <Text type="secondary">Вопрос {currentQuestionIndex + 1} из {config.questions.length}</Text>
-            </div>
+                </div>
 
             <div style={{ minHeight: 200 }}>
               <Paragraph style={{ fontSize: 18, fontWeight: 500, marginBottom: 30 }}>
@@ -344,7 +364,7 @@ const AdditionalTestPage: React.FC = () => {
               </Paragraph>
 
               {renderQuestion()}
-            </div>
+              </div>
 
             <div style={{ marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
               <Button
@@ -373,7 +393,7 @@ const AdditionalTestPage: React.FC = () => {
                 {isLastQuestion ? 'Завершить' : 'Далее'}
               </Button>
             </div>
-          </Card>
+      </Card>
         </Space>
       </Content>
     </Layout>
