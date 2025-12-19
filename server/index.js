@@ -20,6 +20,7 @@ import chatRoutes from './routes/chat.js';
 import backgroundGenerationRoutes from './routes/background-generation.js';
 import cmsRoutes from './routes/cms.js';
 import analyticsRoutes from './routes/analytics.js';
+import questionnaireGenerationRoutes from './routes/questionnaire-generation.js';
 
 // Получаем путь к корневой директории проекта
 const __filename = fileURLToPath(import.meta.url);
@@ -58,13 +59,36 @@ const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // Middleware
-// Временно разрешаем все CORS запросы для отладки
+// CORS настройки
 console.log('🚀 Starting server with CORS configuration...');
 console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
 console.log('🌍 FRONTEND_URL:', FRONTEND_URL);
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5000',
+  'https://idenself.com',
+  'https://www.idenself.com',
+  'http://5.129.250.81', // Внешний сервер для генерации опросников
+  FRONTEND_URL
+].filter(Boolean);
+
+console.log('✅ Разрешённые origins:', allowedOrigins);
+
 app.use(cors({
-  origin: true, // Временно разрешаем все домены
+  origin: (origin, callback) => {
+    // Разрешаем запросы без origin (например, Postman, curl)
+    if (!origin) return callback(null, true);
+    
+    // Разрешаем все origins из списка
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('⚠️ CORS: Запрос с неразрешённого origin:', origin);
+      // Временно разрешаем все origins для совместимости
+      callback(null, true);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -147,6 +171,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/background-generation', backgroundGenerationRoutes);
 app.use('/api/cms', cmsRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api', questionnaireGenerationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
