@@ -166,6 +166,15 @@ const AdditionalTestPage: React.FC = () => {
       // Для демо-сессии не отправляем на сервер, показываем результаты
       console.log('🧪 [DEMO] Демо-режим, пропускаем сохранение в БД. Результат:', score);
       localStorage.removeItem(`test_progress_${testId}`);
+      
+      // Сохраняем результат в localStorage для отображения на test-of-the-tests
+      localStorage.setItem(`demo_test_result_${testId}`, JSON.stringify({
+        testId,
+        testName: config.name,
+        score,
+        timestamp: new Date().toISOString()
+      }));
+      
       setIsCompleted(true);
       setShowResultsModal(true); // Сразу показываем модалку с результатами
       setIsSubmitting(false);

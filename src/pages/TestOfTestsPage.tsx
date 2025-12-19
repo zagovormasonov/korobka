@@ -50,6 +50,28 @@ const TestOfTestsPage: React.FC = () => {
 
   const allTestsCompleted = Object.keys(testResults).length >= allTests.length;
 
+  // Загрузка результатов демо-тестов из localStorage при монтировании
+  React.useEffect(() => {
+    const loadedResults: {[key: number]: string} = {};
+    
+    allTests.forEach(test => {
+      const savedResult = localStorage.getItem(`demo_test_result_${test.configId}`);
+      if (savedResult) {
+        try {
+          const parsed = JSON.parse(savedResult);
+          loadedResults[test.id] = `${parsed.score} баллов`;
+        } catch (e) {
+          console.error('Ошибка загрузки результата теста:', e);
+        }
+      }
+    });
+    
+    if (Object.keys(loadedResults).length > 0) {
+      console.log('📥 Загружено результатов демо-тестов:', Object.keys(loadedResults).length);
+      setTestResults(loadedResults);
+    }
+  }, []);
+
   // Открыть модалку для ввода результата
   const openModal = (testId: number) => {
     setCurrentTestId(testId);
@@ -67,6 +89,18 @@ const TestOfTestsPage: React.FC = () => {
   // Сохранить результат из модалки
   const saveModalResult = () => {
     if (currentTestId && modalText.trim()) {
+      const test = allTests.find(t => t.id === currentTestId);
+      if (test) {
+        // Сохраняем в localStorage
+        const score = parseInt(modalText.replace(/[^0-9]/g, '')) || 0;
+        localStorage.setItem(`demo_test_result_${test.configId}`, JSON.stringify({
+          testId: test.configId,
+          testName: test.name,
+          score,
+          timestamp: new Date().toISOString()
+        }));
+      }
+      
       setTestResults(prev => ({ ...prev, [currentTestId]: modalText.trim() }));
       message.success('Результат сохранён');
       closeModal();
@@ -116,16 +150,36 @@ const TestOfTestsPage: React.FC = () => {
             🧪 Тест-страница (демо)
           </Text>
         </div>
-        <Button 
-          type="link" 
-          onClick={() => navigate(-1)}
-          style={{ 
-            color: '#7B8794',
-            fontSize: '14px'
-          }}
-        >
-          ← Назад
-        </Button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {Object.keys(testResults).length > 0 && (
+            <Button 
+              danger
+              onClick={() => {
+                // Очищаем все результаты из localStorage
+                allTests.forEach(test => {
+                  localStorage.removeItem(`demo_test_result_${test.configId}`);
+                });
+                setTestResults({});
+                message.success('Все результаты очищены');
+              }}
+              style={{ 
+                fontSize: '14px'
+              }}
+            >
+              🗑️ Очистить все результаты
+            </Button>
+          )}
+          <Button 
+            type="link" 
+            onClick={() => navigate(-1)}
+            style={{ 
+              color: '#7B8794',
+              fontSize: '14px'
+            }}
+          >
+            ← Назад
+          </Button>
+        </div>
       </div>
 
       {/* Main content */}
