@@ -197,15 +197,15 @@ const AdditionalTestPage: React.FC = () => {
     
     try {
       const response = await apiRequest('api/tests/additional/save', {
-        method: 'POST',
-        body: JSON.stringify({
+          method: 'POST',
+          body: JSON.stringify({
           sessionId,
           testName: config.name,
           testUrl: config.source?.url || '',
           testResult: score,
           answers: answers
-        })
-      });
+          })
+        });
 
       if (response.ok) {
         localStorage.removeItem(`test_progress_${testId}`);
@@ -258,7 +258,7 @@ const AdditionalTestPage: React.FC = () => {
               <Text strong style={{ fontSize: 18 }}>
                 {marks[sliderValue] || sliderValue}
               </Text>
-            </div>
+          </div>
       </div>
     );
 

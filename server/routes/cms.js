@@ -623,7 +623,7 @@ router.get('/users', checkAuth, async (req, res) => {
     
     console.log('📊 [CMS] Всего анонимов в БД:', allAnonymousUsers?.length || 0);
     console.log('📊 [CMS] Мапа номеров анонимов:', Object.keys(anonymousNumberMap).length);
-    
+
     // Формируем результат с аналитикой для каждого пользователя
     const usersWithAnalytics = users?.map(user => {
       const events = eventsBySession[user.session_id] || [];
@@ -662,7 +662,7 @@ router.get('/users', checkAuth, async (req, res) => {
       } else if (!user.nickname && !isUserOnline) {
         console.log(`🔴 [CMS] Аноним офлайн: ${displayNickname} (${user.session_id})`);
       }
-      
+
       return {
         sessionId: user.session_id,
         nickname: displayNickname,
