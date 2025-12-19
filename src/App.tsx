@@ -22,6 +22,7 @@ import ChatPage from './pages/ChatPage';
 import FeedbackChatPage from './pages/FeedbackChatPage';
 import CMSPage from './pages/CMSPage';
 import AdditionalTestPage from './pages/AdditionalTestPage';
+import TestOfTestsPage from './pages/TestOfTestsPage';
 
 const customTheme = {
   algorithm: theme.defaultAlgorithm,
@@ -113,6 +114,7 @@ function App() {
             <Route path="/feedback-chat" element={<FeedbackChatPage />} />
             <Route path="/cms" element={<CMSPage />} />
             <Route path="/test/:testId" element={<AdditionalTestPage />} />
+            <Route path="/test-of-the-tests" element={<TestOfTestsPage />} />
           </Routes>
         </div>
       </Router>
