@@ -17,10 +17,12 @@ import {
   ArrowLeftOutlined, 
   ArrowRightOutlined, 
   CheckOutlined,
-  HomeOutlined 
+  HomeOutlined,
+  ReloadOutlined
 } from '@ant-design/icons';
 import { getTestConfig, TestConfig } from '../config/tests';
 import { apiRequest } from '../config/api';
+import TestResultsModal from '../components/TestResultsModal';
 
 const { Title, Text, Paragraph } = Typography;
 const { Content } = Layout;
@@ -36,6 +38,8 @@ const AdditionalTestPage: React.FC = () => {
   const [answers, setAnswers] = useState<Record<number, number | number[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
+  const [showResultsModal, setShowResultsModal] = useState(false);
 
   // Загрузка конфигурации и прогресса
   useEffect(() => {
@@ -153,36 +157,37 @@ const AdditionalTestPage: React.FC = () => {
 
     setIsSubmitting(true);
     const score = calculateScore();
+    setFinalScore(score);
     
     // Проверяем, является ли это демо-сессией (тестовая страница)
     const isDemoSession = sessionId.startsWith('test-demo-');
     
     if (isDemoSession) {
-      // Для демо-сессии не отправляем на сервер, просто показываем успех
+      // Для демо-сессии не отправляем на сервер, показываем результаты
       console.log('🧪 [DEMO] Демо-режим, пропускаем сохранение в БД. Результат:', score);
       localStorage.removeItem(`test_progress_${testId}`);
       setIsCompleted(true);
-      message.success(`Тест завершён! Результат: ${score} баллов`);
+      setShowResultsModal(true); // Сразу показываем модалку с результатами
       setIsSubmitting(false);
       return;
     }
     
     try {
       const response = await apiRequest('api/tests/additional/save', {
-          method: 'POST',
-          body: JSON.stringify({
+        method: 'POST',
+        body: JSON.stringify({
           sessionId,
           testName: config.name,
           testUrl: config.source?.url || '',
           testResult: score,
           answers: answers
-          })
-        });
+        })
+      });
 
       if (response.ok) {
         localStorage.removeItem(`test_progress_${testId}`);
         setIsCompleted(true);
-        message.success('Результаты сохранены!');
+        setShowResultsModal(true); // Показываем модалку с результатами
       } else {
         throw new Error('Failed to save results');
       }
@@ -300,7 +305,6 @@ const AdditionalTestPage: React.FC = () => {
 
   if (isCompleted) {
     const isDemoSession = sessionId?.startsWith('test-demo-');
-    const finalScore = calculateScore();
     
     return (
       <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
@@ -308,27 +312,74 @@ const AdditionalTestPage: React.FC = () => {
           <Card style={{ maxWidth: 600, width: '100%', borderRadius: 20, textAlign: 'center' }}>
             <Result
               status="success"
-              title="Тест завершен!"
+              title="Тест завершён!"
               subTitle={
                 isDemoSession 
-                  ? `Вы набрали ${finalScore} баллов в тесте "${config.title}". Это демо-режим — результаты не сохранены.`
-                  : `Вы успешно прошли ${config.title}. Результаты уже доступны в вашем личном кабинете.`
+                  ? `Результат: ${finalScore} баллов. Это демо-режим.`
+                  : `Результаты сохранены в вашем личном кабинете.`
               }
-              extra={[
-                <Button 
-                  type="primary" 
-                  key="back" 
-                  size="large" 
-                  icon={<HomeOutlined />}
-                  onClick={() => navigate(isDemoSession ? '/test-of-the-tests' : `/dashboard?sessionId=${sessionId}`)}
-                  style={{ borderRadius: 12, height: 45, background: '#4F958B', borderColor: '#4F958B' }}
-                >
-                  {isDemoSession ? 'Вернуться к списку тестов' : 'Вернуться в кабинет'}
-                </Button>
-              ]}
+              extra={
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  <Button 
+                    type="primary" 
+                    size="large" 
+                    onClick={() => setShowResultsModal(true)}
+                    style={{ 
+                      borderRadius: 12, 
+                      height: 50, 
+                      width: '100%',
+                      background: '#4F958B', 
+                      borderColor: '#4F958B',
+                      fontSize: '16px',
+                      fontWeight: '600'
+                    }}
+                  >
+                    📊 Смотреть результаты и интерпретацию
+                  </Button>
+                  <Space size="middle">
+                    <Button 
+                      size="large" 
+                      icon={<ReloadOutlined />}
+                      onClick={() => {
+                        setAnswers({});
+                        setCurrentQuestionIndex(0);
+                        setIsCompleted(false);
+                        setShowResultsModal(false);
+                      }}
+                      style={{ borderRadius: 12, height: 45 }}
+                    >
+                      Пройти заново
+                    </Button>
+                    <Button 
+                      size="large" 
+                      icon={<HomeOutlined />}
+                      onClick={() => navigate(isDemoSession ? '/test-of-the-tests' : `/dashboard?sessionId=${sessionId}`)}
+                      style={{ borderRadius: 12, height: 45 }}
+                    >
+                      {isDemoSession ? 'К списку тестов' : 'В кабинет'}
+                    </Button>
+                  </Space>
+                </Space>
+              }
             />
           </Card>
         </Content>
+        
+        {/* Модалка с результатами */}
+        {config && (
+          <TestResultsModal
+            visible={showResultsModal}
+            onCancel={() => setShowResultsModal(false)}
+            config={config}
+            score={finalScore}
+            onRetry={() => {
+              setShowResultsModal(false);
+              setAnswers({});
+              setCurrentQuestionIndex(0);
+              setIsCompleted(false);
+            }}
+          />
+        )}
       </Layout>
     );
   }
