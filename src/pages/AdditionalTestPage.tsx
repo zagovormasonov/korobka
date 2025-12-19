@@ -5,6 +5,7 @@ import { ArrowLeftOutlined, ArrowRightOutlined, ReloadOutlined, BarChartOutlined
 import { getTestConfig, Question, TestConfig } from '../config/tests';
 import { apiRequest } from '../config/api';
 import { useAuth } from '../hooks/useAuth';
+import { TestResultsModal } from '../components/TestResultsModal';
 
 const { Title, Text } = Typography;
 
@@ -44,6 +45,7 @@ const AdditionalTestPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [score, setScore] = useState<number | null>(null);
+  const [resultsModalOpen, setResultsModalOpen] = useState(false);
 
   // Guard: auth
   useEffect(() => {
@@ -130,6 +132,7 @@ const AdditionalTestPage: React.FC = () => {
     const computed = computeScore();
     setScore(computed);
     setCompleted(true);
+    setResultsModalOpen(true);
 
     // Persist to backend (current API stores answers as string; next todo will migrate to JSONB)
     // We save a JSON string now to keep backward compatibility.
@@ -323,7 +326,7 @@ const AdditionalTestPage: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
-              <Button type="primary" onClick={() => message.info('Модалка результатов будет добавлена следующим шагом (ResultsModal).')}>
+              <Button type="primary" onClick={() => setResultsModalOpen(true)}>
                 Смотреть результаты
               </Button>
               <Button icon={<ReloadOutlined />} onClick={restartTest} disabled={saving}>
@@ -342,6 +345,16 @@ const AdditionalTestPage: React.FC = () => {
           </>
         )}
       </Card>
+
+      {score !== null && (
+        <TestResultsModal
+          open={resultsModalOpen}
+          onClose={() => setResultsModalOpen(false)}
+          test={test}
+          score={score}
+          answers={answers}
+        />
+      )}
     </div>
   );
 };
