@@ -20,7 +20,7 @@ import {
   HomeOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
-import { getTestConfig, TestConfig } from '../config/tests';
+import { getTestConfig, TestConfig, Gender, getText } from '../config/tests';
 import { apiRequest } from '../config/api';
 import TestResultsModal from '../components/TestResultsModal';
 
@@ -40,6 +40,7 @@ const AdditionalTestPage: React.FC = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [showResultsModal, setShowResultsModal] = useState(false);
+  const [gender, setGender] = useState<Gender>('male');
 
   // Загрузка конфигурации и прогресса
   useEffect(() => {
@@ -65,7 +66,20 @@ const AdditionalTestPage: React.FC = () => {
         console.error('Failed to restore progress', e);
       }
     }
-  }, [testId, navigate]);
+    
+    // Загрузка пола пользователя
+    if (sessionId && !sessionId.startsWith('test-demo-')) {
+      apiRequest(`api/tests/gender/${sessionId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.gender) {
+            setGender(data.gender);
+            console.log('👤 Пол загружен:', data.gender);
+          }
+        })
+        .catch(err => console.error('Ошибка загрузки пола:', err));
+    }
+  }, [testId, navigate, sessionId]);
 
   // Сохранение прогресса
   useEffect(() => {
@@ -222,7 +236,7 @@ const AdditionalTestPage: React.FC = () => {
         const marks: Record<number, string> = {};
         if (currentQuestion.options.length > 0) {
           currentQuestion.options.forEach(opt => {
-            marks[opt.value] = opt.label;
+            marks[opt.value] = getText(opt.label, gender);
           });
         } else {
           marks[sliderMin] = String(sliderMin);
@@ -273,7 +287,7 @@ const AdditionalTestPage: React.FC = () => {
                     background: selectedValues.includes(option.value) ? '#f0f9f7' : 'white'
                   }}
                 >
-                  {option.label}
+                  {getText(option.label, gender)}
                     </Checkbox>
                   ))}
                 </Space>
@@ -303,7 +317,7 @@ const AdditionalTestPage: React.FC = () => {
                     whiteSpace: 'normal'
                   }}
                 >
-                  {option.label}
+                  {getText(option.label, gender)}
                 </Radio.Button>
               ))}
             </Space>
@@ -420,7 +434,7 @@ const AdditionalTestPage: React.FC = () => {
 
             <div style={{ minHeight: 200 }}>
               <Paragraph style={{ fontSize: 18, fontWeight: 500, marginBottom: 30 }}>
-                {currentQuestion.text}
+                {getText(currentQuestion.text, gender)}
               </Paragraph>
 
               {renderQuestion()}

@@ -382,6 +382,42 @@ router.get('/primary/:sessionId', async (req, res) => {
   }
 });
 
+// Получить пол пользователя по sessionId
+router.get('/gender/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+    console.log('👤 Запрос пола для sessionId:', sessionId);
+    
+    const { data, error } = await supabase
+      .from('primary_test_results')
+      .select('answers')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (error) {
+      console.error('❌ Ошибка при получении пола:', error);
+      // Возвращаем male по умолчанию, если не найдено
+      return res.json({ success: true, gender: 'male' });
+    }
+    
+    if (!data || !data.answers) {
+      console.log('⚠️ Ответы не найдены для sessionId:', sessionId);
+      return res.json({ success: true, gender: 'male' });
+    }
+
+    // Ищем ответ на вопрос о поле (questionId: 1)
+    const genderAnswer = data.answers.find(a => a.questionId === 1);
+    const gender = genderAnswer?.answer === 'female' ? 'female' : 'male';
+    
+    console.log('✅ Пол определён:', gender);
+    res.json({ success: true, gender });
+  } catch (error) {
+    console.error('❌ Ошибка при получении пола:', error);
+    res.json({ success: true, gender: 'male' }); // По умолчанию male
+  }
+});
+
 // Получить результаты теста по токену ЛК
 router.get('/dashboard/:token', async (req, res) => {
   try {

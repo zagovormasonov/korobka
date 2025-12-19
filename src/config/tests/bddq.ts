@@ -1,5 +1,6 @@
 import { TestConfig } from './types';
 
+// BDDQ практически не имеет гендерно-специфичных текстов
 export const bddqTest: TestConfig = {
   id: 'body_dysmorphia',
   name: 'BDDQ',

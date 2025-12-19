@@ -1,4 +1,7 @@
-import { TestConfig } from './types';
+import { TestConfig, GenderedText } from './types';
+
+// Хелпер для создания гендерных текстов
+const g = (male: string, female: string): GenderedText => ({ male, female });
 
 const frequencyOptions = [
   { value: 1, label: 'Никогда' },
@@ -16,39 +19,39 @@ export const ctqTest: TestConfig = {
   scoringStrategy: 'sum',
   questions: [
     // Эмоциональное насилие
-    { id: 1, text: 'Когда я рос(ла), члены моей семьи называли меня «глупым», «ленивым» или «уродливым».', type: 'single', options: frequencyOptions },
-    { id: 2, text: 'Когда я рос(ла), я думал(а), что мои родители хотели бы, чтобы я не родился(ась).', type: 'single', options: frequencyOptions },
-    { id: 3, text: 'Когда я рос(ла), члены моей семьи говорили обидные вещи.', type: 'single', options: frequencyOptions },
-    { id: 4, text: 'Когда я рос(ла), я чувствовал(а), что меня ненавидят члены моей семьи.', type: 'single', options: frequencyOptions },
-    { id: 5, text: 'Когда я рос(ла), люди в моей семье говорили мне, что я никчёмный(ая).', type: 'single', options: frequencyOptions },
+    { id: 1, text: g('Когда я рос, члены моей семьи называли меня «глупым», «ленивым» или «уродливым».', 'Когда я росла, члены моей семьи называли меня «глупой», «ленивой» или «уродливой».'), type: 'single', options: frequencyOptions },
+    { id: 2, text: g('Когда я рос, я думал, что мои родители хотели бы, чтобы я не родился.', 'Когда я росла, я думала, что мои родители хотели бы, чтобы я не родилась.'), type: 'single', options: frequencyOptions },
+    { id: 3, text: g('Когда я рос, члены моей семьи говорили обидные вещи.', 'Когда я росла, члены моей семьи говорили обидные вещи.'), type: 'single', options: frequencyOptions },
+    { id: 4, text: g('Когда я рос, я чувствовал, что меня ненавидят члены моей семьи.', 'Когда я росла, я чувствовала, что меня ненавидят члены моей семьи.'), type: 'single', options: frequencyOptions },
+    { id: 5, text: g('Когда я рос, люди в моей семье говорили мне, что я никчёмный.', 'Когда я росла, люди в моей семье говорили мне, что я никчёмная.'), type: 'single', options: frequencyOptions },
     // Физическое насилие
-    { id: 6, text: 'Когда я рос(ла), меня били так сильно, что оставались синяки или отметины.', type: 'single', options: frequencyOptions },
-    { id: 7, text: 'Когда я рос(ла), меня наказывали ремнём, палкой или другими предметами.', type: 'single', options: frequencyOptions },
-    { id: 8, text: 'Когда я рос(ла), меня били или избивали члены моей семьи.', type: 'single', options: frequencyOptions },
-    { id: 9, text: 'Когда я рос(ла), я думал(а), что меня физически травмируют.', type: 'single', options: frequencyOptions },
-    { id: 10, text: 'Когда я рос(ла), меня били так сильно, что это заметил врач или учитель.', type: 'single', options: frequencyOptions },
+    { id: 6, text: g('Когда я рос, меня били так сильно, что оставались синяки или отметины.', 'Когда я росла, меня били так сильно, что оставались синяки или отметины.'), type: 'single', options: frequencyOptions },
+    { id: 7, text: g('Когда я рос, меня наказывали ремнём, палкой или другими предметами.', 'Когда я росла, меня наказывали ремнём, палкой или другими предметами.'), type: 'single', options: frequencyOptions },
+    { id: 8, text: g('Когда я рос, меня били или избивали члены моей семьи.', 'Когда я росла, меня били или избивали члены моей семьи.'), type: 'single', options: frequencyOptions },
+    { id: 9, text: g('Когда я рос, я думал, что меня физически травмируют.', 'Когда я росла, я думала, что меня физически травмируют.'), type: 'single', options: frequencyOptions },
+    { id: 10, text: g('Когда я рос, меня били так сильно, что это заметил врач или учитель.', 'Когда я росла, меня били так сильно, что это заметил врач или учитель.'), type: 'single', options: frequencyOptions },
     // Сексуальное насилие
-    { id: 11, text: 'Когда я рос(ла), кто-то трогал меня сексуально или заставлял прикасаться к нему.', type: 'single', options: frequencyOptions },
-    { id: 12, text: 'Когда я рос(ла), кто-то угрожал мне, чтобы я совершил(а) сексуальные действия.', type: 'single', options: frequencyOptions },
-    { id: 13, text: 'Когда я рос(ла), кто-то пытался заставить меня совершить сексуальные действия.', type: 'single', options: frequencyOptions },
-    { id: 14, text: 'Когда я рос(ла), кто-то прикасался ко мне сексуально.', type: 'single', options: frequencyOptions },
-    { id: 15, text: 'Когда я рос(ла), я подвергался(ась) сексуальному насилию.', type: 'single', options: frequencyOptions },
+    { id: 11, text: g('Когда я рос, кто-то трогал меня сексуально или заставлял прикасаться к нему.', 'Когда я росла, кто-то трогал меня сексуально или заставлял прикасаться к нему.'), type: 'single', options: frequencyOptions },
+    { id: 12, text: g('Когда я рос, кто-то угрожал мне, чтобы я совершил сексуальные действия.', 'Когда я росла, кто-то угрожал мне, чтобы я совершила сексуальные действия.'), type: 'single', options: frequencyOptions },
+    { id: 13, text: g('Когда я рос, кто-то пытался заставить меня совершить сексуальные действия.', 'Когда я росла, кто-то пытался заставить меня совершить сексуальные действия.'), type: 'single', options: frequencyOptions },
+    { id: 14, text: g('Когда я рос, кто-то прикасался ко мне сексуально.', 'Когда я росла, кто-то прикасался ко мне сексуально.'), type: 'single', options: frequencyOptions },
+    { id: 15, text: g('Когда я рос, я подвергался сексуальному насилию.', 'Когда я росла, я подвергалась сексуальному насилию.'), type: 'single', options: frequencyOptions },
     // Эмоциональное пренебрежение
-    { id: 16, text: 'Когда я рос(ла), я чувствовал(а), что меня любят.', type: 'single', options: frequencyOptions, reverse: true },
-    { id: 17, text: 'Когда я рос(ла), люди в моей семье заботились друг о друге.', type: 'single', options: frequencyOptions, reverse: true },
-    { id: 18, text: 'Когда я рос(ла), люди в моей семье были близки друг к другу.', type: 'single', options: frequencyOptions, reverse: true },
-    { id: 19, text: 'Когда я рос(ла), моя семья была источником силы и поддержки.', type: 'single', options: frequencyOptions, reverse: true },
-    { id: 20, text: 'Когда я рос(ла), я чувствовал(а) себя особенным(ой).', type: 'single', options: frequencyOptions, reverse: true },
+    { id: 16, text: g('Когда я рос, я чувствовал, что меня любят.', 'Когда я росла, я чувствовала, что меня любят.'), type: 'single', options: frequencyOptions, reverse: true },
+    { id: 17, text: g('Когда я рос, люди в моей семье заботились друг о друге.', 'Когда я росла, люди в моей семье заботились друг о друге.'), type: 'single', options: frequencyOptions, reverse: true },
+    { id: 18, text: g('Когда я рос, люди в моей семье были близки друг к другу.', 'Когда я росла, люди в моей семье были близки друг к другу.'), type: 'single', options: frequencyOptions, reverse: true },
+    { id: 19, text: g('Когда я рос, моя семья была источником силы и поддержки.', 'Когда я росла, моя семья была источником силы и поддержки.'), type: 'single', options: frequencyOptions, reverse: true },
+    { id: 20, text: g('Когда я рос, я чувствовал себя особенным.', 'Когда я росла, я чувствовала себя особенной.'), type: 'single', options: frequencyOptions, reverse: true },
     // Физическое пренебрежение
-    { id: 21, text: 'Когда я рос(ла), мне не хватало еды.', type: 'single', options: frequencyOptions },
-    { id: 22, text: 'Когда я рос(ла), я знал(а), что есть кто-то, кто позаботится обо мне и защитит.', type: 'single', options: frequencyOptions, reverse: true },
-    { id: 23, text: 'Когда я рос(ла), мои родители были слишком пьяны или под наркотиками, чтобы заботиться о семье.', type: 'single', options: frequencyOptions },
-    { id: 24, text: 'Когда я рос(ла), мне приходилось носить грязную одежду.', type: 'single', options: frequencyOptions },
-    { id: 25, text: 'Когда я рос(ла), кто-то отводил меня к врачу, когда это было нужно.', type: 'single', options: frequencyOptions, reverse: true },
+    { id: 21, text: g('Когда я рос, мне не хватало еды.', 'Когда я росла, мне не хватало еды.'), type: 'single', options: frequencyOptions },
+    { id: 22, text: g('Когда я рос, я знал, что есть кто-то, кто позаботится обо мне и защитит.', 'Когда я росла, я знала, что есть кто-то, кто позаботится обо мне и защитит.'), type: 'single', options: frequencyOptions, reverse: true },
+    { id: 23, text: g('Когда я рос, мои родители были слишком пьяны или под наркотиками, чтобы заботиться о семье.', 'Когда я росла, мои родители были слишком пьяны или под наркотиками, чтобы заботиться о семье.'), type: 'single', options: frequencyOptions },
+    { id: 24, text: g('Когда я рос, мне приходилось носить грязную одежду.', 'Когда я росла, мне приходилось носить грязную одежду.'), type: 'single', options: frequencyOptions },
+    { id: 25, text: g('Когда я рос, кто-то отводил меня к врачу, когда это было нужно.', 'Когда я росла, кто-то отводил меня к врачу, когда это было нужно.'), type: 'single', options: frequencyOptions, reverse: true },
     // Дополнительные вопросы
-    { id: 26, text: 'Когда я рос(ла), я верил(а), что со мной всё будет хорошо.', type: 'single', options: frequencyOptions, reverse: true },
-    { id: 27, text: 'Когда я рос(ла), я хотел(а) никогда не рождаться.', type: 'single', options: frequencyOptions },
-    { id: 28, text: 'Когда я рос(ла), я чувствовал(а) себя в безопасности дома.', type: 'single', options: frequencyOptions, reverse: true }
+    { id: 26, text: g('Когда я рос, я верил, что со мной всё будет хорошо.', 'Когда я росла, я верила, что со мной всё будет хорошо.'), type: 'single', options: frequencyOptions, reverse: true },
+    { id: 27, text: g('Когда я рос, я хотел никогда не рождаться.', 'Когда я росла, я хотела никогда не рождаться.'), type: 'single', options: frequencyOptions },
+    { id: 28, text: g('Когда я рос, я чувствовал себя в безопасности дома.', 'Когда я росла, я чувствовала себя в безопасности дома.'), type: 'single', options: frequencyOptions, reverse: true }
   ],
   interpretations: [
     { min: 28, max: 40, label: 'Минимальная травматизация', severity: 'low', description: 'Значимого травматического опыта в детстве не выявлено.' },

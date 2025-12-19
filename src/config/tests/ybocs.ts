@@ -1,5 +1,6 @@
 import { TestConfig } from './types';
 
+// Y-BOCS практически не имеет гендерно-специфичных текстов
 export const ybocsTest: TestConfig = {
   id: 'ocd',
   name: 'Y-BOCS',

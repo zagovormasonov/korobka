@@ -1,4 +1,7 @@
-import { TestConfig } from './types';
+import { TestConfig, GenderedText } from './types';
+
+// Хелпер для создания гендерных текстов
+const g = (male: string, female: string): GenderedText => ({ male, female });
 
 const frequencyOptions = [
   { value: 0, label: 'Никогда' },
@@ -26,27 +29,27 @@ export const eat26Test: TestConfig = {
   scoringStrategy: 'sum',
   questions: [
     { id: 1, text: 'Я боюсь располнеть.', type: 'single', options: frequencyOptions },
-    { id: 2, text: 'Я избегаю есть, когда голодна.', type: 'single', options: frequencyOptions },
-    { id: 3, text: 'Я замечаю, что поглощена мыслями о еде.', type: 'single', options: frequencyOptions },
+    { id: 2, text: g('Я избегаю есть, когда голоден.', 'Я избегаю есть, когда голодна.'), type: 'single', options: frequencyOptions },
+    { id: 3, text: g('Я замечаю, что поглощен мыслями о еде.', 'Я замечаю, что поглощена мыслями о еде.'), type: 'single', options: frequencyOptions },
     { id: 4, text: 'У меня бывают приступы бесконтрольного поглощения пищи, во время которых я не могу себя остановить.', type: 'single', options: frequencyOptions },
     { id: 5, text: 'Я режу свою пищу на мелкие куски.', type: 'single', options: frequencyOptions },
     { id: 6, text: 'Я знаю, сколько калорий в пище, которую ем.', type: 'single', options: frequencyOptions },
     { id: 7, text: 'Я избегаю пищи с высоким содержанием углеводов (хлеб, рис, картофель).', type: 'single', options: frequencyOptions },
-    { id: 8, text: 'Мне кажется, что другие хотели бы, чтобы я ела больше.', type: 'single', options: frequencyOptions },
+    { id: 8, text: g('Мне кажется, что другие хотели бы, чтобы я ел больше.', 'Мне кажется, что другие хотели бы, чтобы я ела больше.'), type: 'single', options: frequencyOptions },
     { id: 9, text: 'У меня бывает рвота после еды.', type: 'single', options: frequencyOptions },
     { id: 10, text: 'После еды я испытываю сильное чувство вины.', type: 'single', options: frequencyOptions },
-    { id: 11, text: 'Меня поглощает желание быть стройнее.', type: 'single', options: frequencyOptions },
+    { id: 11, text: g('Меня поглощает желание быть стройным.', 'Меня поглощает желание быть стройной.'), type: 'single', options: frequencyOptions },
     { id: 12, text: 'Я думаю о сжигании калорий во время физических упражнений.', type: 'single', options: frequencyOptions },
-    { id: 13, text: 'Другие считают, что я слишком худая.', type: 'single', options: frequencyOptions },
-    { id: 14, text: 'Меня поглощает мысль о том, что на моём теле есть жир.', type: 'single', options: frequencyOptions },
+    { id: 13, text: g('Другие считают, что я слишком худой.', 'Другие считают, что я слишком худая.'), type: 'single', options: frequencyOptions },
+    { id: 14, text: g('Меня поглощает мысль о том, что на моём теле есть жир.', 'Меня поглощает мысль о том, что на моём теле есть жир.'), type: 'single', options: frequencyOptions },
     { id: 15, text: 'На приём пищи у меня уходит больше времени, чем у других людей.', type: 'single', options: frequencyOptions },
     { id: 16, text: 'Я избегаю пищи, содержащей сахар.', type: 'single', options: frequencyOptions },
     { id: 17, text: 'Я ем диетические продукты.', type: 'single', options: frequencyOptions },
     { id: 18, text: 'Мне кажется, что пища контролирует мою жизнь.', type: 'single', options: frequencyOptions },
     { id: 19, text: 'Я проявляю самоконтроль в отношении еды.', type: 'single', options: frequencyOptions },
-    { id: 20, text: 'Мне кажется, что другие давят на меня, чтобы я ела.', type: 'single', options: frequencyOptions },
+    { id: 20, text: g('Мне кажется, что другие давят на меня, чтобы я ел.', 'Мне кажется, что другие давят на меня, чтобы я ела.'), type: 'single', options: frequencyOptions },
     { id: 21, text: 'Я трачу слишком много времени на мысли о еде.', type: 'single', options: frequencyOptions },
-    { id: 22, text: 'Я испытываю дискомфорт после того, как поем сладкого.', type: 'single', options: frequencyOptions },
+    { id: 22, text: g('Я испытываю дискомфорт после того, как поем сладкого.', 'Я испытываю дискомфорт после того, как поем сладкого.'), type: 'single', options: frequencyOptions },
     { id: 23, text: 'Я соблюдаю диету.', type: 'single', options: frequencyOptions },
     { id: 24, text: 'Мне нравится ощущение пустого желудка.', type: 'single', options: frequencyOptions },
     { id: 25, text: 'После еды у меня появляется импульс вызвать рвоту.', type: 'single', options: frequencyOptions },

@@ -1,4 +1,7 @@
-import { TestConfig } from './types';
+import { TestConfig, GenderedText } from './types';
+
+// Хелпер для создания гендерных текстов
+const g = (male: string, female: string): GenderedText => ({ male, female });
 
 export const osrTest: TestConfig = {
   id: 'suicide_risk',
@@ -12,7 +15,7 @@ export const osrTest: TestConfig = {
       text: 'Испытывали ли вы в последние две недели ощущение, что жить не стоит?',
       type: 'single',
       options: [
-        { value: 0, label: 'Нет, не испытывал(а)' },
+        { value: 0, label: g('Нет, не испытывал', 'Нет, не испытывала') },
         { value: 1, label: 'Иногда такие мысли появлялись' },
         { value: 2, label: 'Довольно часто' },
         { value: 3, label: 'Постоянно' }
@@ -34,7 +37,7 @@ export const osrTest: TestConfig = {
       text: 'Думали ли вы о конкретном способе причинить себе вред?',
       type: 'single',
       options: [
-        { value: 0, label: 'Нет, не думал(а)' },
+        { value: 0, label: g('Нет, не думал', 'Нет, не думала') },
         { value: 1, label: 'Были смутные идеи' },
         { value: 2, label: 'Были конкретные мысли о способе' },
         { value: 3, label: 'Есть чёткий план' }
@@ -47,7 +50,7 @@ export const osrTest: TestConfig = {
       options: [
         { value: 0, label: 'Нет, точно не буду действовать' },
         { value: 1, label: 'Скорее нет' },
-        { value: 2, label: 'Не уверен(а)' },
+        { value: 2, label: g('Не уверен', 'Не уверена') },
         { value: 3, label: 'Есть намерение' }
       ]
     },
@@ -68,9 +71,9 @@ export const osrTest: TestConfig = {
       type: 'single',
       options: [
         { value: 0, label: 'Да, есть надёжная поддержка' },
-        { value: 1, label: 'Есть люди, но не уверен(а), что они помогут' },
+        { value: 1, label: g('Есть люди, но не уверен, что они помогут', 'Есть люди, но не уверена, что они помогут') },
         { value: 2, label: 'Почти нет поддержки' },
-        { value: 3, label: 'Я полностью один/одна' }
+        { value: 3, label: g('Я полностью один', 'Я полностью одна') }
       ]
     }
   ],

@@ -1,4 +1,7 @@
-import { TestConfig } from './types';
+import { TestConfig, GenderedText } from './types';
+
+// Хелпер для создания гендерных текстов
+const g = (male: string, female: string): GenderedText => ({ male, female });
 
 const yesNoOptions = [
   { value: 1, label: 'Да' },
@@ -12,8 +15,8 @@ export const spqTest: TestConfig = {
   description: 'Скрининговый инструмент для выявления шизотипических черт личности.',
   scoringStrategy: 'sum',
   questions: [
-    { id: 1, text: 'Люди иногда считают меня странным или эксцентричным.', type: 'single', options: yesNoOptions },
-    { id: 2, text: 'Иногда я чувствую, что должен быть начеку даже с друзьями.', type: 'single', options: yesNoOptions },
+    { id: 1, text: g('Люди иногда считают меня странным или эксцентричным.', 'Люди иногда считают меня странной или эксцентричной.'), type: 'single', options: yesNoOptions },
+    { id: 2, text: g('Иногда я чувствую, что должен быть начеку даже с друзьями.', 'Иногда я чувствую, что должна быть начеку даже с друзьями.'), type: 'single', options: yesNoOptions },
     { id: 3, text: 'У меня мало друзей и знакомых.', type: 'single', options: yesNoOptions },
     { id: 4, text: 'Люди иногда говорят, что мои разговоры странные или что я говорю о странных вещах.', type: 'single', options: yesNoOptions },
     { id: 5, text: 'Мне трудно выражать свои чувства.', type: 'single', options: yesNoOptions },
@@ -24,15 +27,15 @@ export const spqTest: TestConfig = {
     { id: 10, text: 'У меня бывают необычные восприятия или переживания.', type: 'single', options: yesNoOptions },
     { id: 11, text: 'Я верю в телепатию или «шестое чувство».', type: 'single', options: yesNoOptions },
     { id: 12, text: 'Люди говорят, что у меня странный внешний вид или манера одеваться.', type: 'single', options: yesNoOptions },
-    { id: 13, text: 'Я чувствую себя отстранённым от других людей.', type: 'single', options: yesNoOptions },
+    { id: 13, text: g('Я чувствую себя отстранённым от других людей.', 'Я чувствую себя отстранённой от других людей.'), type: 'single', options: yesNoOptions },
     { id: 14, text: 'Иногда я вижу особый смысл в обычных вещах или событиях.', type: 'single', options: yesNoOptions },
     { id: 15, text: 'Мне трудно начать разговор с незнакомыми людьми.', type: 'single', options: yesNoOptions },
-    { id: 16, text: 'Я предпочитаю быть один.', type: 'single', options: yesNoOptions },
+    { id: 16, text: g('Я предпочитаю быть один.', 'Я предпочитаю быть одна.'), type: 'single', options: yesNoOptions },
     { id: 17, text: 'У меня бывают странные мысли или убеждения, которые другие считают необычными.', type: 'single', options: yesNoOptions },
-    { id: 18, text: 'Мне трудно быть эмоционально близким с другими людьми.', type: 'single', options: yesNoOptions },
+    { id: 18, text: g('Мне трудно быть эмоционально близким с другими людьми.', 'Мне трудно быть эмоционально близкой с другими людьми.'), type: 'single', options: yesNoOptions },
     { id: 19, text: 'Иногда у меня бывают переживания, которые трудно объяснить.', type: 'single', options: yesNoOptions },
     { id: 20, text: 'Я часто чувствую тревогу в присутствии незнакомых людей.', type: 'single', options: yesNoOptions },
-    { id: 21, text: 'Другие люди считают меня холодным или отстранённым.', type: 'single', options: yesNoOptions },
+    { id: 21, text: g('Другие люди считают меня холодным или отстранённым.', 'Другие люди считают меня холодной или отстранённой.'), type: 'single', options: yesNoOptions },
     { id: 22, text: 'Мне кажется, что события имеют скрытый смысл, относящийся лично ко мне.', type: 'single', options: yesNoOptions }
   ],
   interpretations: [

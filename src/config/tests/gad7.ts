@@ -1,5 +1,6 @@
 import { TestConfig } from './types';
 
+// GAD-7 практически не имеет гендерно-специфичных текстов
 const likertOptions = [
   { value: 0, label: 'Совсем нет' },
   { value: 1, label: 'Несколько дней' },

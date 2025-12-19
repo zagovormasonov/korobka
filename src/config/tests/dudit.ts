@@ -1,5 +1,6 @@
 import { TestConfig } from './types';
 
+// DUDIT практически не имеет гендерно-специфичных текстов
 export const duditTest: TestConfig = {
   id: 'substance_use',
   name: 'DUDIT',

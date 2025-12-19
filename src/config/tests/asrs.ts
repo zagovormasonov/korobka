@@ -1,5 +1,6 @@
 import { TestConfig } from './types';
 
+// ASRS практически не имеет гендерно-специфичных текстов
 const frequencyOptions = [
   { value: 0, label: 'Никогда' },
   { value: 1, label: 'Редко' },

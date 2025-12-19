@@ -1,5 +1,6 @@
 import { TestConfig } from './types';
 
+// LSAS практически не имеет гендерно-специфичных текстов
 const fearOptions = [
   { value: 0, label: 'Нет страха' },
   { value: 1, label: 'Слабый страх' },

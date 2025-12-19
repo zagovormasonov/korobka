@@ -1,4 +1,7 @@
-import { TestConfig } from './types';
+import { TestConfig, GenderedText } from './types';
+
+// Хелпер для создания гендерных текстов
+const g = (male: string, female: string): GenderedText => ({ male, female });
 
 export const pdq4Test: TestConfig = {
   id: 'bpd',
@@ -26,4 +29,3 @@ export const pdq4Test: TestConfig = {
     url: 'https://testometrika.com/diagnosis-of-abnormalities/do-you-have-a-border-disorder-of-personality/'
   }
 };
-
