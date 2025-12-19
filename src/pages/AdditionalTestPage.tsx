@@ -5,6 +5,8 @@ import {
   Button, 
   Card, 
   Radio, 
+  Checkbox,
+  Slider,
   Space, 
   Progress, 
   message, 
@@ -31,8 +33,8 @@ const AdditionalTestPage: React.FC = () => {
   
   const [config, setConfig] = useState<TestConfig | undefined>();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [isSubmitting, setIsGenerating] = useState(false);
+  const [answers, setAnswers] = useState<Record<number, number | number[]>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
 
   // Загрузка конфигурации и прогресса
@@ -77,14 +79,38 @@ const AdditionalTestPage: React.FC = () => {
   const progress = Math.round(((currentQuestionIndex) / config.questions.length) * 100);
   const isLastQuestion = currentQuestionIndex === config.questions.length - 1;
 
-  const handleAnswer = (value: number) => {
+  const handleSingleAnswer = (value: number) => {
+    setAnswers(prev => ({ ...prev, [currentQuestion.id]: value }));
+  };
+
+  const handleMultipleAnswer = (values: number[]) => {
+    setAnswers(prev => ({ ...prev, [currentQuestion.id]: values }));
+  };
+
+  const handleSliderAnswer = (value: number) => {
     setAnswers(prev => ({ ...prev, [currentQuestion.id]: value }));
   };
 
   const handleNext = () => {
-    if (answers[currentQuestion.id] === undefined) {
-      message.warning('Пожалуйста, выберите ответ');
-      return;
+    const answer = answers[currentQuestion.id];
+    
+    // Проверка ответа в зависимости от типа вопроса
+    if (currentQuestion.type === 'multiple') {
+      if (!answer || (Array.isArray(answer) && answer.length === 0)) {
+        message.warning('Пожалуйста, выберите хотя бы один вариант');
+        return;
+      }
+    } else if (currentQuestion.type === 'slider') {
+      // Для слайдера ответ может быть 0, это допустимо
+      if (answer === undefined) {
+        message.warning('Пожалуйста, выберите значение');
+        return;
+      }
+    } else {
+      if (answer === undefined) {
+        message.warning('Пожалуйста, выберите ответ');
+        return;
+      }
     }
     
     if (isLastQuestion) {
@@ -103,7 +129,20 @@ const AdditionalTestPage: React.FC = () => {
   };
 
   const calculateScore = () => {
-    return Object.values(answers).reduce((sum, val) => sum + val, 0);
+    let total = 0;
+    
+    for (const question of config.questions) {
+      const answer = answers[question.id];
+      
+      if (question.type === 'multiple' && Array.isArray(answer)) {
+        // Для множественного выбора суммируем все выбранные значения
+        total += answer.reduce((sum, val) => sum + val, 0);
+      } else if (typeof answer === 'number') {
+        total += answer;
+      }
+    }
+    
+    return total;
   };
 
   const handleSubmit = async () => {
@@ -112,20 +151,20 @@ const AdditionalTestPage: React.FC = () => {
       return;
     }
 
-    setIsGenerating(true);
+    setIsSubmitting(true);
     const score = calculateScore();
     
     try {
       const response = await apiRequest('api/tests/additional/save', {
-          method: 'POST',
-          body: JSON.stringify({
+        method: 'POST',
+        body: JSON.stringify({
           sessionId,
           testName: config.name,
           testUrl: config.source?.url || '',
-          testResult: score, // Для обратной совместимости
-          answers: answers // Полные ответы в JSONB
-          })
-        });
+          testResult: score,
+          answers: answers
+        })
+      });
 
       if (response.ok) {
         localStorage.removeItem(`test_progress_${testId}`);
@@ -137,7 +176,112 @@ const AdditionalTestPage: React.FC = () => {
     } catch (e) {
       message.error('Ошибка при сохранении результатов');
     } finally {
-      setIsGenerating(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  // Рендер вопроса в зависимости от типа
+  const renderQuestion = () => {
+    switch (currentQuestion.type) {
+      case 'slider':
+        const sliderMin = currentQuestion.min ?? 0;
+        const sliderMax = currentQuestion.max ?? 10;
+        const sliderStep = currentQuestion.step ?? 1;
+        const sliderValue = typeof answers[currentQuestion.id] === 'number' 
+          ? answers[currentQuestion.id] as number 
+          : sliderMin;
+        
+        // Создаем marks из опций если они есть
+        const marks: Record<number, string> = {};
+        if (currentQuestion.options.length > 0) {
+          currentQuestion.options.forEach(opt => {
+            marks[opt.value] = opt.label;
+          });
+        } else {
+          marks[sliderMin] = String(sliderMin);
+          marks[sliderMax] = String(sliderMax);
+        }
+        
+        return (
+          <div style={{ padding: '20px 10px' }}>
+            <Slider
+              min={sliderMin}
+              max={sliderMax}
+              step={sliderStep}
+              value={sliderValue}
+              onChange={handleSliderAnswer}
+              marks={marks}
+              tooltip={{ formatter: (val) => marks[val as number] || String(val) }}
+            />
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <Text strong style={{ fontSize: 18 }}>
+                {marks[sliderValue] || sliderValue}
+              </Text>
+            </div>
+          </div>
+        );
+        
+      case 'multiple':
+        const selectedValues = Array.isArray(answers[currentQuestion.id]) 
+          ? answers[currentQuestion.id] as number[] 
+          : [];
+        
+        return (
+          <Checkbox.Group
+            value={selectedValues}
+            onChange={(values) => handleMultipleAnswer(values as number[])}
+            style={{ width: '100%' }}
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {currentQuestion.options.map(option => (
+                <Checkbox
+                  key={option.value}
+                  value={option.value}
+                  style={{
+                    width: '100%',
+                    padding: '12px 20px',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: 12,
+                    marginBottom: 10,
+                    background: selectedValues.includes(option.value) ? '#f0f9f7' : 'white'
+                  }}
+                >
+                  {option.label}
+                </Checkbox>
+              ))}
+            </Space>
+          </Checkbox.Group>
+        );
+        
+      case 'single':
+      default:
+        return (
+          <Radio.Group
+            onChange={(e) => handleSingleAnswer(e.target.value)} 
+            value={answers[currentQuestion.id]}
+            style={{ width: '100%' }}
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {currentQuestion.options.map(option => (
+                <Radio.Button 
+                  key={option.value} 
+                  value={option.value}
+                  style={{ 
+                    width: '100%', 
+                    height: 'auto', 
+                    padding: '12px 20px', 
+                    borderRadius: 12,
+                    marginBottom: 10,
+                    textAlign: 'left',
+                    whiteSpace: 'normal'
+                  }}
+                >
+                  {option.label}
+                </Radio.Button>
+              ))}
+            </Space>
+          </Radio.Group>
+        );
     }
   };
 
@@ -160,10 +304,10 @@ const AdditionalTestPage: React.FC = () => {
                   style={{ borderRadius: 12, height: 45, background: '#4F958B', borderColor: '#4F958B' }}
                 >
                   Вернуться в кабинет
-            </Button>
+                </Button>
               ]}
             />
-        </Card>
+          </Card>
         </Content>
       </Layout>
     );
@@ -192,39 +336,15 @@ const AdditionalTestPage: React.FC = () => {
                 style={{ marginBottom: 10 }}
               />
               <Text type="secondary">Вопрос {currentQuestionIndex + 1} из {config.questions.length}</Text>
-      </div>
+            </div>
 
             <div style={{ minHeight: 200 }}>
               <Paragraph style={{ fontSize: 18, fontWeight: 500, marginBottom: 30 }}>
-              {currentQuestion.text}
+                {currentQuestion.text}
               </Paragraph>
 
-              <Radio.Group
-                onChange={(e) => handleAnswer(e.target.value)} 
-                value={answers[currentQuestion.id]}
-                style={{ width: '100%' }}
-              >
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  {currentQuestion.options.map(option => (
-                    <Radio.Button 
-                      key={option.value} 
-                      value={option.value}
-                      style={{ 
-                        width: '100%', 
-                        height: 'auto', 
-                        padding: '12px 20px', 
-                        borderRadius: 12,
-                        marginBottom: 10,
-                        textAlign: 'left',
-                        whiteSpace: 'normal'
-                      }}
-                    >
-                      {option.label}
-                    </Radio.Button>
-                  ))}
-                </Space>
-              </Radio.Group>
-              </div>
+              {renderQuestion()}
+            </div>
 
             <div style={{ marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
               <Button
@@ -253,7 +373,7 @@ const AdditionalTestPage: React.FC = () => {
                 {isLastQuestion ? 'Завершить' : 'Далее'}
               </Button>
             </div>
-      </Card>
+          </Card>
         </Space>
       </Content>
     </Layout>

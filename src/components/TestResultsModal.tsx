@@ -6,7 +6,7 @@ import {
   WarningOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
-import { TestConfig, InterpretationRange } from '../config/tests/types';
+import { TestConfig, TestInterpretation } from '../config/tests/types';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -25,7 +25,7 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
   score,
   onRetry
 }) => {
-  const getInterpretation = (score: number): InterpretationRange | undefined => {
+  const getInterpretation = (score: number): TestInterpretation | undefined => {
     return config.interpretations.find(range => score >= range.min && score <= range.max);
   };
 
