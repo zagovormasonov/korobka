@@ -1,10 +1,99 @@
 import express from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const router = express.Router();
 
-// Инициализация Google Generative AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+/**
+ * Вызов Gemini API через v1beta API (как в /chat)
+ */
+async function callGeminiAI(prompt, maxTokens = 8192) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY не установлен в переменных окружения');
+  }
+
+  const modelName = 'models/gemini-3-pro-preview';
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
+
+  const requestBody = {
+    contents: [{
+      parts: [{ text: prompt }]
+    }],
+    generationConfig: {
+      maxOutputTokens: maxTokens
+    }
+  };
+
+  // Проверяем доступность fetch (для Node.js < 18 может потребоваться node-fetch)
+  if (typeof fetch === 'undefined') {
+    throw new Error('fetch не доступен. Требуется Node.js 18+ или установка node-fetch');
+  }
+
+  console.log('🚀 [QUESTIONNAIRE] Отправляем запрос к v1beta API...');
+  console.log('🔗 [QUESTIONNAIRE] URL:', apiUrl.replace(apiKey, '***'));
+  console.log('📋 [QUESTIONNAIRE] Model:', modelName);
+  console.log('🔧 [QUESTIONNAIRE] Используем v1beta API (не SDK)');
+  const startTime = Date.now();
+  
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody)
+  });
+
+  const elapsed = Date.now() - startTime;
+  console.log(`⏱️ [QUESTIONNAIRE] Время ответа v1beta API: ${(elapsed / 1000).toFixed(2)}с`);
+
+  if (!response.ok) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (parseError) {
+      const errorText = await response.text();
+      console.error('❌ [QUESTIONNAIRE] Ошибка ответа (не JSON):', errorText);
+      throw new Error(`v1beta API error (${response.status}): ${errorText}`);
+    }
+    
+    console.error('❌ [QUESTIONNAIRE] Ошибка API:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData
+    });
+    
+    // Обработка ошибки 429 (Rate Limit Exceeded)
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After');
+      const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
+      console.warn(`⚠️ [QUESTIONNAIRE] Превышен лимит запросов (429). Retry-After: ${retryAfter || 'не указан'}`);
+      throw new Error(`v1beta API error (429): Rate limit exceeded`);
+    }
+    
+    // Обработка ошибки 404
+    if (response.status === 404) {
+      console.error('❌ [QUESTIONNAIRE] Модель не найдена (404). Проверьте название модели:', modelName);
+      throw new Error(`Модель ${modelName} не найдена для v1beta API. Проверьте доступность модели.`);
+    }
+    
+    throw new Error(`v1beta API error (${response.status}): ${JSON.stringify(errorData)}`);
+  }
+
+  const data = await response.json();
+  
+  // Проверяем структуру ответа (как в chat.js)
+  if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0 ||
+      !data.candidates[0].content || !data.candidates[0].content.parts ||
+      !Array.isArray(data.candidates[0].content.parts) || data.candidates[0].content.parts.length === 0 ||
+      !data.candidates[0].content.parts[0].text) {
+    console.error('❌ [QUESTIONNAIRE] Неожиданная структура ответа от v1beta API:', JSON.stringify(data));
+    throw new Error('Неожиданная структура ответа от Gemini 3.0 Pro v1beta API');
+  }
+
+  const text = data.candidates[0].content.parts[0].text;
+  console.log(`✅ [QUESTIONNAIRE] Ответ получен, длина: ${text.length} символов`);
+  
+  return text;
+}
 
 /**
  * POST /api/generate-part1
@@ -64,11 +153,8 @@ router.post('/generate-part1', async (req, res) => {
 
 Типы вопросов: "single" (один вариант), "multiple" (несколько вариантов), "text" (текстовый ответ)`;
 
-    // Вызываем Gemini API
-    const model = genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // Вызываем Gemini API через v1beta
+    const text = await callGeminiAI(prompt, 8192);
 
     console.log('📥 [QUESTIONNAIRE] Ответ от Gemini (Part 1):', text.substring(0, 500));
 
@@ -91,6 +177,8 @@ router.post('/generate-part1', async (req, res) => {
 
   } catch (error) {
     console.error('❌ [QUESTIONNAIRE] Ошибка генерации первой части:', error);
+    console.error('❌ [QUESTIONNAIRE] Тип ошибки:', error.constructor?.name);
+    console.error('❌ [QUESTIONNAIRE] Stack:', error.stack);
     res.status(500).json({
       success: false,
       error: error.message || 'Ошибка генерации опросника',
@@ -158,11 +246,8 @@ ${answersDescription}
 ID вопросов должны начинаться с 8 (продолжение после первой части).
 Типы вопросов: "single" (один вариант), "multiple" (несколько вариантов), "text" (текстовый ответ)`;
 
-    // Вызываем Gemini API
-    const model = genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // Вызываем Gemini API через v1beta
+    const text = await callGeminiAI(prompt, 8192);
 
     console.log('📥 [QUESTIONNAIRE] Ответ от Gemini (Part 2):', text.substring(0, 500));
 
@@ -285,11 +370,8 @@ ${answersDescription}
   "urgency_level": "low" | "medium" | "high"
 }`;
 
-    // Вызываем Gemini API
-    const model = genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // Вызываем Gemini API через v1beta
+    const text = await callGeminiAI(prompt, 8192);
 
     console.log('📥 [QUESTIONNAIRE] Ответ от Gemini (Results):', text.substring(0, 500));
 
