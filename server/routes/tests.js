@@ -562,7 +562,27 @@ router.post('/verify-credentials', async (req, res) => {
 // Сохранить результаты дополнительного теста
 router.post('/additional/save', async (req, res) => {
   try {
-    const { sessionId, testName, testUrl, testResult } = req.body;
+    const { sessionId, testName, testUrl, testResult, answers } = req.body;
+
+    // Поддерживаем старый формат (testResult: string) и новый (answers: object)
+    let answersToStore = answers;
+    if (answersToStore === undefined) {
+      answersToStore = testResult;
+    }
+
+    // Если пришла строка, пробуем распарсить как JSON (иначе сохраняем как raw_text)
+    if (typeof answersToStore === 'string') {
+      const trimmed = answersToStore.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          answersToStore = JSON.parse(trimmed);
+        } catch (e) {
+          answersToStore = { raw_text: answersToStore };
+        }
+      } else {
+        answersToStore = { raw_text: answersToStore };
+      }
+    }
     
     const { data, error } = await supabase
       .from('additional_test_results')
@@ -570,7 +590,7 @@ router.post('/additional/save', async (req, res) => {
         session_id: sessionId,
         test_type: testName,
         test_url: testUrl,
-        answers: testResult
+        answers: answersToStore
       })
       .select()
       .single();
@@ -587,11 +607,11 @@ router.post('/additional/save', async (req, res) => {
 // Сохранить результат дополнительного теста
 router.post('/additional/save-result', async (req, res) => {
   try {
-    const { sessionId, testName, testUrl, testResult } = req.body;
+    const { sessionId, testName, testUrl, testResult, answers } = req.body;
     
     console.log('💾 [ВЕРСИЯ 2.1] Получен запрос на сохранение результата теста');
     console.log('📋 Тело запроса:', JSON.stringify(req.body, null, 2));
-    console.log('💾 Извлеченные данные:', { sessionId, testName, testUrl, testResult });
+    console.log('💾 Извлеченные данные:', { sessionId, testName, testUrl, hasTestResult: !!testResult, hasAnswers: answers !== undefined });
     console.log('🔧 Используем колонки: test_type и answers (не test_name и test_result)');
     
     // Проверяем все обязательные поля
@@ -605,9 +625,30 @@ router.post('/additional/save-result', async (req, res) => {
       return res.status(400).json({ success: false, error: 'TestName is required' });
     }
     
-    if (!testResult || testResult.trim() === '') {
-      console.log('❌ TestResult пустой или отсутствует');
-      return res.status(400).json({ success: false, error: 'TestResult is required' });
+    // Поддерживаем старый формат (testResult: string) и новый (answers: object)
+    let answersToStore = answers;
+    if (answersToStore === undefined) {
+      answersToStore = testResult;
+    }
+
+    // Если всё ещё нет — ошибка
+    if (answersToStore === undefined || answersToStore === null || answersToStore === '') {
+      console.log('❌ Answers/testResult пустой или отсутствует');
+      return res.status(400).json({ success: false, error: 'Answers are required' });
+    }
+
+    // Если пришла строка, пробуем распарсить как JSON (иначе сохраняем как raw_text)
+    if (typeof answersToStore === 'string') {
+      const trimmed = answersToStore.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          answersToStore = JSON.parse(trimmed);
+        } catch (e) {
+          answersToStore = { raw_text: answersToStore };
+        }
+      } else {
+        answersToStore = { raw_text: answersToStore };
+      }
     }
     
     // Получаем email пользователя из primary_test_results
@@ -649,7 +690,7 @@ router.post('/additional/save-result', async (req, res) => {
       const { data, error } = await supabase
         .from('additional_test_results')
         .update({
-          answers: testResult,
+          answers: answersToStore,
           test_url: testUrl
         })
         .eq('session_id', sessionId)
@@ -666,7 +707,7 @@ router.post('/additional/save-result', async (req, res) => {
         session_id: sessionId,
         test_type: testName,
         test_url: testUrl,
-        answers: testResult
+        answers: answersToStore,
       });
       const { data, error } = await supabase
         .from('additional_test_results')
@@ -674,7 +715,7 @@ router.post('/additional/save-result', async (req, res) => {
           session_id: sessionId,
           test_type: testName,
           test_url: testUrl,
-          answers: testResult
+          answers: answersToStore
         })
         .select()
         .single();
