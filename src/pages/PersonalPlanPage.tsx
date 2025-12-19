@@ -6,11 +6,7 @@ import {
   Input, 
   Form, 
   message,
-  Space,
-  Progress,
-  Divider,
-  Tag,
-  Tooltip
+  Space
 } from 'antd'; 
 import { apiRequest } from '../config/api'; 
 import { 
@@ -18,13 +14,8 @@ import {
   UserOutlined, 
   FileTextOutlined, 
   MessageOutlined,
-  CheckOutlined,
-  EyeOutlined,
-  ReloadOutlined,
-  ArrowRightOutlined
+  CheckOutlined
 } from '@ant-design/icons';
-import { getTestConfig } from '../config/tests';
-import TestResultsModal from '../components/TestResultsModal';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
 import TelegramButton from '../components/TelegramButton';

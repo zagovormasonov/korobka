@@ -11,9 +11,7 @@ import {
   Spin,
   Progress,
   Divider,
-  Result,
-  Tag,
-  Tooltip
+  Result
 } from 'antd'; 
 import { apiRequest } from '../config/api'; 
 import { 
@@ -963,9 +961,17 @@ const DashboardPage: React.FC = () => {
   const showResults = (test: any) => {
     const config = getTestConfig(test.name);
     if (config) {
-      setCurrentTestConfig(config);
-      setCurrentTestScore(Number(testResults[test.id]));
-      setResultsModalVisible(true);
+      const result = testResults[test.id];
+      // Пытаемся извлечь только цифры, если это строка
+      const score = typeof result === 'string' ? parseInt(result.replace(/[^0-9]/g, '')) : Number(result);
+      
+      if (!isNaN(score)) {
+        setCurrentTestConfig(config);
+        setCurrentTestScore(score);
+        setResultsModalVisible(true);
+      } else {
+        message.info('Результаты доступны в текстовом виде: ' + result);
+      }
     } else {
       message.info('Результаты доступны в текстовом виде: ' + testResults[test.id]);
     }
@@ -997,7 +1003,7 @@ const DashboardPage: React.FC = () => {
   };
 
   // Функция для обрезки текста
-  const truncateText = (text: string, maxLength: number = 100) => {
+  const truncateText = (text: string | undefined, maxLength: number = 100) => {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';

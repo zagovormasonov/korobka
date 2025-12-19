@@ -54,10 +54,10 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
   // Максимально возможный балл для шкалы
   const maxPossibleScore = config.questions.reduce((sum, q) => {
     const maxOption = Math.max(...q.options.map(o => o.value));
-    return sum + maxOption;
-      }, 0);
+    return sum + (isNaN(maxOption) ? 0 : maxOption);
+  }, 0);
 
-  const percentage = Math.round((score / maxPossibleScore) * 100);
+  const percentage = maxPossibleScore > 0 ? Math.round((score / maxPossibleScore) * 100) : 0;
 
   return (
     <Modal
@@ -72,9 +72,13 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
         </Button>
       ]}
       width={600}
-      borderRadius={20}
       title={null}
       centered
+      styles={{
+        content: {
+          borderRadius: 20
+        }
+      }}
     >
       <div style={{ textAlign: 'center', paddingTop: 20 }}>
         <Text type="secondary" style={{ fontSize: 14 }}>{config.name}</Text>
