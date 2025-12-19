@@ -563,41 +563,44 @@ router.post('/verify-credentials', async (req, res) => {
 router.post('/additional/save', async (req, res) => {
   try {
     const { sessionId, testName, testUrl, testResult, answers } = req.body;
-
-    // Поддерживаем старый формат (testResult: string) и новый (answers: object)
-    let answersToStore = answers;
-    if (answersToStore === undefined) {
-      answersToStore = testResult;
-    }
-
-    // Если пришла строка, пробуем распарсить как JSON (иначе сохраняем как raw_text)
-    if (typeof answersToStore === 'string') {
-      const trimmed = answersToStore.trim();
-      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-        try {
-          answersToStore = JSON.parse(trimmed);
-        } catch (e) {
-          answersToStore = { raw_text: answersToStore };
-        }
-      } else {
-        answersToStore = { raw_text: answersToStore };
-      }
-    }
     
-    const { data, error } = await supabase
+    // Проверяем, существует ли уже результат для этого теста
+    const { data: existingResult } = await supabase
       .from('additional_test_results')
-      .insert({
-        session_id: sessionId,
-        test_type: testName,
-        test_url: testUrl,
-        answers: answersToStore
-      })
-      .select()
+      .select('id')
+      .eq('session_id', sessionId)
+      .eq('test_type', testName)
       .single();
 
-    if (error) throw error;
+    let result;
+    if (existingResult) {
+      const { data, error } = await supabase
+        .from('additional_test_results')
+        .update({
+          test_url: testUrl,
+          answers: answers || testResult // Сохраняем либо объект ответов, либо итоговый балл
+        })
+        .eq('id', existingResult.id)
+        .select()
+        .single();
+      if (error) throw error;
+      result = data;
+    } else {
+      const { data, error } = await supabase
+        .from('additional_test_results')
+        .insert({
+          session_id: sessionId,
+          test_type: testName,
+          test_url: testUrl,
+          answers: answers || testResult
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      result = data;
+    }
 
-    res.json({ success: true, data });
+    res.json({ success: true, data: result });
   } catch (error) {
     console.error('Error saving additional test:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -607,11 +610,11 @@ router.post('/additional/save', async (req, res) => {
 // Сохранить результат дополнительного теста
 router.post('/additional/save-result', async (req, res) => {
   try {
-    const { sessionId, testName, testUrl, testResult, answers } = req.body;
+    const { sessionId, testName, testUrl, testResult } = req.body;
     
     console.log('💾 [ВЕРСИЯ 2.1] Получен запрос на сохранение результата теста');
     console.log('📋 Тело запроса:', JSON.stringify(req.body, null, 2));
-    console.log('💾 Извлеченные данные:', { sessionId, testName, testUrl, hasTestResult: !!testResult, hasAnswers: answers !== undefined });
+    console.log('💾 Извлеченные данные:', { sessionId, testName, testUrl, testResult });
     console.log('🔧 Используем колонки: test_type и answers (не test_name и test_result)');
     
     // Проверяем все обязательные поля
@@ -625,30 +628,9 @@ router.post('/additional/save-result', async (req, res) => {
       return res.status(400).json({ success: false, error: 'TestName is required' });
     }
     
-    // Поддерживаем старый формат (testResult: string) и новый (answers: object)
-    let answersToStore = answers;
-    if (answersToStore === undefined) {
-      answersToStore = testResult;
-    }
-
-    // Если всё ещё нет — ошибка
-    if (answersToStore === undefined || answersToStore === null || answersToStore === '') {
-      console.log('❌ Answers/testResult пустой или отсутствует');
-      return res.status(400).json({ success: false, error: 'Answers are required' });
-    }
-
-    // Если пришла строка, пробуем распарсить как JSON (иначе сохраняем как raw_text)
-    if (typeof answersToStore === 'string') {
-      const trimmed = answersToStore.trim();
-      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-        try {
-          answersToStore = JSON.parse(trimmed);
-        } catch (e) {
-          answersToStore = { raw_text: answersToStore };
-        }
-      } else {
-        answersToStore = { raw_text: answersToStore };
-      }
+    if (!testResult || testResult.trim() === '') {
+      console.log('❌ TestResult пустой или отсутствует');
+      return res.status(400).json({ success: false, error: 'TestResult is required' });
     }
     
     // Получаем email пользователя из primary_test_results
@@ -690,7 +672,7 @@ router.post('/additional/save-result', async (req, res) => {
       const { data, error } = await supabase
         .from('additional_test_results')
         .update({
-          answers: answersToStore,
+          answers: req.body.answers || testResult,
           test_url: testUrl
         })
         .eq('session_id', sessionId)
@@ -707,7 +689,7 @@ router.post('/additional/save-result', async (req, res) => {
         session_id: sessionId,
         test_type: testName,
         test_url: testUrl,
-        answers: answersToStore,
+        answers: testResult
       });
       const { data, error } = await supabase
         .from('additional_test_results')
@@ -715,7 +697,7 @@ router.post('/additional/save-result', async (req, res) => {
           session_id: sessionId,
           test_type: testName,
           test_url: testUrl,
-          answers: answersToStore
+          answers: testResult
         })
         .select()
         .single();

@@ -8,7 +8,12 @@ import {
   Form, 
   message, 
   Modal,
-  Spin
+  Spin,
+  Progress,
+  Divider,
+  Result,
+  Tag,
+  Tooltip
 } from 'antd'; 
 import { apiRequest } from '../config/api'; 
 import { 
@@ -17,8 +22,13 @@ import {
   FileTextOutlined, 
   MessageOutlined,
   CheckOutlined,
-  BulbOutlined
+  BulbOutlined,
+  EyeOutlined,
+  ReloadOutlined,
+  ArrowRightOutlined
 } from '@ant-design/icons';
+import { getTestConfig } from '../config/tests';
+import TestResultsModal from '../components/TestResultsModal';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
 import GenerationAnimation from '../components/GenerationAnimation';
@@ -405,6 +415,9 @@ const DashboardPage: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentTestId, setCurrentTestId] = useState<number | null>(null);
   const [modalText, setModalText] = useState('');
+  const [resultsModalVisible, setResultsModalVisible] = useState(false);
+  const [currentTestConfig, setCurrentTestConfig] = useState<any>(null);
+  const [currentTestScore, setCurrentTestScore] = useState<number>(0);
   
   // Состояния для фоновой генерации
   const [isGenerating, setIsGenerating] = useState(false);
@@ -945,6 +958,17 @@ const DashboardPage: React.FC = () => {
     setCurrentTestId(testId);
     setModalText(testResults[testId] || '');
     setModalVisible(true);
+  };
+
+  const showResults = (test: any) => {
+    const config = getTestConfig(test.name);
+    if (config) {
+      setCurrentTestConfig(config);
+      setCurrentTestScore(Number(testResults[test.id]));
+      setResultsModalVisible(true);
+    } else {
+      message.info('Результаты доступны в текстовом виде: ' + testResults[test.id]);
+    }
   };
 
   const closeModal = () => {
@@ -1942,9 +1966,27 @@ const DashboardPage: React.FC = () => {
                       
                       {/* Action buttons */}
                       <div style={{ display: 'flex', gap: '10px' }}>
+                        {!testResults[test.id] ? (
                         <Button
-                          href={test.url}
-                          target="_blank"
+                            type="primary"
+                            onClick={() => navigate(`/test/${getTestConfig(test.name)?.id || test.id}?sessionId=${authData?.sessionId}`)}
+                            style={{
+                              flex: 1,
+                              height: '40px',
+                              borderRadius: '20px',
+                              backgroundColor: '#4F958B',
+                              borderColor: '#4F958B',
+                              color: '#ffffff',
+                              fontWeight: '500'
+                            }}
+                            icon={<ArrowRightOutlined />}
+                          >
+                            Начать
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              onClick={() => showResults(test)}
                           style={{
                             flex: 1,
                             height: '40px',
@@ -1954,24 +1996,27 @@ const DashboardPage: React.FC = () => {
                             color: '#1890FF',
                             fontWeight: '500'
                           }}
+                              icon={<EyeOutlined />}
                         >
-                          Пройти тест
+                              Результаты
                         </Button>
                         <Button
-                          type="primary"
-                          onClick={() => openModal(test.id)}
+                              onClick={() => navigate(`/test/${getTestConfig(test.name)?.id || test.id}?sessionId=${authData?.sessionId}`)}
                           style={{
                             flex: 1,
                             height: '40px',
                             borderRadius: '20px',
-                            backgroundColor: '#4F958B',
-                            borderColor: '#4F958B',
-                            color: '#ffffff',
+                                backgroundColor: '#F0F2F5',
+                                borderColor: '#F0F2F5',
+                                color: '#595959',
                             fontWeight: '500'
                           }}
+                              icon={<ReloadOutlined />}
                         >
-                          {testResults[test.id] ? 'Изменить' : 'Ввести результат'}
+                              Заново
                         </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -2087,6 +2132,19 @@ const DashboardPage: React.FC = () => {
             />
           </div>
         </Modal>
+
+        {currentTestConfig && (
+          <TestResultsModal
+            visible={resultsModalVisible}
+            onCancel={() => setResultsModalVisible(false)}
+            config={currentTestConfig}
+            score={currentTestScore}
+            onRetry={() => {
+              setResultsModalVisible(false);
+              navigate(`/test/${currentTestConfig.id}?sessionId=${authData?.sessionId}`);
+            }}
+          />
+        )}
         </div>
         )}
         

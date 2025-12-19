@@ -1,364 +1,263 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Card, Progress, Typography, message, Space, Radio, Checkbox, Slider, Spin } from 'antd';
-import { ArrowLeftOutlined, ArrowRightOutlined, ReloadOutlined, BarChartOutlined } from '@ant-design/icons';
-import { getTestConfig, Question, TestConfig } from '../config/tests';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { 
+  Typography, 
+  Button, 
+  Card, 
+  Radio, 
+  Space, 
+  Progress, 
+  message, 
+  Layout,
+  Result
+} from 'antd';
+import { 
+  ArrowLeftOutlined, 
+  ArrowRightOutlined, 
+  CheckOutlined,
+  HomeOutlined 
+} from '@ant-design/icons';
+import { getTestConfig, TestConfig } from '../config/tests';
 import { apiRequest } from '../config/api';
-import { useAuth } from '../hooks/useAuth';
-import { TestResultsModal } from '../components/TestResultsModal';
 
-const { Title, Text } = Typography;
-
-type AnswerValue = number | number[];
-
-type SavedProgress = {
-  testId: string;
-  currentIndex: number;
-  answers: Record<number, AnswerValue>;
-  completed?: boolean;
-  completedAt?: string;
-  score?: number;
-};
-
-const getProgressKey = (testId: string) => `test_progress_${testId}`;
-
-const defaultComputeScore = (answers: Record<number, AnswerValue>) => {
-  return Object.values(answers).reduce((sum, v) => {
-    if (Array.isArray(v)) return sum + v.reduce((s, n) => s + Number(n || 0), 0);
-    return sum + Number(v || 0);
-  }, 0);
-};
-
-const findInterpretation = (test: TestConfig, score: number) => {
-  return test.interpretations.find(r => score >= r.min && score <= r.max);
-};
+const { Title, Text, Paragraph } = Typography;
+const { Content } = Layout;
 
 const AdditionalTestPage: React.FC = () => {
-  const navigate = useNavigate();
   const { testId } = useParams<{ testId: string }>();
-  const { isAuthenticated, isLoading: authLoading, authData } = useAuth();
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('sessionId');
+  const navigate = useNavigate();
+  
+  const [config, setConfig] = useState<TestConfig | undefined>();
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [isSubmitting, setIsGenerating] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
-  const test = useMemo(() => (testId ? getTestConfig(testId) : undefined), [testId]);
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
-  const [saving, setSaving] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  const [score, setScore] = useState<number | null>(null);
-  const [resultsModalOpen, setResultsModalOpen] = useState(false);
-
-  // Guard: auth
-  useEffect(() => {
-    if (authLoading) return;
-    if (!isAuthenticated) {
-      navigate('/lk/login');
-    }
-  }, [authLoading, isAuthenticated, navigate]);
-
-  // Restore progress
+  // Загрузка конфигурации и прогресса
   useEffect(() => {
     if (!testId) return;
-    const raw = localStorage.getItem(getProgressKey(testId));
-    if (!raw) return;
-    try {
-      const saved: SavedProgress = JSON.parse(raw);
-      if (saved?.testId !== testId) return;
-      setCurrentIndex(saved.currentIndex || 0);
-      setAnswers(saved.answers || {});
-      setCompleted(!!saved.completed);
-      if (typeof saved.score === 'number') setScore(saved.score);
-      if (saved.currentIndex > 0 || Object.keys(saved.answers || {}).length > 0) {
-        message.success({ content: 'Восстановлен прогресс теста', duration: 2 });
+    
+    const testConfig = getTestConfig(testId);
+    if (!testConfig) {
+      message.error('Тест не найден');
+      navigate('/dashboard');
+      return;
+    }
+    
+    setConfig(testConfig);
+    
+    // Восстановление прогресса
+    const savedProgress = localStorage.getItem(`test_progress_${testId}`);
+    if (savedProgress) {
+      try {
+        const { answers: savedAnswers, currentIndex } = JSON.parse(savedProgress);
+        setAnswers(savedAnswers || {});
+        setCurrentQuestionIndex(currentIndex || 0);
+      } catch (e) {
+        console.error('Failed to restore progress', e);
       }
-    } catch (e) {
-      console.error('❌ Ошибка восстановления прогресса теста:', e);
-      localStorage.removeItem(getProgressKey(testId));
     }
-  }, [testId]);
+  }, [testId, navigate]);
 
-  // Persist progress
+  // Сохранение прогресса
   useEffect(() => {
-    if (!testId) return;
-    if (!test) return;
-    const payload: SavedProgress = {
-      testId,
-      currentIndex,
+    if (!testId || Object.keys(answers).length === 0) return;
+    
+    localStorage.setItem(`test_progress_${testId}`, JSON.stringify({
       answers,
-      completed,
-      score: score ?? undefined,
-      completedAt: completed ? new Date().toISOString() : undefined
-    };
-    localStorage.setItem(getProgressKey(testId), JSON.stringify(payload));
-  }, [testId, test, currentIndex, answers, completed, score]);
+      currentIndex: currentQuestionIndex
+    }));
+  }, [answers, currentQuestionIndex, testId]);
 
-  const questions = test?.questions || [];
-  const total = questions.length;
-  const progress = total > 0 ? Math.round(((Math.min(currentIndex, total) + 1) / total) * 100) : 0;
+  if (!config) return null;
 
-  const currentQuestion: Question | undefined = questions[currentIndex];
-  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
+  const currentQuestion = config.questions[currentQuestionIndex];
+  const progress = Math.round(((currentQuestionIndex) / config.questions.length) * 100);
+  const isLastQuestion = currentQuestionIndex === config.questions.length - 1;
 
-  const setAnswer = (questionId: number, value: AnswerValue) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
+  const handleAnswer = (value: number) => {
+    setAnswers(prev => ({ ...prev, [currentQuestion.id]: value }));
   };
 
-  const canGoNext = () => {
-    if (!currentQuestion) return false;
-    const v = answers[currentQuestion.id];
-    if (currentQuestion.type === 'multiple') {
-      return Array.isArray(v) && v.length > 0;
+  const handleNext = () => {
+    if (answers[currentQuestion.id] === undefined) {
+      message.warning('Пожалуйста, выберите ответ');
+      return;
     }
-    if (currentQuestion.type === 'scale') {
-      return typeof v === 'number';
+    
+    if (isLastQuestion) {
+      handleSubmit();
+    } else {
+      setCurrentQuestionIndex(prev => prev + 1);
+      window.scrollTo(0, 0);
     }
-    return typeof v === 'number';
   };
 
-  const computeScore = () => {
-    if (!test) return 0;
-    if (typeof test.calculateScore === 'function') {
-      // For now we only pass numeric answers (scale/single) to custom scorer
-      const numericAnswers: Record<number, number> = {};
-      Object.entries(answers).forEach(([qid, v]) => {
-        if (typeof v === 'number') numericAnswers[Number(qid)] = v;
-      });
-      return test.calculateScore(numericAnswers);
+  const handleBack = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+      window.scrollTo(0, 0);
     }
-    return defaultComputeScore(answers);
+  };
+
+  const calculateScore = () => {
+    return Object.values(answers).reduce((sum, val) => sum + val, 0);
   };
 
   const handleSubmit = async () => {
-    if (!testId || !test) return;
-    const computed = computeScore();
-    setScore(computed);
-    setCompleted(true);
-    setResultsModalOpen(true);
+    if (!sessionId) {
+      message.error('Сессия не найдена. Пожалуйста, начните с главного теста.');
+      return;
+    }
 
-    // Persist to backend (current API stores answers as string; next todo will migrate to JSONB)
-    // We save a JSON string now to keep backward compatibility.
-    if (authData?.sessionId) {
-      try {
-        setSaving(true);
-        const payload = {
-          testId: test.id,
-          testName: test.name,
-          score: computed,
-          answers
-        };
-        await apiRequest('api/tests/additional/save-result', {
+    setIsGenerating(true);
+    const score = calculateScore();
+    
+    try {
+      const response = await apiRequest('api/tests/additional/save', {
           method: 'POST',
           body: JSON.stringify({
-            sessionId: authData.sessionId,
-            testName: test.name,
-            testUrl: `internal:${test.id}`,
-            testResult: JSON.stringify(payload)
+          sessionId,
+          testName: config.name,
+          testUrl: config.source?.url || '',
+          testResult: score, // Для обратной совместимости
+          answers: answers // Полные ответы в JSONB
           })
         });
-      } catch (e) {
-        console.error('❌ Ошибка сохранения результата доп. теста:', e);
-        message.warning('Не удалось сохранить результат на сервере, но он сохранен в браузере');
-      } finally {
-        setSaving(false);
+
+      if (response.ok) {
+        localStorage.removeItem(`test_progress_${testId}`);
+        setIsCompleted(true);
+        message.success('Результаты сохранены!');
+      } else {
+        throw new Error('Failed to save results');
       }
+    } catch (e) {
+      message.error('Ошибка при сохранении результатов');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const restartTest = () => {
-    if (!testId) return;
-    localStorage.removeItem(getProgressKey(testId));
-    setAnswers({});
-    setCurrentIndex(0);
-    setCompleted(false);
-    setScore(null);
-  };
-
-  if (authLoading || !isAuthenticated) {
+  if (isCompleted) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  if (!testId || !test) {
-    return (
-      <div style={{ maxWidth: 820, margin: '0 auto', padding: 20 }}>
-        <Card style={{ borderRadius: 16 }}>
-          <Title level={3}>Тест не найден</Title>
-          <Text type="secondary">Похоже, такого теста в системе пока нет.</Text>
-          <div style={{ marginTop: 16 }}>
-            <Button type="primary" onClick={() => navigate('/dashboard')}>
-              Вернуться в личный кабинет
+      <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+        <Content style={{ padding: '40px 20px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Card style={{ maxWidth: 600, width: '100%', borderRadius: 20, textAlign: 'center' }}>
+            <Result
+              status="success"
+              title="Тест завершен!"
+              subTitle={`Вы успешно прошли ${config.title}. Результаты уже доступны в вашем личном кабинете.`}
+              extra={[
+                <Button 
+                  type="primary" 
+                  key="dashboard" 
+                  size="large" 
+                  icon={<HomeOutlined />}
+                  onClick={() => navigate(`/dashboard?sessionId=${sessionId}`)}
+                  style={{ borderRadius: 12, height: 45, background: '#4F958B', borderColor: '#4F958B' }}
+                >
+                  Вернуться в кабинет
             </Button>
-          </div>
+              ]}
+            />
         </Card>
-      </div>
+        </Content>
+      </Layout>
     );
   }
-
-  const interpretation = score !== null ? findInterpretation(test, score) : undefined;
 
   return (
-    <div style={{ maxWidth: 820, margin: '0 auto', padding: 16 }}>
-      <div style={{ marginBottom: 16 }}>
-        <Progress percent={progress} showInfo={false} strokeColor="#4F958B" />
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-          <Text type="secondary">
-            {completed ? 'Тест завершён' : `Вопрос ${currentIndex + 1} из ${total}`}
-          </Text>
-          <Button type="text" danger onClick={() => navigate('/dashboard')}>
-            Выйти
+    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+      <Content style={{ padding: '20px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Button 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => navigate(-1)}
+            type="text"
+          >
+            Вернуться назад
           </Button>
-        </div>
+
+          <Card style={{ borderRadius: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+            <div style={{ marginBottom: 30 }}>
+              <Text type="secondary" style={{ fontSize: 14 }}>{config.name}</Text>
+              <Title level={2} style={{ marginTop: 5, marginBottom: 20 }}>{config.title}</Title>
+              <Progress 
+                percent={progress} 
+                strokeColor="#4F958B" 
+                showInfo={false} 
+                style={{ marginBottom: 10 }}
+              />
+              <Text type="secondary">Вопрос {currentQuestionIndex + 1} из {config.questions.length}</Text>
       </div>
 
-      <Card style={{ borderRadius: 16, boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
-        <Title level={3} style={{ marginTop: 0 }}>
-          {test.name}
-        </Title>
-        <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-          {test.description}
-        </Text>
-
-        {!completed && currentQuestion && (
-          <>
-            <Title level={4} style={{ marginTop: 8 }}>
+            <div style={{ minHeight: 200 }}>
+              <Paragraph style={{ fontSize: 18, fontWeight: 500, marginBottom: 30 }}>
               {currentQuestion.text}
-            </Title>
+              </Paragraph>
 
-            {currentQuestion.type === 'single' && (
               <Radio.Group
-                value={typeof currentAnswer === 'number' ? currentAnswer : undefined}
-                onChange={(e) => setAnswer(currentQuestion.id, e.target.value)}
-                style={{ width: '100%', marginTop: 12 }}
+                onChange={(e) => handleAnswer(e.target.value)} 
+                value={answers[currentQuestion.id]}
+                style={{ width: '100%' }}
               >
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  {(currentQuestion.options || []).map(opt => (
-                    <Radio key={String(opt.id)} value={opt.value} style={{ width: '100%' }}>
-                      {opt.text}
-                    </Radio>
+                  {currentQuestion.options.map(option => (
+                    <Radio.Button 
+                      key={option.value} 
+                      value={option.value}
+                      style={{ 
+                        width: '100%', 
+                        height: 'auto', 
+                        padding: '12px 20px', 
+                        borderRadius: 12,
+                        marginBottom: 10,
+                        textAlign: 'left',
+                        whiteSpace: 'normal'
+                      }}
+                    >
+                      {option.label}
+                    </Radio.Button>
                   ))}
                 </Space>
               </Radio.Group>
-            )}
-
-            {currentQuestion.type === 'multiple' && (
-              <Checkbox.Group
-                value={Array.isArray(currentAnswer) ? currentAnswer : []}
-                onChange={(vals) => setAnswer(currentQuestion.id, vals as number[])}
-                style={{ width: '100%', marginTop: 12 }}
-              >
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  {(currentQuestion.options || []).map(opt => (
-                    <Checkbox key={String(opt.id)} value={opt.value}>
-                      {opt.text}
-                    </Checkbox>
-                  ))}
-                </Space>
-              </Checkbox.Group>
-            )}
-
-            {currentQuestion.type === 'scale' && (
-              <div style={{ marginTop: 12 }}>
-                <Slider
-                  min={currentQuestion.scaleConfig?.min ?? 0}
-                  max={currentQuestion.scaleConfig?.max ?? 3}
-                  value={typeof currentAnswer === 'number' ? currentAnswer : (currentQuestion.scaleConfig?.min ?? 0)}
-                  onChange={(v) => setAnswer(currentQuestion.id, v as number)}
-                />
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Text type="secondary">{currentQuestion.scaleConfig?.minLabel}</Text>
-                  <Text type="secondary">{currentQuestion.scaleConfig?.maxLabel}</Text>
-                </div>
               </div>
-            )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
+            <div style={{ marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
               <Button
                 icon={<ArrowLeftOutlined />}
-                onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
-                disabled={currentIndex === 0}
+                onClick={handleBack}
+                disabled={currentQuestionIndex === 0}
+                size="large"
+                style={{ borderRadius: 12, height: 45 }}
               >
                 Назад
               </Button>
-
               <Button
                 type="primary"
-                icon={currentIndex === total - 1 ? <BarChartOutlined /> : <ArrowRightOutlined />}
-                onClick={() => {
-                  if (currentIndex === total - 1) {
-                    handleSubmit();
-                  } else {
-                    setCurrentIndex(i => Math.min(total - 1, i + 1));
-                  }
+                onClick={handleNext}
+                loading={isSubmitting}
+                size="large"
+                style={{ 
+                  borderRadius: 12, 
+                  height: 45, 
+                  minWidth: 150,
+                  background: '#4F958B', 
+                  borderColor: '#4F958B' 
                 }}
-                disabled={!canGoNext()}
+                icon={isLastQuestion ? <CheckOutlined /> : <ArrowRightOutlined />}
               >
-                {currentIndex === total - 1 ? 'Завершить' : 'Далее'}
+                {isLastQuestion ? 'Завершить' : 'Далее'}
               </Button>
             </div>
-          </>
-        )}
-
-        {completed && (
-          <>
-            <Title level={4} style={{ marginTop: 8 }}>
-              Результат
-            </Title>
-            <div style={{ marginTop: 8 }}>
-              <Text>
-                Баллы: <b>{score ?? 0}</b>
-              </Text>
-              {interpretation && (
-                <div style={{ marginTop: 10 }}>
-                  <div
-                    style={{
-                      padding: 12,
-                      borderRadius: 12,
-                      background: '#f6ffed',
-                      border: '1px solid #b7eb8f'
-                    }}
-                  >
-                    <Text>{interpretation.text}</Text>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
-              <Button type="primary" onClick={() => setResultsModalOpen(true)}>
-                Смотреть результаты
-              </Button>
-              <Button icon={<ReloadOutlined />} onClick={restartTest} disabled={saving}>
-                Пройти снова
-              </Button>
-              <Button onClick={() => navigate('/dashboard')} disabled={saving}>
-                Вернуться в личный кабинет
-              </Button>
-            </div>
-
-            {saving && (
-              <div style={{ marginTop: 12 }}>
-                <Text type="secondary">Сохраняю результат…</Text>
-              </div>
-            )}
-          </>
-        )}
       </Card>
-
-      {score !== null && (
-        <TestResultsModal
-          open={resultsModalOpen}
-          onClose={() => setResultsModalOpen(false)}
-          test={test}
-          score={score}
-          answers={answers}
-        />
-      )}
-    </div>
+        </Space>
+      </Content>
+    </Layout>
   );
 };
 
 export default AdditionalTestPage;
-
-

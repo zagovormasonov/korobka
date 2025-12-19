@@ -1,160 +1,137 @@
-import React, { useMemo } from 'react';
-import { Modal, Typography, Progress, Tag, Divider } from 'antd';
-import { TestConfig, InterpretationRange, AnswerValue } from '../config/tests';
+import React from 'react';
+import { Modal, Typography, Progress, Tag, Space, Divider, Button, Card } from 'antd';
+import { 
+  CheckCircleOutlined, 
+  ExclamationCircleOutlined, 
+  WarningOutlined,
+  ReloadOutlined
+} from '@ant-design/icons';
+import { TestConfig, InterpretationRange } from '../config/tests/types';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
-function getMaxScoreFromRanges(ranges: InterpretationRange[]): number {
-  return ranges.reduce((max, r) => Math.max(max, r.max), 0);
-}
-
-function findRange(ranges: InterpretationRange[], score: number): InterpretationRange | undefined {
-  return ranges.find(r => score >= r.min && score <= r.max);
-}
-
-function severityLabel(sev: InterpretationRange['severity']) {
-  switch (sev) {
-    case 'low':
-      return { text: 'Низкий', color: 'green' as const };
-    case 'medium':
-      return { text: 'Умеренный', color: 'gold' as const };
-    case 'high':
-      return { text: 'Высокий', color: 'orange' as const };
-    case 'critical':
-      return { text: 'Критический', color: 'red' as const };
-    default:
-      return { text: '—', color: 'default' as const };
-  }
-}
-
-export type TestResultsModalProps = {
-  open: boolean;
-  onClose: () => void;
-  test: TestConfig;
+interface TestResultsModalProps {
+  visible: boolean;
+  onCancel: () => void;
+  config: TestConfig;
   score: number;
-  answers: Record<number, AnswerValue>;
-};
+  onRetry: () => void;
+}
 
-export const TestResultsModal: React.FC<TestResultsModalProps> = ({ open, onClose, test, score, answers }) => {
-  const maxScore = useMemo(() => getMaxScoreFromRanges(test.interpretations), [test.interpretations]);
-  const range = useMemo(() => findRange(test.interpretations, score), [test.interpretations, score]);
-  const sev = range ? severityLabel(range.severity) : null;
+const TestResultsModal: React.FC<TestResultsModalProps> = ({ 
+  visible, 
+  onCancel, 
+  config, 
+  score,
+  onRetry
+}) => {
+  const getInterpretation = (score: number): InterpretationRange | undefined => {
+    return config.interpretations.find(range => score >= range.min && score <= range.max);
+  };
 
-  const percent = maxScore > 0 ? Math.round((Math.min(score, maxScore) / maxScore) * 100) : 0;
+  const interpretation = getInterpretation(score);
+  
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'low': return '#52c41a';
+      case 'moderate': return '#faad14';
+      case 'high': return '#ff7a45';
+      case 'critical': return '#f5222d';
+      default: return '#d9d9d9';
+    }
+  };
 
-  const subscaleResults = useMemo(() => {
-    if (!test.subscales || test.subscales.length === 0) return [];
-    return test.subscales.map(sc => {
-      const value = sc.questionIds.reduce((sum, qid) => {
-        const v = answers[qid];
-        if (Array.isArray(v)) return sum + v.reduce((s, n) => s + Number(n || 0), 0);
-        return sum + Number(v || 0);
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'low': return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+      case 'moderate': return <ExclamationCircleOutlined style={{ color: '#faad14' }} />;
+      case 'high': return <WarningOutlined style={{ color: '#ff7a45' }} />;
+      case 'critical': return <WarningOutlined style={{ color: '#f5222d' }} />;
+      default: return null;
+    }
+  };
+
+  // Максимально возможный балл для шкалы
+  const maxPossibleScore = config.questions.reduce((sum, q) => {
+    const maxOption = Math.max(...q.options.map(o => o.value));
+    return sum + maxOption;
       }, 0);
-      const r = findRange(sc.ranges, value);
-      return { ...sc, value, range: r };
-    });
-  }, [test.subscales, answers]);
+
+  const percentage = Math.round((score / maxPossibleScore) * 100);
 
   return (
     <Modal
-      open={open}
-      onCancel={onClose}
-      footer={null}
+      open={visible}
+      onCancel={onCancel}
+      footer={[
+        <Button key="retry" icon={<ReloadOutlined />} onClick={onRetry}>
+          Пройти заново
+        </Button>,
+        <Button key="close" type="primary" onClick={onCancel} style={{ background: '#4F958B', borderColor: '#4F958B' }}>
+          Понятно
+        </Button>
+      ]}
+      width={600}
+      borderRadius={20}
+      title={null}
       centered
-      width={720}
-      styles={{
-        content: { borderRadius: 20, padding: 24 },
-        body: { paddingTop: 8 }
-      }}
-      title={
-        <div>
-          <Title level={4} style={{ margin: 0 }}>
-            Результаты: {test.name}
-          </Title>
-          <Text type="secondary">{test.description}</Text>
-        </div>
-      }
     >
-      <div style={{ marginTop: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <Text type="secondary">Итоговый балл</Text>
-            <div>
-              <span style={{ fontSize: 34, fontWeight: 700, color: '#2C3E50' }}>{score}</span>
-              <span style={{ color: '#7B8794' }}> / {maxScore}</span>
-            </div>
-          </div>
-          {sev && (
-            <Tag color={sev.color} style={{ fontSize: 14, padding: '4px 10px', borderRadius: 999 }}>
-              {sev.text}
-            </Tag>
-          )}
-        </div>
-
-        <div style={{ marginTop: 12 }}>
+      <div style={{ textAlign: 'center', paddingTop: 20 }}>
+        <Text type="secondary" style={{ fontSize: 14 }}>{config.name}</Text>
+        <Title level={3} style={{ marginTop: 5, marginBottom: 30 }}>{config.title}</Title>
+        
+        <div style={{ marginBottom: 40 }}>
           <Progress
-            percent={percent}
-            showInfo={false}
-            strokeColor={range?.color || '#4F958B'}
-            trailColor="rgba(0,0,0,0.06)"
-            size={[720, 10]}
+            type="dashboard"
+            percent={percentage}
+            strokeColor={getSeverityColor(interpretation?.severity || 'low')}
+            format={() => (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 32, fontWeight: 'bold' }}>{score}</span>
+                <span style={{ fontSize: 12, opacity: 0.5 }}>баллов</span>
+              </div>
+            )}
+            width={160}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-            <Text type="secondary">0</Text>
-            <Text type="secondary">{maxScore}</Text>
-          </div>
         </div>
 
-        {range && (
-          <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: '#F6FFED', border: '1px solid #B7EB8F' }}>
-            <Text style={{ color: '#2C3E50', lineHeight: 1.55 }}>{range.text}</Text>
+        {interpretation && (
+          <Card 
+            style={{ 
+              background: `${getSeverityColor(interpretation.severity)}10`, 
+              border: `1px solid ${getSeverityColor(interpretation.severity)}30`,
+              borderRadius: 16,
+              textAlign: 'left'
+            }}
+          >
+            <Space align="start">
+              {getSeverityIcon(interpretation.severity)}
+              <div>
+                <Title level={5} style={{ margin: 0 }}>{interpretation.label}</Title>
+                <Paragraph style={{ marginTop: 10, marginBottom: 0 }}>
+                  {interpretation.description}
+                </Paragraph>
           </div>
+            </Space>
+          </Card>
         )}
 
-        {subscaleResults.length > 0 && (
-          <>
-            <Divider style={{ margin: '18px 0' }} />
-            <Title level={5} style={{ marginBottom: 12 }}>
-              Подшкалы
-            </Title>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-              {subscaleResults.map(sc => {
-                const max = getMaxScoreFromRanges(sc.ranges);
-                const pct = max > 0 ? Math.round((Math.min(sc.value, max) / max) * 100) : 0;
-                return (
-                  <div key={sc.id} style={{ padding: 14, borderRadius: 14, border: '1px solid rgba(0,0,0,0.06)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                      <div>
-                        <Text style={{ fontWeight: 600 }}>{sc.name}</Text>
-                        <div style={{ marginTop: 4 }}>
-                          <Text type="secondary">
-                            {sc.value} / {max}
+        <Divider />
+        
+        <div style={{ textAlign: 'left' }}>
+          <Title level={5}>О тесте</Title>
+          <Paragraph type="secondary">
+            {config.description}
+          </Paragraph>
+          {config.source && (
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Источник: <a href={config.source.url} target="_blank" rel="noopener noreferrer">{config.source.name}</a>
                           </Text>
-                        </div>
-                      </div>
-                      {sc.range && (
-                        <Tag color={severityLabel(sc.range.severity).color} style={{ borderRadius: 999 }}>
-                          {severityLabel(sc.range.severity).text}
-                        </Tag>
-                      )}
-                    </div>
-                    <div style={{ marginTop: 10 }}>
-                      <Progress percent={pct} showInfo={false} strokeColor={sc.range?.color || '#4F958B'} />
-                    </div>
-                    {sc.range?.text && (
-                      <div style={{ marginTop: 10 }}>
-                        <Text type="secondary">{sc.range.text}</Text>
-                      </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          </>
-        )}
       </div>
     </Modal>
   );
 };
 
-
+export default TestResultsModal;

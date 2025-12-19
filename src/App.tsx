@@ -98,7 +98,6 @@ function App() {
             <Route path="/test" element={<TestPage />} />
             <Route path="/test-info" element={<TestInfoPage />} />
             <Route path="/bpd_test" element={<BpdTestPage />} />
-            <Route path="/additional-test/:testId" element={<AdditionalTestPage />} />
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/payment-success" element={<PaymentSuccessPage />} />
             <Route path="/registration" element={<RegistrationPage />} />
@@ -113,6 +112,7 @@ function App() {
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/feedback-chat" element={<FeedbackChatPage />} />
             <Route path="/cms" element={<CMSPage />} />
+            <Route path="/test/:testId" element={<AdditionalTestPage />} />
           </Routes>
         </div>
       </Router>

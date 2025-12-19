@@ -6,7 +6,11 @@ import {
   Input, 
   Form, 
   message,
-  Space
+  Space,
+  Progress,
+  Divider,
+  Tag,
+  Tooltip
 } from 'antd'; 
 import { apiRequest } from '../config/api'; 
 import { 
@@ -14,8 +18,13 @@ import {
   UserOutlined, 
   FileTextOutlined, 
   MessageOutlined,
-  CheckOutlined
+  CheckOutlined,
+  EyeOutlined,
+  ReloadOutlined,
+  ArrowRightOutlined
 } from '@ant-design/icons';
+import { getTestConfig } from '../config/tests';
+import TestResultsModal from '../components/TestResultsModal';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
 import TelegramButton from '../components/TelegramButton';
@@ -652,26 +661,26 @@ const PersonalPlanPage: React.FC = () => {
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
             textAlign: 'center'
           }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              backgroundColor: '#E8F5F3',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px auto'
-            }}>
-              <UserOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
-            </div>
-            <Title level={4} style={{ 
-              color: '#2C3E50', 
+              <div style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                backgroundColor: '#E8F5F3',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px auto'
+              }}>
+                <UserOutlined style={{ fontSize: '24px', color: '#4F958B' }} />
+              </div>
+              <Title level={4} style={{ 
+                color: '#2C3E50', 
               marginBottom: '15px',
-              fontSize: '18px',
-              fontWeight: '600'
-            }}>
-              Подбор психолога
-            </Title>
+                fontSize: '18px',
+                fontWeight: '600'
+              }}>
+                Подбор психолога
+              </Title>
             <Text style={{ 
               color: '#7B8794', 
               fontSize: '14px',
@@ -681,22 +690,22 @@ const PersonalPlanPage: React.FC = () => {
             }}>
               Оставь заявку, и мы подберём психологов под твою ситуацию и бюджет
             </Text>
-            <Button 
-              type="primary" 
+              <Button 
+                type="primary" 
               onClick={() => window.open('https://forms.yandex.ru/u/693b277feb614619417efad0', '_blank')}
-              style={{
-                width: '100%',
-                height: '45px',
-                borderRadius: '22px',
+                style={{
+                  width: '100%',
+                  height: '45px',
+                  borderRadius: '22px',
                 backgroundColor: '#4F958B',
                 borderColor: '#4F958B',
-                color: '#ffffff',
-                fontSize: '16px',
+                  color: '#ffffff',
+                  fontSize: '16px',
                 fontWeight: '500'
-              }}
-            >
+                }}
+              >
               Оставить заявку
-            </Button>
+              </Button>
           </div>
 
           {/* Session Preparation Card */}
