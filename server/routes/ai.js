@@ -743,11 +743,15 @@ router.post('/personal-plan', async (req, res) => {
     // Формируем результаты дополнительных тестов
     let secondaryTestResults = 'Дополнительные тесты не пройдены';
     if (additionalTests && additionalTests.length > 0) {
-      secondaryTestResults = additionalTests.map(test =>
-        `${test.test_type}: ${test.answers}`
-      ).join('; ');
+      secondaryTestResults = additionalTests.map(test => {
+        // Правильно сериализуем answers (может быть объект, массив или строка)
+        const answersStr = typeof test.answers === 'object' && test.answers !== null
+          ? JSON.stringify(test.answers, null, 2)
+          : String(test.answers || 'нет данных');
+        return `${test.test_type}:\n${answersStr}`;
+      }).join('\n\n---\n\n');
     }
-    console.log('📋 [PERSONAL-PLAN] Результаты доп. тестов:', secondaryTestResults.substring(0, 100) + '...');
+    console.log('📋 [PERSONAL-PLAN] Результаты доп. тестов:', secondaryTestResults.substring(0, 200) + '...');
 
     // Читаем промпт из файла
     console.log('📝 [PERSONAL-PLAN] Читаем шаблон промпта...');
@@ -864,12 +868,16 @@ router.post('/session-preparation', async (req, res) => {
     // Формируем результаты дополнительных тестов
     let secondaryTestResults = 'Дополнительные тесты не пройдены';
     if (additionalTests && additionalTests.length > 0) {
-      secondaryTestResults = additionalTests.map(test => 
-        `${test.test_type}: ${test.answers}`
-      ).join('; ');
+      secondaryTestResults = additionalTests.map(test => {
+        // Правильно сериализуем answers (может быть объект, массив или строка)
+        const answersStr = typeof test.answers === 'object' && test.answers !== null
+          ? JSON.stringify(test.answers, null, 2)
+          : String(test.answers || 'нет данных');
+        return `${test.test_type}:\n${answersStr}`;
+      }).join('\n\n---\n\n');
     }
     
-    console.log('📋 [SESSION-PREPARATION] Результаты доп. тестов:', secondaryTestResults.substring(0, 100) + '...');
+    console.log('📋 [SESSION-PREPARATION] Результаты доп. тестов:', secondaryTestResults.substring(0, 200) + '...');
 
     // Определяем пол пользователя из ответов
     const genderAnswer = primaryAnswers.find(a => a.questionId === 1);
@@ -1409,9 +1417,13 @@ router.post('/psychologist-pdf', async (req, res) => {
     // Формируем результаты дополнительных тестов
     let additionalTestResults = 'Дополнительные тесты не пройдены';
     if (additionalTests && additionalTests.length > 0) {
-      additionalTestResults = additionalTests.map(test => 
-        `${test.test_type}: ${test.answers}`
-      ).join('\n');
+      additionalTestResults = additionalTests.map(test => {
+        // Правильно сериализуем answers (может быть объект, массив или строка)
+        const answersStr = typeof test.answers === 'object' && test.answers !== null
+          ? JSON.stringify(test.answers, null, 2)
+          : String(test.answers || 'нет данных');
+        return `${test.test_type}:\n${answersStr}`;
+      }).join('\n\n---\n\n');
     }
 
     // Определяем пол пользователя из ответов

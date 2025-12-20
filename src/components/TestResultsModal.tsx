@@ -55,7 +55,7 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
   const maxPossibleScore = config.questions.reduce((sum, q) => {
     const maxOption = Math.max(...q.options.map(o => o.value));
     return sum + (isNaN(maxOption) ? 0 : maxOption);
-  }, 0);
+      }, 0);
 
   const percentage = maxPossibleScore > 0 ? Math.round((score / maxPossibleScore) * 100) : 0;
 
