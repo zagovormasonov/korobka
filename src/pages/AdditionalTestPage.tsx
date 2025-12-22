@@ -448,13 +448,13 @@ const AdditionalTestPage: React.FC = () => {
               {renderQuestion()}
               </div>
 
-            <div style={{ marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ marginTop: 40, display: 'flex', justifyContent: 'space-between', gap: '15px' }}>
               <Button
                 icon={<ArrowLeftOutlined />}
                 onClick={handleBack}
                 disabled={currentQuestionIndex === 0}
                 size="large"
-                style={{ borderRadius: 12, height: 45 }}
+                style={{ borderRadius: 12, height: 45, flex: '0 0 auto' }}
               >
                 Назад
               </Button>
@@ -467,6 +467,7 @@ const AdditionalTestPage: React.FC = () => {
                   borderRadius: 12, 
                   height: 45, 
                   minWidth: 150,
+                  flex: '1 1 auto',
                   background: '#4F958B', 
                   borderColor: '#4F958B' 
                 }}
