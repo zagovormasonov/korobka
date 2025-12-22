@@ -1863,23 +1863,6 @@ const DashboardPage: React.FC = () => {
             {showTests && !loadingTestResults && (
               <>
                 <div style={{ 
-                  marginBottom: '30px', 
-                  padding: '20px', 
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)', 
-                  borderRadius: '15px',
-                  textAlign: 'center'
-                }}>
-                  <Text style={{ 
-                    color: '#7B8794', 
-                    fontSize: '16px', 
-                    fontWeight: '500',
-                    lineHeight: '1.5'
-                  }}>
-                    Перейди по ссылке каждого теста, пройди тест на сайте партнёра, вернись сюда в личный кабинет и впиши результаты теста в поле ввода результатов. Когда результаты всех тестов будут занесены, мы составим для тебя персональный план
-                  </Text>
-                </div>
-                
-                <div style={{ 
                   display: 'grid', 
                   gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
                   gap: '20px',
