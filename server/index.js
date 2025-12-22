@@ -22,6 +22,7 @@ import cmsRoutes from './routes/cms.js';
 import analyticsRoutes from './routes/analytics.js';
 import questionnaireGenerationRoutes from './routes/questionnaire-generation.js';
 import budgetAlertsRoutes from './routes/budget-alerts.js';
+import generateVariantsRoutes from './routes/generate-variants.js';
 
 // Получаем путь к корневой директории проекта
 const __filename = fileURLToPath(import.meta.url);
@@ -166,6 +167,7 @@ app.use('/api/telegram', telegramRoutes);
 app.use('/api/telegram-notifications', telegramNotificationsRoutes);
 app.use('/api/yandex-forms', yandexFormsRoutes);
 app.use('/api/budget-alerts', budgetAlertsRoutes);
+app.use('/api', generateVariantsRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/pdf-html', pdfHtmlRoutes);
 app.use('/api/dashboard', dashboardRoutes);
