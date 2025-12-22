@@ -423,6 +423,22 @@ const AdditionalTestPage: React.FC = () => {
             <div style={{ marginBottom: 30 }}>
               <Text type="secondary" style={{ fontSize: 14 }}>{config.name}</Text>
               <Title level={2} style={{ marginTop: 5, marginBottom: 20 }}>{config.title}</Title>
+              
+              {/* Показываем описание теста только на первом вопросе */}
+              {currentQuestionIndex === 0 && config.description && (
+                <div style={{ 
+                  marginBottom: 20, 
+                  padding: '15px', 
+                  backgroundColor: '#f0f9f7', 
+                  borderRadius: 12,
+                  border: '1px solid #4F958B30'
+                }}>
+                  <Paragraph style={{ margin: 0, fontSize: 14, color: '#2C3E50', lineHeight: 1.6 }}>
+                    {getText(config.description, gender)}
+                  </Paragraph>
+                </div>
+              )}
+              
               <Progress 
                 percent={progress} 
                 strokeColor="#4F958B" 

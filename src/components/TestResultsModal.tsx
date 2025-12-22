@@ -59,43 +59,79 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
 
   const percentage = maxPossibleScore > 0 ? Math.round((score / maxPossibleScore) * 100) : 0;
 
+  // Определяем, мобильное ли устройство
+  const [isMobile, setIsMobile] = React.useState(false);
+  
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <Modal
       open={visible}
       onCancel={onCancel}
       footer={[
-        <Button key="retry" icon={<ReloadOutlined />} onClick={onRetry}>
+        <Button 
+          key="retry" 
+          icon={<ReloadOutlined />} 
+          onClick={onRetry}
+          style={{ 
+            fontSize: isMobile ? '14px' : '16px',
+            height: isMobile ? '40px' : 'auto',
+            padding: isMobile ? '0 12px' : undefined
+          }}
+        >
           Пройти заново
         </Button>,
-        <Button key="close" type="primary" onClick={onCancel} style={{ background: '#4F958B', borderColor: '#4F958B' }}>
+        <Button 
+          key="close" 
+          type="primary" 
+          onClick={onCancel} 
+          style={{ 
+            background: '#4F958B', 
+            borderColor: '#4F958B',
+            fontSize: isMobile ? '14px' : '16px',
+            height: isMobile ? '40px' : 'auto',
+            padding: isMobile ? '0 12px' : undefined
+          }}
+        >
           Понятно
         </Button>
       ]}
-      width={600}
+      width={isMobile ? '95%' : 600}
       title={null}
       centered
       styles={{
         content: {
-          borderRadius: 20
+          borderRadius: 20,
+          padding: isMobile ? '20px' : '24px'
+        },
+        body: {
+          padding: isMobile ? '10px' : '20px'
         }
       }}
     >
-      <div style={{ textAlign: 'center', paddingTop: 20 }}>
-        <Text type="secondary" style={{ fontSize: 14 }}>{config.name}</Text>
-        <Title level={3} style={{ marginTop: 5, marginBottom: 30 }}>{config.title}</Title>
+      <div style={{ textAlign: 'center', paddingTop: isMobile ? 10 : 20 }}>
+        <Text type="secondary" style={{ fontSize: isMobile ? 12 : 14 }}>{config.name}</Text>
+        <Title level={3} style={{ marginTop: 5, marginBottom: isMobile ? 20 : 30, fontSize: isMobile ? '20px' : undefined }}>{config.title}</Title>
         
-        <div style={{ marginBottom: 40 }}>
+        <div style={{ marginBottom: isMobile ? 25 : 40 }}>
           <Progress
             type="dashboard"
             percent={percentage}
             strokeColor={getSeverityColor(interpretation?.severity || 'low')}
             format={() => (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 32, fontWeight: 'bold' }}>{score}</span>
-                <span style={{ fontSize: 12, opacity: 0.5 }}>баллов</span>
+                <span style={{ fontSize: isMobile ? 24 : 32, fontWeight: 'bold' }}>{score}</span>
+                <span style={{ fontSize: isMobile ? 10 : 12, opacity: 0.5 }}>баллов</span>
               </div>
             )}
-            width={160}
+            width={isMobile ? 120 : 160}
           />
         </div>
 
@@ -105,14 +141,15 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
               background: `${getSeverityColor(interpretation.severity)}10`, 
               border: `1px solid ${getSeverityColor(interpretation.severity)}30`,
               borderRadius: 16,
-              textAlign: 'left'
+              textAlign: 'left',
+              marginBottom: isMobile ? 15 : 0
             }}
           >
-            <Space align="start">
+            <Space align="start" size={isMobile ? 'small' : 'middle'}>
               {getSeverityIcon(interpretation.severity)}
               <div>
-                <Title level={5} style={{ margin: 0 }}>{interpretation.label}</Title>
-                <Paragraph style={{ marginTop: 10, marginBottom: 0 }}>
+                <Title level={5} style={{ margin: 0, fontSize: isMobile ? '16px' : undefined }}>{interpretation.label}</Title>
+                <Paragraph style={{ marginTop: 10, marginBottom: 0, fontSize: isMobile ? '14px' : undefined }}>
                   {interpretation.description}
                 </Paragraph>
           </div>
@@ -120,15 +157,15 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
           </Card>
         )}
 
-        <Divider />
+        <Divider style={{ margin: isMobile ? '15px 0' : '20px 0' }} />
         
         <div style={{ textAlign: 'left' }}>
-          <Title level={5}>О тесте</Title>
-          <Paragraph type="secondary">
+          <Title level={5} style={{ fontSize: isMobile ? '16px' : undefined }}>О тесте</Title>
+          <Paragraph type="secondary" style={{ fontSize: isMobile ? '13px' : undefined }}>
             {config.description}
           </Paragraph>
           {config.source && (
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text type="secondary" style={{ fontSize: isMobile ? 11 : 12 }}>
               Источник: <a href={config.source.url} target="_blank" rel="noopener noreferrer">{config.source.name}</a>
                           </Text>
                     )}
