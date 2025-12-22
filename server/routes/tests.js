@@ -623,16 +623,16 @@ router.post('/additional/save', async (req, res) => {
       result = data;
     } else {
       const { data, error } = await supabase
-        .from('additional_test_results')
-        .insert({
-          session_id: sessionId,
-          test_type: testName,
-          test_url: testUrl,
+      .from('additional_test_results')
+      .insert({
+        session_id: sessionId,
+        test_type: testName,
+        test_url: testUrl,
           answers: answers || testResult
-        })
-        .select()
-        .single();
-      if (error) throw error;
+      })
+      .select()
+      .single();
+    if (error) throw error;
       result = data;
     }
 
