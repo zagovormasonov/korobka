@@ -303,31 +303,23 @@ const AdditionalTestPage: React.FC = () => {
             style={{ width: '100%' }}
           >
             <Space direction="vertical" style={{ width: '100%' }}>
-              {currentQuestion.options.map(option => {
-                const isSelected = answers[currentQuestion.id] === option.value;
-                return (
-                  <Radio.Button 
-                    key={option.value} 
-                    value={option.value}
-                    style={{ 
-                      width: '100%', 
-                      height: 'auto', 
-                      padding: '12px 20px', 
-                      borderRadius: 12,
-                      marginBottom: 10,
-                      textAlign: 'left',
-                      whiteSpace: 'normal',
-                      backgroundColor: isSelected ? '#4F958B' : 'white',
-                      borderColor: isSelected ? '#4F958B' : '#d9d9d9',
-                      color: isSelected ? 'white' : '#2C3E50',
-                      fontWeight: isSelected ? '500' : '400',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {getText(option.label, gender)}
-                  </Radio.Button>
-                );
-              })}
+              {currentQuestion.options.map(option => (
+                <Radio.Button 
+                  key={option.value} 
+                  value={option.value}
+                  style={{ 
+                    width: '100%', 
+                    height: 'auto', 
+                    padding: '12px 20px', 
+                    borderRadius: 12,
+                    marginBottom: 10,
+                    textAlign: 'left',
+                    whiteSpace: 'normal'
+                  }}
+                >
+                  {getText(option.label, gender)}
+                </Radio.Button>
+              ))}
             </Space>
           </Radio.Group>
         );
@@ -454,7 +446,7 @@ const AdditionalTestPage: React.FC = () => {
                 onClick={handleBack}
                 disabled={currentQuestionIndex === 0}
                 size="large"
-                style={{ borderRadius: 12, height: 45, flex: '0 0 auto' }}
+                style={{ borderRadius: 12, height: 45, flex: 1 }}
               >
                 Назад
               </Button>
@@ -467,7 +459,7 @@ const AdditionalTestPage: React.FC = () => {
                   borderRadius: 12, 
                   height: 45, 
                   minWidth: 150,
-                  flex: '1 1 auto',
+                  flex: 1,
                   background: '#4F958B', 
                   borderColor: '#4F958B' 
                 }}
