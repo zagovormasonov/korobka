@@ -228,6 +228,9 @@ const AdditionalTestPage: React.FC = () => {
         localStorage.removeItem(`test_progress_${testId}`);
         setIsCompleted(true);
         setShowResultsModal(true); // Показываем модалку с результатами
+        
+        // Сохраняем флаг обновления результатов для синхронизации с dashboard
+        localStorage.setItem('test_results_updated', Date.now().toString());
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('❌ [HANDLE-SUBMIT] Ошибка ответа сервера:', response.status, errorData);
