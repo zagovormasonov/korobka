@@ -470,6 +470,20 @@ const DashboardPage: React.FC = () => {
       generateMascotMessage();
       // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
       
+      // Проверяем URL параметр для принудительной перезагрузки
+      const forceRefresh = searchParams.get('refresh') === 'true';
+      if (forceRefresh) {
+        console.log('🔄 [DASHBOARD] Обнаружен параметр refresh=true, принудительно перезагружаем результаты');
+        // Удаляем параметр из URL
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('refresh');
+        navigate(`/dashboard?${newSearchParams.toString()}`, { replace: true });
+        // Перезагружаем результаты после небольшой задержки
+        setTimeout(() => {
+          fetchAdditionalTestResults();
+        }, 500);
+      }
+      
       // Проверяем, были ли обновлены результаты тестов перед загрузкой страницы
       const checkInitialUpdate = () => {
         const lastUpdate = localStorage.getItem('test_results_updated');
@@ -483,6 +497,9 @@ const DashboardPage: React.FC = () => {
               fetchAdditionalTestResults();
               localStorage.removeItem('test_results_updated');
             }, 1000); // Небольшая задержка, чтобы recommendedTests успели загрузиться
+          } else {
+            // Удаляем старый флаг
+            localStorage.removeItem('test_results_updated');
           }
         }
       };
