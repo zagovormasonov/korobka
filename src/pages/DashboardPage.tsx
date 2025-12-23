@@ -934,24 +934,32 @@ const DashboardPage: React.FC = () => {
           // Ищем тест по test_type (это config.id, например 'bipolar' для HCL-32)
           const testConfig = getTestConfig(result.test_type);
           if (testConfig) {
-            // Находим тест в recommendedTests по config.id
-            // Сначала пытаемся найти по id из конфига
+            // Находим тест в recommendedTests по URL из конфига
+            // recommendedTests содержит объекты с полями id, name, url
+            // testConfig содержит source.url, который должен совпадать с t.url
             const test = recommendedTests.find(t => {
-              // Проверяем, совпадает ли id теста в recommendedTests с id конфига
+              // Сначала проверяем по URL (самый надежный способ)
+              if (testConfig.source?.url && t.url && testConfig.source.url === t.url) {
+                return true;
+              }
+              // Fallback: проверяем по name через getTestConfig
               const tConfig = getTestConfig(t.name);
               if (tConfig && tConfig.id === result.test_type) {
                 return true;
               }
-              // Fallback: проверяем по name, если id не совпал
-              return t.name === testConfig.name;
+              // Еще один fallback: проверяем, содержит ли name теста название из конфига
+              if (t.name && testConfig.name && t.name.toLowerCase().includes(testConfig.name.toLowerCase())) {
+                return true;
+              }
+              return false;
             });
             
             if (test) {
               resultsMap[test.id] = result.answers;
-              console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (test_type: ${result.test_type}, config.id: ${testConfig.id})`);
+              console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (test_type: ${result.test_type}, config.id: ${testConfig.id}, config.name: ${testConfig.name})`);
             } else {
-              console.warn(`⚠️ [FETCH RESULTS] Тест с test_type "${result.test_type}" (config.id: ${testConfig.id}, config.name: ${testConfig.name}) найден в конфиге, но не найден в recommendedTests`);
-              console.warn(`⚠️ [FETCH RESULTS] Доступные тесты в recommendedTests:`, recommendedTests.map(t => ({ id: t.id, name: t.name })));
+              console.warn(`⚠️ [FETCH RESULTS] Тест с test_type "${result.test_type}" (config.id: ${testConfig.id}, config.name: ${testConfig.name}, config.url: ${testConfig.source?.url}) найден в конфиге, но не найден в recommendedTests`);
+              console.warn(`⚠️ [FETCH RESULTS] Доступные тесты в recommendedTests:`, recommendedTests.map(t => ({ id: t.id, name: t.name, url: t.url })));
             }
           } else {
             // Fallback: пытаемся найти по старому способу (по name)
@@ -961,7 +969,7 @@ const DashboardPage: React.FC = () => {
               console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (старый формат)`);
             } else {
               console.warn(`⚠️ [FETCH RESULTS] Не найден тест с test_type "${result.test_type}"`);
-              console.warn(`⚠️ [FETCH RESULTS] Доступные тесты в recommendedTests:`, recommendedTests.map(t => ({ id: t.id, name: t.name })));
+              console.warn(`⚠️ [FETCH RESULTS] Доступные тесты в recommendedTests:`, recommendedTests.map(t => ({ id: t.id, name: t.name, url: t.url })));
             }
           }
         });
