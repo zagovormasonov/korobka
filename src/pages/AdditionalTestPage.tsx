@@ -213,15 +213,15 @@ const AdditionalTestPage: React.FC = () => {
       }
       
       const response = await apiRequest('api/tests/additional/save', {
-        method: 'POST',
-        body: JSON.stringify({
+          method: 'POST',
+          body: JSON.stringify({
           sessionId,
           testName: config.id, // Используем config.id вместо config.name для правильного сопоставления
           testUrl: config.source?.url || '',
           testResult: score,
           answers: answers
-        })
-      });
+          })
+        });
 
       if (response.ok) {
         localStorage.removeItem(`test_progress_${testId}`);
@@ -398,31 +398,29 @@ const AdditionalTestPage: React.FC = () => {
                       fontWeight: '600'
                     }}
                   >
-                    📊 Смотреть результаты и интерпретацию
+                    📊 Результаты
                   </Button>
-                  <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                    <Button 
-                      size="large" 
-                      icon={<ReloadOutlined />}
-                      onClick={() => {
-                        setAnswers({});
-                        setCurrentQuestionIndex(0);
-                        setIsCompleted(false);
-                        setShowResultsModal(false);
-                      }}
-                      style={{ borderRadius: 12, height: 45, flex: 1 }}
-                    >
-                      Пройти заново
-                    </Button>
-                    <Button 
-                      size="large" 
-                      icon={<HomeOutlined />}
-                      onClick={() => navigate(isDemoSession ? '/test-of-the-tests' : `/dashboard?sessionId=${sessionId}`)}
-                      style={{ borderRadius: 12, height: 45, flex: 1 }}
-                    >
-                      {isDemoSession ? 'К списку тестов' : 'В кабинет'}
-                    </Button>
-                  </div>
+                  <Button 
+                    size="large" 
+                    icon={<ReloadOutlined />}
+                    onClick={() => {
+                      setAnswers({});
+                      setCurrentQuestionIndex(0);
+                      setIsCompleted(false);
+                      setShowResultsModal(false);
+                    }}
+                    style={{ borderRadius: 12, height: 45, width: '100%' }}
+                  >
+                    Пройти заново
+                  </Button>
+                  <Button 
+                    size="large" 
+                    icon={<HomeOutlined />}
+                    onClick={() => navigate(isDemoSession ? '/test-of-the-tests' : `/dashboard?sessionId=${sessionId}`)}
+                    style={{ borderRadius: 12, height: 45, width: '100%' }}
+                  >
+                    {isDemoSession ? 'К списку тестов' : 'В кабинет'}
+                  </Button>
                 </Space>
               }
             />
