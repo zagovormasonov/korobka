@@ -24,6 +24,7 @@ import questionnaireGenerationRoutes from './routes/questionnaire-generation.js'
 import budgetAlertsRoutes from './routes/budget-alerts.js';
 import generateVariantsRoutes from './routes/generate-variants.js';
 import symptomsRoutes from './routes/symptoms.js';
+import renderDeployRoutes from './routes/render-deploy.js';
 
 // Получаем путь к корневой директории проекта
 const __filename = fileURLToPath(import.meta.url);
@@ -168,6 +169,7 @@ app.use('/api/telegram', telegramRoutes);
 app.use('/api/telegram-notifications', telegramNotificationsRoutes);
 app.use('/api/yandex-forms', yandexFormsRoutes);
 app.use('/api/budget-alerts', budgetAlertsRoutes);
+app.use('/api/render-deploy', renderDeployRoutes);
 app.use('/api', generateVariantsRoutes);
 app.use('/api', symptomsRoutes);
 app.use('/api/pdf', pdfRoutes);
