@@ -2362,7 +2362,8 @@ const DashboardPage: React.FC = () => {
                             <Button
                               onClick={() => {
                                 try {
-                                  showResults(test);
+                                  // Передаем testConfigId для более точного поиска конфига
+                                  showResults({ ...test, testConfigId });
                                 } catch (error) {
                                   console.error('❌ [RENDER] Ошибка при показе результатов:', error);
                                   message.error('Ошибка при открытии результатов');
