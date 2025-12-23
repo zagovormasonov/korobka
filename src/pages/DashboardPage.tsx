@@ -2083,7 +2083,7 @@ const DashboardPage: React.FC = () => {
                         {!testResults[test.id] ? (
                         <Button
                             type="primary"
-                            onClick={() => navigate(`/test/${getTestConfig(test.name)?.id || test.id}?sessionId=${authData?.sessionId}`)}
+                            onClick={() => navigate(`/test/${testConfigId}?sessionId=${authData?.sessionId || ''}`)}
                             style={{
                               flex: 1,
                               height: '40px',
@@ -2100,7 +2100,14 @@ const DashboardPage: React.FC = () => {
                         ) : (
                           <>
                             <Button
-                              onClick={() => showResults(test)}
+                              onClick={() => {
+                                try {
+                                  showResults(test);
+                                } catch (error) {
+                                  console.error('❌ [RENDER] Ошибка при показе результатов:', error);
+                                  message.error('Ошибка при открытии результатов');
+                                }
+                              }}
                           style={{
                             flex: 1,
                             height: '40px',
@@ -2115,7 +2122,7 @@ const DashboardPage: React.FC = () => {
                               Результаты
                         </Button>
                         <Button
-                              onClick={() => navigate(`/test/${getTestConfig(test.name)?.id || test.id}?sessionId=${authData?.sessionId}`)}
+                              onClick={() => navigate(`/test/${testConfigId}?sessionId=${authData?.sessionId || ''}`)}
                           style={{
                             flex: 1,
                             height: '40px',
