@@ -162,7 +162,7 @@ const DashboardPage: React.FC = () => {
   const [recommendedTests, setRecommendedTests] = useState<any[]>([]);
   const [showTests, setShowTests] = useState(false);
   const [allTestsCompleted, setAllTestsCompleted] = useState(false);
-  const [testResults, setTestResults] = useState<{[key: number]: string}>({});
+  const [testResults, setTestResults] = useState<{[key: number]: Record<number, number | number[]> | string}>({});
   const [savingResults, setSavingResults] = useState<{[key: number]: boolean}>({});
   const completionButtonRef = useRef<HTMLDivElement>(null);
   
@@ -969,7 +969,7 @@ const DashboardPage: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         // Загружаем существующие результаты
-        const resultsMap: {[key: number]: string} = {};
+        const resultsMap: {[key: number]: Record<number, number | number[]> | string} = {};
         
         // Проверяем, что recommendedTests загружены
         if (!recommendedTests || recommendedTests.length === 0) {
@@ -1029,21 +1029,25 @@ const DashboardPage: React.FC = () => {
               }
               
               if (test && test.id) {
-                // Преобразуем answers в строку, если это объект
-                let answersStr: string;
+                // Сохраняем answers как объект (не преобразуем в строку)
+                let answersObj: Record<number, number | number[]>;
                 if (typeof result.answers === 'string') {
-                  answersStr = result.answers;
-                } else if (typeof result.answers === 'object' && result.answers !== null) {
-                  // Если это объект (JSONB), преобразуем в строку
                   try {
-                    answersStr = JSON.stringify(result.answers);
+                    answersObj = JSON.parse(result.answers);
                   } catch (e) {
-                    answersStr = String(result.answers);
+                    console.warn('⚠️ [FETCH RESULTS] Не удалось распарсить answers как JSON:', result.answers);
+                    // Если не JSON, пропускаем этот результат
+                    return;
                   }
+                } else if (typeof result.answers === 'object' && result.answers !== null) {
+                  answersObj = result.answers;
                 } else {
-                  answersStr = String(result.answers || '');
+                  console.warn('⚠️ [FETCH RESULTS] Неверный формат answers:', result.answers);
+                  return;
                 }
-                resultsMap[test.id] = answersStr;
+                
+                // Сохраняем объект answers (не строку)
+                resultsMap[test.id] = answersObj;
                 console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (test_type: ${result.test_type}, config.id: ${testConfig.id}, config.name: ${testConfig.name})`);
               } else {
                 console.warn(`⚠️ [FETCH RESULTS] Тест с test_type "${result.test_type}" (config.id: ${testConfig.id}, config.name: ${testConfig.name}, config.url: ${testConfig.source?.url}) найден в конфиге, но не найден в recommendedTests`);
@@ -1056,21 +1060,24 @@ const DashboardPage: React.FC = () => {
               try {
                 const test = recommendedTests.find(t => t && t.name === result.test_type);
                 if (test && test.id) {
-                  // Преобразуем answers в строку, если это объект
-                  let answersStr: string;
+                  // Сохраняем answers как объект (не преобразуем в строку)
+                  let answersObj: Record<number, number | number[]>;
                   if (typeof result.answers === 'string') {
-                    answersStr = result.answers;
-                  } else if (typeof result.answers === 'object' && result.answers !== null) {
-                    // Если это объект (JSONB), преобразуем в строку
                     try {
-                      answersStr = JSON.stringify(result.answers);
+                      answersObj = JSON.parse(result.answers);
                     } catch (e) {
-                      answersStr = String(result.answers);
+                      console.warn('⚠️ [FETCH RESULTS] Не удалось распарсить answers как JSON (fallback):', result.answers);
+                      return;
                     }
+                  } else if (typeof result.answers === 'object' && result.answers !== null) {
+                    answersObj = result.answers;
                   } else {
-                    answersStr = String(result.answers || '');
+                    console.warn('⚠️ [FETCH RESULTS] Неверный формат answers (fallback):', result.answers);
+                    return;
                   }
-                  resultsMap[test.id] = answersStr;
+                  
+                  // Сохраняем объект answers (не строку)
+                  resultsMap[test.id] = answersObj;
                   console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (старый формат)`);
                 } else {
                   console.warn(`⚠️ [FETCH RESULTS] Не найден тест с test_type "${result.test_type}"`);
@@ -1086,8 +1093,7 @@ const DashboardPage: React.FC = () => {
         } catch (error) {
           console.error('❌ [FETCH RESULTS] Критическая ошибка при обработке результатов:', error);
           // Не прерываем выполнение, просто логируем ошибку
-          // Устанавливаем пустой resultsMap, чтобы не сломать компонент
-          resultsMap = {};
+          // resultsMap уже инициализирован как пустой объект выше
         }
         
         // Всегда устанавливаем результаты, даже если они пустые
@@ -1130,23 +1136,131 @@ const DashboardPage: React.FC = () => {
     setModalVisible(true);
   };
 
+  // Функция для вычисления score из answers
+  const calculateTestScore = (config: any, answers: any): number => {
+    if (!config || !config.questions || !answers) return 0;
+    
+    let total = 0;
+    
+    for (const question of config.questions) {
+      const answer = answers[question.id];
+      
+      if (question.type === 'multiple' && Array.isArray(answer)) {
+        // Для множественного выбора суммируем все выбранные значения
+        total += answer.reduce((sum: number, val: number) => sum + val, 0);
+      } else if (question.type === 'slider' && typeof answer === 'number') {
+        // Для слайдера используем значение напрямую
+        total += answer;
+      } else if (typeof answer === 'number') {
+        total += answer;
+      }
+    }
+    
+    // Если scoringStrategy = 'average', делим на количество вопросов
+    if (config.scoringStrategy === 'average') {
+      const answeredQuestions = config.questions.filter((q: any) => answers[q.id] !== undefined).length;
+      return answeredQuestions > 0 ? total / answeredQuestions : 0;
+    }
+    
+    return total;
+  };
+
+  // Функция для получения интерпретации по score
+  const getTestInterpretation = (config: any, score: number): string => {
+    if (!config || !config.interpretations) return '';
+    
+    const interpretation = config.interpretations.find((range: any) => 
+      score >= range.min && score <= range.max
+    );
+    
+    if (!interpretation) return '';
+    
+    // Вычисляем максимальный возможный score
+    const maxScore = config.questions.reduce((sum: number, q: any) => {
+      if (q.type === 'slider') {
+        return sum + (q.max ?? 0);
+      }
+      if (!q.options || q.options.length === 0) {
+        return sum;
+      }
+      const maxOption = Math.max(...q.options.map((o: any) => o.value));
+      return sum + (isNaN(maxOption) ? 0 : maxOption);
+    }, 0);
+    
+    return `Балл: ${score}/${maxScore}, ${interpretation.label}`;
+  };
+
   const showResults = (test: any) => {
     const config = getTestConfig(test.name);
-    if (config) {
-      const result = testResults[test.id];
-      // Пытаемся извлечь только цифры, если это строка
-      const score = typeof result === 'string' ? parseInt(result.replace(/[^0-9]/g, '')) : Number(result);
-      
-      if (!isNaN(score)) {
-        setCurrentTestConfig(config);
-        setCurrentTestScore(score);
-        setResultsModalVisible(true);
-      } else {
-        message.info('Результаты доступны в текстовом виде: ' + result);
-      }
-    } else {
-      message.info('Результаты доступны в текстовом виде: ' + testResults[test.id]);
+    if (!config) {
+      message.info('Конфигурация теста не найдена');
+      return;
     }
+    
+    // Получаем answers из testResults
+    const resultData = testResults[test.id];
+    if (!resultData) {
+      message.info('Результаты теста не найдены');
+      return;
+    }
+    
+    // Парсим answers (может быть строкой JSON или объектом)
+    let answers: Record<number, number | number[]>;
+    try {
+      if (typeof resultData === 'string') {
+        // Пытаемся распарсить как JSON
+        try {
+          const parsed = JSON.parse(resultData);
+          if (typeof parsed === 'object' && parsed !== null) {
+            answers = parsed;
+          } else {
+            // Если это не объект, возможно это старый формат (просто число)
+            const score = parseInt(resultData.replace(/[^0-9]/g, ''));
+            if (!isNaN(score)) {
+              // Если есть только score, используем его напрямую
+              setCurrentTestConfig(config);
+              setCurrentTestScore(score);
+              setResultsModalVisible(true);
+              return;
+            }
+            message.info('Не удалось распарсить результаты теста');
+            return;
+          }
+        } catch (e) {
+          // Если не JSON, возможно это просто число
+          const score = parseInt(resultData.replace(/[^0-9]/g, ''));
+          if (!isNaN(score)) {
+            setCurrentTestConfig(config);
+            setCurrentTestScore(score);
+            setResultsModalVisible(true);
+            return;
+          }
+          message.info('Не удалось распарсить результаты теста');
+          return;
+        }
+      } else if (typeof resultData === 'object' && resultData !== null) {
+        answers = resultData;
+      } else {
+        message.info('Неверный формат результатов теста');
+        return;
+      }
+    } catch (e) {
+      console.error('❌ [SHOW-RESULTS] Ошибка парсинга результатов:', e);
+      message.info('Ошибка при обработке результатов теста');
+      return;
+    }
+    
+    // Вычисляем score из answers
+    const score = calculateTestScore(config, answers);
+    
+    if (isNaN(score)) {
+      message.info('Не удалось вычислить балл теста');
+      return;
+    }
+    
+    setCurrentTestConfig(config);
+    setCurrentTestScore(score);
+    setResultsModalVisible(true);
   };
 
   const closeModal = () => {
@@ -2137,23 +2251,58 @@ const DashboardPage: React.FC = () => {
                         </div>
                       </div>
                       
-                      {/* Test result display */}
-                      {testResults[test.id] && (
-                        <div style={{ 
-                          padding: '12px 16px', 
-                          backgroundColor: '#F8F9FA', 
-                          borderRadius: '12px',
-                          marginBottom: '15px'
-                        }}>
-                          <Text style={{ 
-                            fontSize: '14px', 
-                            color: '#2C3E50',
-                            lineHeight: '1.4'
+                      {/* Test result display - показываем интерпретацию вместо JSON */}
+                      {testResults[test.id] && (() => {
+                        const resultData = testResults[test.id];
+                        let interpretationText = '';
+                        
+                        try {
+                          // Получаем конфиг теста
+                          const config = getTestConfig(test.name);
+                          if (!config) return null;
+                          
+                          // Парсим answers если это строка
+                          let answers: Record<number, number | number[]>;
+                          if (typeof resultData === 'string') {
+                            try {
+                              answers = JSON.parse(resultData);
+                            } catch (e) {
+                              // Если не JSON, возможно это старый формат - пропускаем
+                              return null;
+                            }
+                          } else if (typeof resultData === 'object' && resultData !== null) {
+                            answers = resultData;
+                          } else {
+                            return null;
+                          }
+                          
+                          // Вычисляем score и интерпретацию
+                          const score = calculateTestScore(config, answers);
+                          interpretationText = getTestInterpretation(config, score);
+                        } catch (e) {
+                          console.error('❌ [RENDER] Ошибка при вычислении интерпретации:', e);
+                          return null;
+                        }
+                        
+                        if (!interpretationText) return null;
+                        
+                        return (
+                          <div style={{ 
+                            padding: '12px 16px', 
+                            backgroundColor: '#F8F9FA', 
+                            borderRadius: '12px',
+                            marginBottom: '15px'
                           }}>
-                            {truncateText(testResults[test.id])}
-                          </Text>
-                        </div>
-                      )}
+                            <Text style={{ 
+                              fontSize: '14px', 
+                              color: '#2C3E50',
+                              lineHeight: '1.4'
+                            }}>
+                              {interpretationText}
+                            </Text>
+                          </div>
+                        );
+                      })()}
                       
                       {/* Action buttons */}
                       <div style={{ display: 'flex', gap: '10px' }}>
