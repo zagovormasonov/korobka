@@ -1106,9 +1106,12 @@ const DashboardPage: React.FC = () => {
             // Если для этого test_type уже есть результат, сравниваем по updated_at или created_at
             const existing = resultsByTestType[result.test_type];
             if (existing) {
+              // Используем updated_at если есть, иначе created_at
               const existingTime = new Date(existing.updated_at || existing.created_at).getTime();
               const currentTime = new Date(result.updated_at || result.created_at).getTime();
-              if (currentTime > existingTime) {
+              // Если времена одинаковые, берем запись с большим id (обычно это более новая запись)
+              if (currentTime > existingTime || 
+                  (currentTime === existingTime && result.id > existing.id)) {
                 resultsByTestType[result.test_type] = result; // Заменяем на более новую запись
               }
             } else {
