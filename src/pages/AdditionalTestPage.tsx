@@ -200,7 +200,7 @@ const AdditionalTestPage: React.FC = () => {
           method: 'POST',
           body: JSON.stringify({
           sessionId,
-          testName: config.name,
+          testName: config.id, // Используем config.id вместо config.name для правильного сопоставления
           testUrl: config.source?.url || '',
           testResult: score,
           answers: answers

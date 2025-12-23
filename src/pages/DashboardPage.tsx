@@ -931,9 +931,30 @@ const DashboardPage: React.FC = () => {
         // Загружаем существующие результаты
         const resultsMap: {[key: number]: string} = {};
         data.results.forEach((result: any) => {
-          const test = recommendedTests.find(t => t.name === result.test_type);
-          if (test) {
-            resultsMap[test.id] = result.answers;
+          // Ищем тест по test_type (теперь это config.id)
+          // Сначала пытаемся найти через getTestConfig по test_type
+          const testConfig = getTestConfig(result.test_type);
+          if (testConfig) {
+            // Находим тест в recommendedTests по названию из конфига
+            const test = recommendedTests.find(t => {
+              // Сравниваем по name из recommendedTests с name из конфига
+              return t.name === testConfig.name || getTestConfig(t.name)?.id === result.test_type;
+            });
+            if (test) {
+              resultsMap[test.id] = result.answers;
+              console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (test_type: ${result.test_type})`);
+            } else {
+              console.warn(`⚠️ [FETCH RESULTS] Тест с test_type "${result.test_type}" найден в конфиге, но не найден в recommendedTests`);
+            }
+          } else {
+            // Fallback: пытаемся найти по старому способу (по name)
+            const test = recommendedTests.find(t => t.name === result.test_type);
+            if (test) {
+              resultsMap[test.id] = result.answers;
+              console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (старый формат)`);
+            } else {
+              console.warn(`⚠️ [FETCH RESULTS] Не найден тест с test_type "${result.test_type}"`);
+            }
           }
         });
         setTestResults(resultsMap);
