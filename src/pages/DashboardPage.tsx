@@ -2303,8 +2303,13 @@ const DashboardPage: React.FC = () => {
                         let interpretationText = '';
                         
                         try {
-                          // Получаем конфиг теста используя testConfigId (который уже вычислен выше)
-                          let config = getTestConfig(testConfigId || test.name);
+                          // Используем кэшированный testConfig (если был найден выше) или ищем заново
+                          let config = testConfig;
+                          
+                          if (!config) {
+                            // Пробуем найти по testConfigId
+                            config = getTestConfig(testConfigId || test.name);
+                          }
                           
                           // Если не нашли, пробуем найти по URL
                           if (!config && test.url) {
