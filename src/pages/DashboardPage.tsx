@@ -930,49 +930,95 @@ const DashboardPage: React.FC = () => {
       if (data.success) {
         // Загружаем существующие результаты
         const resultsMap: {[key: number]: string} = {};
-        data.results.forEach((result: any) => {
-          // Ищем тест по test_type (это config.id, например 'bipolar' для HCL-32)
-          const testConfig = getTestConfig(result.test_type);
-          if (testConfig) {
-            // Находим тест в recommendedTests по URL из конфига
-            // recommendedTests содержит объекты с полями id, name, url
-            // testConfig содержит source.url, который должен совпадать с t.url
-            const test = recommendedTests.find(t => {
-              // Сначала проверяем по URL (самый надежный способ)
-              if (testConfig.source?.url && t.url && testConfig.source.url === t.url) {
-                return true;
-              }
-              // Fallback: проверяем по name через getTestConfig
-              const tConfig = getTestConfig(t.name);
-              if (tConfig && tConfig.id === result.test_type) {
-                return true;
-              }
-              // Еще один fallback: проверяем, содержит ли name теста название из конфига
-              if (t.name && testConfig.name && t.name.toLowerCase().includes(testConfig.name.toLowerCase())) {
-                return true;
-              }
-              return false;
-            });
+        
+        // Проверяем, что recommendedTests загружены
+        if (!recommendedTests || recommendedTests.length === 0) {
+          console.warn('⚠️ [FETCH RESULTS] recommendedTests ещё не загружены, пропускаем сопоставление результатов');
+          setTestResults(resultsMap);
+          return;
+        }
+        
+        try {
+          data.results.forEach((result: any) => {
+            // Проверяем наличие обязательных полей
+            if (!result || !result.test_type) {
+              console.warn('⚠️ [FETCH RESULTS] Результат не содержит test_type, пропускаем:', result);
+              return;
+            }
             
-            if (test) {
-              resultsMap[test.id] = result.answers;
-              console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (test_type: ${result.test_type}, config.id: ${testConfig.id}, config.name: ${testConfig.name})`);
-            } else {
-              console.warn(`⚠️ [FETCH RESULTS] Тест с test_type "${result.test_type}" (config.id: ${testConfig.id}, config.name: ${testConfig.name}, config.url: ${testConfig.source?.url}) найден в конфиге, но не найден в recommendedTests`);
-              console.warn(`⚠️ [FETCH RESULTS] Доступные тесты в recommendedTests:`, recommendedTests.map(t => ({ id: t.id, name: t.name, url: t.url })));
+            // Ищем тест по test_type (это config.id, например 'bipolar' для HCL-32)
+            let testConfig;
+            try {
+              testConfig = getTestConfig(result.test_type);
+            } catch (error) {
+              console.error('❌ [FETCH RESULTS] Ошибка при вызове getTestConfig:', error);
+              testConfig = null;
             }
-          } else {
-            // Fallback: пытаемся найти по старому способу (по name)
-            const test = recommendedTests.find(t => t.name === result.test_type);
-            if (test) {
-              resultsMap[test.id] = result.answers;
-              console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (старый формат)`);
+            
+            if (testConfig) {
+              // Находим тест в recommendedTests по URL из конфига
+              // recommendedTests содержит объекты с полями id, name, url
+              // testConfig содержит source.url, который должен совпадать с t.url
+              let test;
+              try {
+                test = recommendedTests.find(t => {
+                  if (!t) return false;
+                  
+                  // Сначала проверяем по URL (самый надежный способ)
+                  if (testConfig.source?.url && t.url && testConfig.source.url === t.url) {
+                    return true;
+                  }
+                  // Fallback: проверяем по name через getTestConfig
+                  try {
+                    const tConfig = getTestConfig(t.name);
+                    if (tConfig && tConfig.id === result.test_type) {
+                      return true;
+                    }
+                  } catch (e) {
+                    // Игнорируем ошибки при вызове getTestConfig для t.name
+                  }
+                  // Еще один fallback: проверяем, содержит ли name теста название из конфига
+                  if (t.name && testConfig.name && t.name.toLowerCase().includes(testConfig.name.toLowerCase())) {
+                    return true;
+                  }
+                  return false;
+                });
+              } catch (error) {
+                console.error('❌ [FETCH RESULTS] Ошибка при поиске теста в recommendedTests:', error);
+                test = null;
+              }
+              
+              if (test && test.id) {
+                resultsMap[test.id] = result.answers;
+                console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (test_type: ${result.test_type}, config.id: ${testConfig.id}, config.name: ${testConfig.name})`);
+              } else {
+                console.warn(`⚠️ [FETCH RESULTS] Тест с test_type "${result.test_type}" (config.id: ${testConfig.id}, config.name: ${testConfig.name}, config.url: ${testConfig.source?.url}) найден в конфиге, но не найден в recommendedTests`);
+                if (recommendedTests && recommendedTests.length > 0) {
+                  console.warn(`⚠️ [FETCH RESULTS] Доступные тесты в recommendedTests:`, recommendedTests.map(t => t ? { id: t.id, name: t.name, url: t.url } : null).filter(Boolean));
+                }
+              }
             } else {
-              console.warn(`⚠️ [FETCH RESULTS] Не найден тест с test_type "${result.test_type}"`);
-              console.warn(`⚠️ [FETCH RESULTS] Доступные тесты в recommendedTests:`, recommendedTests.map(t => ({ id: t.id, name: t.name, url: t.url })));
+              // Fallback: пытаемся найти по старому способу (по name)
+              try {
+                const test = recommendedTests.find(t => t && t.name === result.test_type);
+                if (test && test.id) {
+                  resultsMap[test.id] = result.answers;
+                  console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (старый формат)`);
+                } else {
+                  console.warn(`⚠️ [FETCH RESULTS] Не найден тест с test_type "${result.test_type}"`);
+                  if (recommendedTests && recommendedTests.length > 0) {
+                    console.warn(`⚠️ [FETCH RESULTS] Доступные тесты в recommendedTests:`, recommendedTests.map(t => t ? { id: t.id, name: t.name, url: t.url } : null).filter(Boolean));
+                  }
+                }
+              } catch (error) {
+                console.error('❌ [FETCH RESULTS] Ошибка при fallback поиске:', error);
+              }
             }
-          }
-        });
+          });
+        } catch (error) {
+          console.error('❌ [FETCH RESULTS] Критическая ошибка при обработке результатов:', error);
+          // Не прерываем выполнение, просто логируем ошибку
+        }
         setTestResults(resultsMap);
         console.log('📊 [FETCH RESULTS] Загружено результатов дополнительных тестов:', data.results.length);
         console.log('📊 [FETCH RESULTS] Новое состояние testResults:', resultsMap);
