@@ -157,6 +157,7 @@ const fallbackTests = [
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated, isLoading, authData, logout, updatePersonalPlanUnlocked } = useAuth();
   const [mascotMessage, setMascotMessage] = useState('');
   const [recommendedTests, setRecommendedTests] = useState<any[]>([]);

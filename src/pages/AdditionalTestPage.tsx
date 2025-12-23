@@ -425,8 +425,11 @@ const AdditionalTestPage: React.FC = () => {
                       if (!isDemoSession) {
                         localStorage.setItem('test_results_updated', Date.now().toString());
                         console.log('🔄 [TEST-PAGE] Установлен флаг test_results_updated перед переходом в кабинет');
+                        // Добавляем параметр refresh для принудительной перезагрузки
+                        navigate(`/dashboard?sessionId=${sessionId}&refresh=true`);
+                      } else {
+                        navigate('/test-of-the-tests');
                       }
-                      navigate(isDemoSession ? '/test-of-the-tests' : `/dashboard?sessionId=${sessionId}`);
                     }}
                     style={{ borderRadius: 12, height: 45, width: '100%' }}
                   >
