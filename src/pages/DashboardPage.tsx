@@ -1981,51 +1981,63 @@ const DashboardPage: React.FC = () => {
                   gap: '20px',
                   marginBottom: '40px'
                 }}>
-                  {recommendedTests.map((test) => (
-                    <div 
-                      key={test.id}
-                      style={{
-                        backgroundColor: 'white',
-                        borderRadius: '20px',
-                        padding: '25px',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                        cursor: 'pointer',
-                        textAlign: 'left'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px', marginBottom: '20px' }}>
-                        {/* Status indicator */}
-                        <div 
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '50%',
-                            backgroundColor: testResults[test.id] ? '#4F958B' : '#E8E8E8',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            marginTop: '2px'
-                          }}
-                        >
-                          {testResults[test.id] && (
-                            <CheckOutlined 
-                              style={{ 
-                                fontSize: '10px',
-                                color: 'white'
-                              }} 
-                            />
-                          )}
-                        </div>
+                  {Array.isArray(recommendedTests) && recommendedTests.filter(t => t && t.id).map((test) => {
+                    if (!test || !test.id) return null;
+                    
+                    let testConfigId;
+                    try {
+                      const config = getTestConfig(test.name);
+                      testConfigId = config?.id || test.id;
+                    } catch (error) {
+                      console.error('❌ [RENDER] Ошибка при вызове getTestConfig для теста:', test.name, error);
+                      testConfigId = test.id;
+                    }
+                    
+                    return (
+                      <div 
+                        key={test.id}
+                        style={{
+                          backgroundColor: 'white',
+                          borderRadius: '20px',
+                          padding: '25px',
+                          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.15)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px', marginBottom: '20px' }}>
+                          {/* Status indicator */}
+                          <div 
+                            style={{
+                              width: '20px',
+                              height: '20px',
+                              borderRadius: '50%',
+                              backgroundColor: testResults[test.id] ? '#4F958B' : '#E8E8E8',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              marginTop: '2px'
+                            }}
+                          >
+                            {testResults[test.id] && (
+                              <CheckOutlined 
+                                style={{ 
+                                  fontSize: '10px',
+                                  color: 'white'
+                                }} 
+                              />
+                            )}
+                          </div>
                         
                         <div style={{ flex: 1 }}>
                           <Title level={5} style={{ 
