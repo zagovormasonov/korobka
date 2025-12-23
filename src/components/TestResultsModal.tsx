@@ -7,6 +7,7 @@ import {
   ReloadOutlined
 } from '@ant-design/icons';
 import { TestConfig, TestInterpretation } from '../config/tests/types';
+import { getText } from '../config/tests';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -53,9 +54,16 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
 
   // Максимально возможный балл для шкалы
   const maxPossibleScore = config.questions.reduce((sum, q) => {
+    if (q.type === 'slider') {
+      // Для слайдера используем max значение
+      return sum + (q.max ?? 0);
+    }
+    if (!q.options || q.options.length === 0) {
+      return sum;
+    }
     const maxOption = Math.max(...q.options.map(o => o.value));
     return sum + (isNaN(maxOption) ? 0 : maxOption);
-      }, 0);
+  }, 0);
 
   const percentage = maxPossibleScore > 0 ? Math.round((score / maxPossibleScore) * 100) : 0;
 
@@ -148,9 +156,9 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
             <Space align="start" size={isMobile ? 'small' : 'middle'}>
               {getSeverityIcon(interpretation.severity)}
               <div>
-                <Title level={5} style={{ margin: 0, fontSize: isMobile ? '16px' : undefined }}>{interpretation.label}</Title>
+                <Title level={5} style={{ margin: 0, fontSize: isMobile ? '16px' : undefined }}>{getText(interpretation.label, 'unknown')}</Title>
                 <Paragraph style={{ marginTop: 10, marginBottom: 0, fontSize: isMobile ? '14px' : undefined }}>
-                  {interpretation.description}
+                  {getText(interpretation.description, 'unknown')}
                 </Paragraph>
           </div>
             </Space>
@@ -162,7 +170,7 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
         <div style={{ textAlign: 'left' }}>
           <Title level={5} style={{ fontSize: isMobile ? '16px' : undefined }}>О тесте</Title>
           <Paragraph type="secondary" style={{ fontSize: isMobile ? '13px' : undefined }}>
-            {config.description}
+            {getText(config.description, 'unknown')}
           </Paragraph>
           {config.source && (
             <Text type="secondary" style={{ fontSize: isMobile ? 11 : 12 }}>

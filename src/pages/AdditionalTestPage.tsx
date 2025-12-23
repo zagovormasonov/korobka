@@ -147,6 +147,11 @@ const AdditionalTestPage: React.FC = () => {
   };
 
   const calculateScore = () => {
+    if (!config || !config.questions) {
+      console.error('❌ [CALCULATE-SCORE] Config или questions отсутствуют');
+      return 0;
+    }
+    
     let total = 0;
     
     for (const question of config.questions) {
@@ -155,6 +160,9 @@ const AdditionalTestPage: React.FC = () => {
       if (question.type === 'multiple' && Array.isArray(answer)) {
         // Для множественного выбора суммируем все выбранные значения
         total += answer.reduce((sum, val) => sum + val, 0);
+      } else if (question.type === 'slider' && typeof answer === 'number') {
+        // Для слайдера используем значение напрямую
+        total += answer;
       } else if (typeof answer === 'number') {
         total += answer;
       }
@@ -169,52 +177,63 @@ const AdditionalTestPage: React.FC = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    const score = calculateScore();
-    setFinalScore(score);
-    
-    // Проверяем, является ли это демо-сессией (тестовая страница)
-    const isDemoSession = sessionId.startsWith('test-demo-');
-    
-    if (isDemoSession) {
-      // Для демо-сессии не отправляем на сервер, показываем результаты
-      console.log('🧪 [DEMO] Демо-режим, пропускаем сохранение в БД. Результат:', score);
-      localStorage.removeItem(`test_progress_${testId}`);
-      
-      // Сохраняем результат в localStorage для отображения на test-of-the-tests
-      localStorage.setItem(`demo_test_result_${testId}`, JSON.stringify({
-        testId,
-        testName: config.name,
-        score,
-        timestamp: new Date().toISOString()
-      }));
-      
-      setIsCompleted(true);
-      setShowResultsModal(true); // Сразу показываем модалку с результатами
-      setIsSubmitting(false);
+    if (!config) {
+      console.error('❌ [HANDLE-SUBMIT] Config отсутствует');
+      message.error('Ошибка: конфигурация теста не загружена');
       return;
     }
+
+    setIsSubmitting(true);
     
     try {
+      const score = calculateScore();
+      console.log('📊 [HANDLE-SUBMIT] Рассчитанный балл:', score);
+      setFinalScore(score);
+    
+      // Проверяем, является ли это демо-сессией (тестовая страница)
+      const isDemoSession = sessionId.startsWith('test-demo-');
+      
+      if (isDemoSession) {
+        // Для демо-сессии не отправляем на сервер, показываем результаты
+        console.log('🧪 [DEMO] Демо-режим, пропускаем сохранение в БД. Результат:', score);
+        localStorage.removeItem(`test_progress_${testId}`);
+        
+        // Сохраняем результат в localStorage для отображения на test-of-the-tests
+        localStorage.setItem(`demo_test_result_${testId}`, JSON.stringify({
+          testId,
+          testName: config.name,
+          score,
+          timestamp: new Date().toISOString()
+        }));
+        
+        setIsCompleted(true);
+        setShowResultsModal(true); // Сразу показываем модалку с результатами
+        setIsSubmitting(false);
+        return;
+      }
+      
       const response = await apiRequest('api/tests/additional/save', {
-          method: 'POST',
-          body: JSON.stringify({
+        method: 'POST',
+        body: JSON.stringify({
           sessionId,
           testName: config.id, // Используем config.id вместо config.name для правильного сопоставления
           testUrl: config.source?.url || '',
           testResult: score,
           answers: answers
-          })
-        });
+        })
+      });
 
       if (response.ok) {
         localStorage.removeItem(`test_progress_${testId}`);
         setIsCompleted(true);
         setShowResultsModal(true); // Показываем модалку с результатами
       } else {
-        throw new Error('Failed to save results');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ [HANDLE-SUBMIT] Ошибка ответа сервера:', response.status, errorData);
+        throw new Error(errorData.error || 'Failed to save results');
       }
     } catch (e) {
+      console.error('❌ [HANDLE-SUBMIT] Ошибка при сохранении результатов:', e);
       message.error('Ошибка при сохранении результатов');
     } finally {
       setIsSubmitting(false);
@@ -327,6 +346,28 @@ const AdditionalTestPage: React.FC = () => {
   };
 
   if (isCompleted) {
+    if (!config) {
+      console.error('❌ [RENDER] Config отсутствует при isCompleted=true');
+      return (
+        <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+          <Content style={{ padding: '40px 20px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Card style={{ maxWidth: 600, width: '100%', borderRadius: 20, textAlign: 'center' }}>
+              <Result
+                status="error"
+                title="Ошибка"
+                subTitle="Конфигурация теста не загружена. Пожалуйста, попробуйте перезагрузить страницу."
+                extra={
+                  <Button type="primary" onClick={() => window.location.reload()}>
+                    Перезагрузить страницу
+                  </Button>
+                }
+              />
+            </Card>
+          </Content>
+        </Layout>
+      );
+    }
+    
     const isDemoSession = sessionId?.startsWith('test-demo-');
     
     return (
