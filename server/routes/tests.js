@@ -624,13 +624,18 @@ router.post('/additional/save', async (req, res) => {
     if (existingResult) {
       // Обновляем существующий результат
       console.log('🔄 [SAVE] Обновляем существующий результат для test_type:', testName);
+      const updateData = {
+        test_url: testUrl,
+        answers: answers || testResult // Сохраняем либо объект ответов, либо итоговый балл
+      };
+      
+      // Добавляем score только если колонка существует (проверяем через try-catch или просто не добавляем)
+      // Пока убираем score, так как колонки нет в схеме
+      // updateData.score = calculatedScore;
+      
       const { data, error } = await supabase
         .from('additional_test_results')
-        .update({
-          test_url: testUrl,
-          answers: answers || testResult, // Сохраняем либо объект ответов, либо итоговый балл
-          score: calculatedScore // Обновляем score
-        })
+        .update(updateData)
         .eq('id', existingResult.id)
         .select()
         .single();
@@ -649,15 +654,20 @@ router.post('/additional/save', async (req, res) => {
         }, 0);
       }
       
-      const { data, error } = await supabase
-      .from('additional_test_results')
-      .insert({
+      const insertData = {
         session_id: sessionId,
         test_type: testName,
         test_url: testUrl,
-        answers: answers || testResult,
-        score: calculatedScore
-      })
+        answers: answers || testResult
+      };
+      
+      // Добавляем score только если колонка существует
+      // Пока убираем score, так как колонки нет в схеме
+      // insertData.score = calculatedScore;
+      
+      const { data, error } = await supabase
+      .from('additional_test_results')
+      .insert(insertData)
       .select()
       .single();
     if (error) throw error;
