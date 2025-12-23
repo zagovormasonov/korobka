@@ -17,23 +17,37 @@ jobs:
         run: |
           echo "⏳ Ожидание завершения деплоя на Render..."
           echo "🔍 Проверяем доступность сервиса каждые 10 секунд..."
+          echo "📋 Деплой считается завершённым, когда сервис стабильно доступен 3 раза подряд"
           
-          MAX_ATTEMPTS=60  # Максимум 10 минут (60 * 10 секунд)
+          MAX_ATTEMPTS=90  # Максимум 15 минут (90 * 10 секунд)
           ATTEMPT=0
+          SUCCESS_COUNT=0
+          REQUIRED_SUCCESSES=3  # Нужно 3 успешных ответа подряд
           DEPLOY_SUCCESS=false
           
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
             ATTEMPT=$((ATTEMPT + 1))
-            echo "📡 Попытка $ATTEMPT/$MAX_ATTEMPTS..."
+            echo "📡 Попытка $ATTEMPT/$MAX_ATTEMPTS (успешных подряд: $SUCCESS_COUNT/$REQUIRED_SUCCESSES)..."
             
             response=$(curl -s -o /dev/null -w "%{http_code}" https://idenself.com/api/health || echo "000")
             echo "   HTTP статус: $response"
             
             if [ "$response" = "200" ]; then
-              echo "✅ Сервис доступен! Деплой завершён."
-              echo "status=success" >> $GITHUB_OUTPUT
-              DEPLOY_SUCCESS=true
-              break
+              SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+              echo "   ✅ Успешный ответ ($SUCCESS_COUNT/$REQUIRED_SUCCESSES)"
+              
+              if [ $SUCCESS_COUNT -ge $REQUIRED_SUCCESSES ]; then
+                echo "✅ Сервис стабильно доступен! Деплой завершён."
+                echo "status=success" >> $GITHUB_OUTPUT
+                DEPLOY_SUCCESS=true
+                break
+              fi
+            else
+              # Если сервис недоступен, сбрасываем счётчик
+              if [ $SUCCESS_COUNT -gt 0 ]; then
+                echo "   ⚠️ Сервис снова недоступен, сбрасываем счётчик успешных ответов"
+                SUCCESS_COUNT=0
+              fi
             fi
             
             if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
@@ -43,7 +57,7 @@ jobs:
           done
           
           if [ "$DEPLOY_SUCCESS" = "false" ]; then
-            echo "❌ Сервис недоступен после $MAX_ATTEMPTS попыток"
+            echo "❌ Сервис не стал стабильно доступен после $MAX_ATTEMPTS попыток"
             echo "status=failed" >> $GITHUB_OUTPUT
           fi
       
