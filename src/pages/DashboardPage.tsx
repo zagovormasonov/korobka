@@ -1191,9 +1191,33 @@ const DashboardPage: React.FC = () => {
   };
 
   const showResults = (test: any) => {
-    const config = getTestConfig(test.name);
+    // Пытаемся найти конфиг разными способами
+    let config;
+    
+    // Сначала пробуем по testConfigId (если передан)
+    if (test.testConfigId) {
+      config = getTestConfig(test.testConfigId);
+    }
+    
+    // Если не нашли, пробуем по name
     if (!config) {
-      message.info('Конфигурация теста не найдена');
+      config = getTestConfig(test.name);
+    }
+    
+    // Если не нашли по name, пробуем найти по URL
+    if (!config && test.url) {
+      const { additionalTests } = require('../config/tests');
+      config = additionalTests.find((t: any) => t.source?.url === test.url);
+    }
+    
+    if (!config) {
+      console.error('❌ [SHOW-RESULTS] Конфиг не найден для теста:', {
+        name: test.name,
+        url: test.url,
+        testConfigId: test.testConfigId,
+        id: test.id
+      });
+      message.error('Конфигурация теста не найдена');
       return;
     }
     
@@ -2257,9 +2281,19 @@ const DashboardPage: React.FC = () => {
                         let interpretationText = '';
                         
                         try {
-                          // Получаем конфиг теста
-                          const config = getTestConfig(test.name);
-                          if (!config) return null;
+                          // Получаем конфиг теста используя testConfigId (который уже вычислен выше)
+                          let config = getTestConfig(testConfigId || test.name);
+                          
+                          // Если не нашли, пробуем найти по URL
+                          if (!config && test.url) {
+                            const { additionalTests } = require('../config/tests');
+                            config = additionalTests.find((t: any) => t.source?.url === test.url);
+                          }
+                          
+                          if (!config) {
+                            console.warn('⚠️ [RENDER] Конфиг не найден для testConfigId:', testConfigId, 'test.name:', test.name, 'test.url:', test.url);
+                            return null;
+                          }
                           
                           // Парсим answers если это строка
                           let answers: Record<number, number | number[]>;
