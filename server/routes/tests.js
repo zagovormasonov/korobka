@@ -612,9 +612,9 @@ router.post('/additional/save', async (req, res) => {
     let calculatedScore = testResult;
     if (answers && typeof answers === 'object') {
       // Если передан объект answers, вычисляем score
-      calculatedScore = Object.values(answers).reduce((sum: number, val: any) => {
+      calculatedScore = Object.values(answers).reduce((sum, val) => {
         if (Array.isArray(val)) {
-          return sum + val.reduce((s: number, v: number) => s + v, 0);
+          return sum + val.reduce((s, v) => s + v, 0);
         }
         return sum + (typeof val === 'number' ? val : 0);
       }, 0);
@@ -641,9 +641,9 @@ router.post('/additional/save', async (req, res) => {
       // Вычисляем score из answers, если передан объект answers
       let calculatedScore = testResult;
       if (answers && typeof answers === 'object') {
-        calculatedScore = Object.values(answers).reduce((sum: number, val: any) => {
+        calculatedScore = Object.values(answers).reduce((sum, val) => {
           if (Array.isArray(val)) {
-            return sum + val.reduce((s: number, v: number) => s + v, 0);
+            return sum + val.reduce((s, v) => s + v, 0);
           }
           return sum + (typeof val === 'number' ? val : 0);
         }, 0);
