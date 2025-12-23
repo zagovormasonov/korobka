@@ -601,12 +601,41 @@ router.post('/additional/save', async (req, res) => {
     const { sessionId, testName, testUrl, testResult, answers } = req.body;
     
     // Проверяем, существует ли уже результат для этого теста
-    const { data: existingResult } = await supabase
-      .from('additional_test_results')
-      .select('id')
-      .eq('session_id', sessionId)
-      .eq('test_type', testName)
-      .single();
+    // Ищем по test_type и test_url, так как могут быть старые записи с другим test_type
+    // Например, старые записи могут иметь test_type='HCL-32', а новые 'bipolar'
+    // Сначала ищем по test_type, если не найдено - ищем по test_url
+    let existingResult = null;
+    
+    if (testName) {
+      const { data: resultByType } = await supabase
+        .from('additional_test_results')
+        .select('id, test_type')
+        .eq('session_id', sessionId)
+        .eq('test_type', testName)
+        .maybeSingle();
+      
+      if (resultByType) {
+        existingResult = resultByType;
+      }
+    }
+    
+    // Если не нашли по test_type, ищем по test_url (для старых записей)
+    if (!existingResult && testUrl) {
+      const { data: resultByUrl } = await supabase
+        .from('additional_test_results')
+        .select('id, test_type')
+        .eq('session_id', sessionId)
+        .eq('test_url', testUrl)
+        .order('updated_at', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (resultByUrl) {
+        existingResult = resultByUrl;
+        console.log('🔄 [SAVE] Найдена старая запись по test_url с другим test_type:', resultByUrl.test_type, 'обновляем на:', testName);
+      }
+    }
 
     // Вычисляем score из answers, если передан объект answers
     let calculatedScore = testResult;

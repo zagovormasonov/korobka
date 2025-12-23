@@ -1106,7 +1106,9 @@ const DashboardPage: React.FC = () => {
             // Если для этого test_type уже есть результат, сравниваем по updated_at или created_at
             const existing = resultsByTestType[result.test_type];
             if (existing) {
-              // Используем updated_at если есть, иначе created_at
+              // Используем updated_at если есть, иначе 
+              
+              created_at
               const existingTime = new Date(existing.updated_at || existing.created_at).getTime();
               const currentTime = new Date(result.updated_at || result.created_at).getTime();
               // Если времена одинаковые, берем запись с большим id (обычно это более новая запись)
@@ -1119,8 +1121,8 @@ const DashboardPage: React.FC = () => {
             }
           });
           
-          // Теперь обрабатываем только уникальные результаты (последние для каждого test_type)
-          Object.values(resultsByTestType).forEach((result: any) => {
+          // Теперь обрабатываем только уникальные результаты (последние для каждого test_url)
+          Object.values(resultsByTestUrl).forEach((result: any) => {
             
             // Ищем тест по test_type (это config.id, например 'bipolar' для HCL-32)
             let testConfig;
