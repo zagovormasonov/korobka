@@ -25,7 +25,7 @@ export const eat26Test: TestConfig = {
   id: 'eating_disorder',
   name: 'EAT-26',
   title: 'Тест отношения к приёму пищи',
-  description: 'Скрининговый инструмент для выявления симптомов расстройств пищевого поведения.',
+  description: 'Скрининговый инструмент для выявления симптомов расстройств пищевого поведения. Отвечайте, основываясь на вашем опыте за последние 6 месяцев.',
   scoringStrategy: 'sum',
   questions: [
     { id: 1, text: 'Я боюсь располнеть.', type: 'single', options: frequencyOptions },

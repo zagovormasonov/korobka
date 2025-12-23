@@ -13,7 +13,7 @@ export const pcl5Test: TestConfig = {
   id: 'ptsd',
   name: 'PCL-5',
   title: 'Тест на ПТСР',
-  description: 'Опросник для оценки симптомов посттравматического стрессового расстройства.',
+  description: 'Опросник для оценки симптомов посттравматического стрессового расстройства за последний месяц.',
   scoringStrategy: 'sum',
   questions: [
     { id: 1, text: 'Повторяющиеся, нежелательные и беспокоящие воспоминания о стрессовом событии?', type: 'single', options: severityOptions },

@@ -12,7 +12,7 @@ export const lsasTest: TestConfig = {
   id: 'social_anxiety',
   name: 'LSAS',
   title: 'Шкала социальной тревожности Либовица',
-  description: 'Инструмент для оценки страха и избегания в различных социальных ситуациях.',
+  description: 'Инструмент для оценки страха и избегания в различных социальных ситуациях. Отвечайте, основываясь на вашем опыте за последние несколько недель.',
   scoringStrategy: 'sum',
   questions: [
     { id: 1, text: 'Разговор по телефону в общественном месте.', type: 'single', options: fearOptions },
