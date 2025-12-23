@@ -1,0 +1,72 @@
+name: Deploy Notification
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Wait for Render deployment
+        run: |
+          echo "⏳ Ожидание завершения деплоя на Render..."
+          sleep 120  # Ждём 2 минуты для завершения деплоя
+      
+      - name: Check deployment status
+        id: check_deploy
+        run: |
+          # Проверяем, что сервис доступен
+          echo "🔍 Проверка доступности сервиса..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://idenself.com/api/health || echo "000")
+          echo "📡 HTTP статус: $response"
+          
+          if [ "$response" = "200" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ Сервис доступен"
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "❌ Сервис недоступен (HTTP $response)"
+          fi
+      
+      - name: Send Telegram notification
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ "${{ steps.check_deploy.outputs.status }}" = "success" ]; then
+            EMOJI="✅"
+            STATUS="Успешно"
+            MESSAGE="🎉 Деплой успешно завершён!"
+          else
+            EMOJI="❌"
+            STATUS="Ошибка"
+            MESSAGE="⚠️ Требуется внимание! Сервис недоступен."
+          fi
+          
+          COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+          COMMIT_ID=$(git rev-parse --short HEAD)
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
+          TIME=$(TZ='Europe/Moscow' date '+%d.%m.%Y %H:%M')
+          
+          echo "📤 Отправка уведомления в Telegram..."
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d parse_mode="HTML" \
+            -d text="${EMOJI} <b>Деплой ${STATUS}</b>
+
+📦 Сервис: <code>korobka-1</code>
+📝 Коммит: <code>${COMMIT_ID}</code>
+💬 Сообщение: ${COMMIT_MSG}
+👤 Автор: ${COMMIT_AUTHOR}
+⏰ Время: ${TIME}
+
+${MESSAGE}"
+          
+          echo "✅ Уведомление отправлено"
+
