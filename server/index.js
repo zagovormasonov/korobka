@@ -25,6 +25,7 @@ import budgetAlertsRoutes from './routes/budget-alerts.js';
 import generateVariantsRoutes from './routes/generate-variants.js';
 import symptomsRoutes from './routes/symptoms.js';
 import renderDeployRoutes from './routes/render-deploy.js';
+import clientErrorsRoutes from './routes/client-errors.js';
 
 // Получаем путь к корневой директории проекта
 const __filename = fileURLToPath(import.meta.url);
@@ -180,6 +181,7 @@ app.use('/api/background-generation', backgroundGenerationRoutes);
 app.use('/api/cms', cmsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api', questionnaireGenerationRoutes);
+app.use('/api/errors', clientErrorsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

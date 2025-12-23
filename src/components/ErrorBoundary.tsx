@@ -45,6 +45,29 @@ class ErrorBoundary extends Component<Props, State> {
     console.error('❌ [ERROR-BOUNDARY] Is Safari:', isSafari);
     console.error('❌ [ERROR-BOUNDARY] Is iOS:', isIOS);
     
+    // Отправляем ошибку на сервер для логирования (не async, используем .then())
+    fetch('/api/errors/client', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        },
+        errorInfo: {
+          componentStack: errorInfo.componentStack
+        },
+        userAgent,
+        isSafari,
+        isIOS,
+        url: window.location.href,
+        timestamp: new Date().toISOString()
+      })
+    }).catch(() => {
+      // Игнорируем ошибки отправки, чтобы не сломать UI
+    });
+    
     this.setState({
       error,
       errorInfo
