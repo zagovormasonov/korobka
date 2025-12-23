@@ -450,7 +450,7 @@ const AdditionalTestPage: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
-      <Content style={{ padding: '20px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
+      <Content style={{ padding: '20px', maxWidth: 800, margin: '0 auto', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Button 
             icon={<ArrowLeftOutlined />} 
@@ -460,7 +460,7 @@ const AdditionalTestPage: React.FC = () => {
             Вернуться назад
           </Button>
 
-          <Card style={{ borderRadius: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+          <Card style={{ borderRadius: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', width: '100%', boxSizing: 'border-box' }}>
             <div style={{ marginBottom: 30 }}>
               <Text type="secondary" style={{ fontSize: 14 }}>{config.name}</Text>
               <Title level={2} style={{ marginTop: 5, marginBottom: 20 }}>{config.title}</Title>
@@ -497,13 +497,13 @@ const AdditionalTestPage: React.FC = () => {
               {renderQuestion()}
               </div>
 
-            <div style={{ marginTop: 40, display: 'flex', gap: '15px' }}>
+            <div style={{ marginTop: 40, display: 'flex', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
               <Button
                 icon={<ArrowLeftOutlined />}
                 onClick={handleBack}
                 disabled={currentQuestionIndex === 0}
                 size="large"
-                style={{ borderRadius: 12, height: 45, flex: 1 }}
+                style={{ borderRadius: 12, height: 45, flex: 1, minWidth: 0 }}
               >
                 Назад
               </Button>
@@ -516,6 +516,7 @@ const AdditionalTestPage: React.FC = () => {
                   borderRadius: 12, 
                   height: 45, 
                   flex: 1,
+                  minWidth: 0,
                   background: '#4F958B', 
                   borderColor: '#4F958B' 
                 }}
