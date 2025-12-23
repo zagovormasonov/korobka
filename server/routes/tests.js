@@ -627,8 +627,7 @@ router.post('/additional/save', async (req, res) => {
       const updateData = {
         test_url: testUrl,
         answers: answers || testResult // Сохраняем либо объект ответов, либо итоговый балл
-        // Не обновляем updated_at, так как колонка не существует в схеме БД
-        // Используем created_at для сортировки, но при UPDATE created_at не меняется
+        // updated_at обновляется автоматически через триггер в БД
       };
       
       // Добавляем score только если колонка существует (проверяем через try-catch или просто не добавляем)
