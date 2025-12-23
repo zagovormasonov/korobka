@@ -12,25 +12,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Wait for Render deployment
-        run: |
-          echo "⏳ Ожидание завершения деплоя на Render..."
-          sleep 40  # Ждём 40 секунд для завершения деплоя
-      
-      - name: Check deployment status
+      - name: Wait for Render deployment and check status
         id: check_deploy
         run: |
-          # Проверяем, что сервис доступен
-          echo "🔍 Проверка доступности сервиса..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://idenself.com/api/health || echo "000")
-          echo "📡 HTTP статус: $response"
+          echo "⏳ Ожидание завершения деплоя на Render..."
+          echo "🔍 Проверяем доступность сервиса каждые 10 секунд..."
           
-          if [ "$response" = "200" ]; then
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "✅ Сервис доступен"
-          else
+          MAX_ATTEMPTS=60  # Максимум 10 минут (60 * 10 секунд)
+          ATTEMPT=0
+          DEPLOY_SUCCESS=false
+          
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "📡 Попытка $ATTEMPT/$MAX_ATTEMPTS..."
+            
+            response=$(curl -s -o /dev/null -w "%{http_code}" https://idenself.com/api/health || echo "000")
+            echo "   HTTP статус: $response"
+            
+            if [ "$response" = "200" ]; then
+              echo "✅ Сервис доступен! Деплой завершён."
+              echo "status=success" >> $GITHUB_OUTPUT
+              DEPLOY_SUCCESS=true
+              break
+            fi
+            
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              echo "⏳ Ждём 10 секунд перед следующей проверкой..."
+              sleep 10
+            fi
+          done
+          
+          if [ "$DEPLOY_SUCCESS" = "false" ]; then
+            echo "❌ Сервис недоступен после $MAX_ATTEMPTS попыток"
             echo "status=failed" >> $GITHUB_OUTPUT
-            echo "❌ Сервис недоступен (HTTP $response)"
           fi
       
       - name: Send Telegram notification
