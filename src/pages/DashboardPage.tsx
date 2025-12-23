@@ -484,9 +484,18 @@ const DashboardPage: React.FC = () => {
 
   // Загружаем результаты тестов после того, как загрузились рекомендованные тесты
   useEffect(() => {
-    if (recommendedTests.length > 0 && authData?.sessionId && authData?.personalPlanUnlocked === false) {
-      console.log('📋 Рекомендованные тесты загружены, загружаем результаты...');
-      fetchAdditionalTestResults();
+    try {
+      if (recommendedTests.length > 0 && authData?.sessionId && authData?.personalPlanUnlocked === false) {
+        console.log('📋 Рекомендованные тесты загружены, загружаем результаты...');
+        fetchAdditionalTestResults().catch((error) => {
+          console.error('❌ [USE-EFFECT] Критическая ошибка в fetchAdditionalTestResults:', error);
+          // Не позволяем ошибке сломать компонент
+          setLoadingTestResults(false);
+        });
+      }
+    } catch (error) {
+      console.error('❌ [USE-EFFECT] Критическая ошибка в useEffect:', error);
+      // Не позволяем ошибке сломать компонент
     }
   }, [recommendedTests.length, authData]);
 
@@ -1018,19 +1027,40 @@ const DashboardPage: React.FC = () => {
         } catch (error) {
           console.error('❌ [FETCH RESULTS] Критическая ошибка при обработке результатов:', error);
           // Не прерываем выполнение, просто логируем ошибку
+          // Устанавливаем пустой resultsMap, чтобы не сломать компонент
+          resultsMap = {};
         }
-        setTestResults(resultsMap);
-        console.log('📊 [FETCH RESULTS] Загружено результатов дополнительных тестов:', data.results.length);
-        console.log('📊 [FETCH RESULTS] Новое состояние testResults:', resultsMap);
+        
+        // Всегда устанавливаем результаты, даже если они пустые
+        try {
+          setTestResults(resultsMap);
+          console.log('📊 [FETCH RESULTS] Загружено результатов дополнительных тестов:', data.results?.length || 0);
+          console.log('📊 [FETCH RESULTS] Новое состояние testResults:', resultsMap);
+        } catch (error) {
+          console.error('❌ [FETCH RESULTS] Ошибка при установке testResults:', error);
+        }
         
         // Проверка завершенности тестов перенесена в useEffect
         // который срабатывает после загрузки recommendedTests
         console.log('📊 [FETCH RESULTS] Данные из API:', data.results);
+      } else {
+        console.warn('⚠️ [FETCH RESULTS] API вернул data.success = false');
+        setTestResults({});
       }
     } catch (error) {
-      console.error('Error fetching additional test results:', error);
+      console.error('❌ [FETCH RESULTS] Критическая ошибка в fetchAdditionalTestResults:', error);
+      // Устанавливаем пустые результаты, чтобы не сломать компонент
+      try {
+        setTestResults({});
+      } catch (setError) {
+        console.error('❌ [FETCH RESULTS] Ошибка при установке пустых результатов:', setError);
+      }
     } finally {
-      setLoadingTestResults(false);
+      try {
+        setLoadingTestResults(false);
+      } catch (error) {
+        console.error('❌ [FETCH RESULTS] Ошибка при установке loading в false:', error);
+      }
     }
   };
 
