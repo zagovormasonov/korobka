@@ -907,8 +907,15 @@ const DashboardPage: React.FC = () => {
   };
 
   const fetchAdditionalTestResults = async () => {
+    // Детектируем Safari для специальной обработки
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
     try {
       console.log('🔄 [FETCH RESULTS] Начинаем загрузку результатов дополнительных тестов');
+      if (isSafari || isIOS) {
+        console.log('🍎 [SAFARI-DETECT] Safari/iOS обнаружен, используем специальную обработку');
+      }
       console.log('🔄 [FETCH RESULTS] Текущее состояние testResults:', testResults);
       
       setLoadingTestResults(true);
