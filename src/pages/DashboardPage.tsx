@@ -484,17 +484,41 @@ const DashboardPage: React.FC = () => {
 
   // Загружаем результаты тестов после того, как загрузились рекомендованные тесты
   useEffect(() => {
+    // Детектируем Safari для специальной обработки
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (isSafari || isIOS) {
+      console.log('🍎 [SAFARI-DETECT] Обнаружен Safari/iOS, используем специальную обработку ошибок');
+    }
+    
     try {
       if (recommendedTests.length > 0 && authData?.sessionId && authData?.personalPlanUnlocked === false) {
         console.log('📋 Рекомендованные тесты загружены, загружаем результаты...');
-        fetchAdditionalTestResults().catch((error) => {
-          console.error('❌ [USE-EFFECT] Критическая ошибка в fetchAdditionalTestResults:', error);
-          // Не позволяем ошибке сломать компонент
-          setLoadingTestResults(false);
-        });
+        
+        // Для Safari используем более надежную обработку промисов
+        const fetchPromise = fetchAdditionalTestResults();
+        
+        if (fetchPromise && typeof fetchPromise.then === 'function') {
+          fetchPromise.catch((error) => {
+            console.error('❌ [USE-EFFECT] Критическая ошибка в fetchAdditionalTestResults:', error);
+            console.error('❌ [USE-EFFECT] Error stack:', error?.stack);
+            console.error('❌ [USE-EFFECT] Error message:', error?.message);
+            console.error('❌ [USE-EFFECT] Error name:', error?.name);
+            
+            // Не позволяем ошибке сломать компонент
+            try {
+              setLoadingTestResults(false);
+            } catch (setError) {
+              console.error('❌ [USE-EFFECT] Ошибка при установке loading в false:', setError);
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('❌ [USE-EFFECT] Критическая ошибка в useEffect:', error);
+      console.error('❌ [USE-EFFECT] Error stack:', (error as Error)?.stack);
+      console.error('❌ [USE-EFFECT] Error message:', (error as Error)?.message);
       // Не позволяем ошибке сломать компонент
     }
   }, [recommendedTests.length, authData]);

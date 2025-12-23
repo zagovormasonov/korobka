@@ -23,6 +23,7 @@ import FeedbackChatPage from './pages/FeedbackChatPage';
 import CMSPage from './pages/CMSPage';
 import AdditionalTestPage from './pages/AdditionalTestPage';
 import TestOfTestsPage from './pages/TestOfTestsPage';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const customTheme = {
   algorithm: theme.defaultAlgorithm,
@@ -103,7 +104,11 @@ function App() {
             <Route path="/payment-success" element={<PaymentSuccessPage />} />
             <Route path="/registration" element={<RegistrationPage />} />
             <Route path="/telegram-bot" element={<TelegramBotPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/dashboard" element={
+              <ErrorBoundary>
+                <DashboardPage />
+              </ErrorBoundary>
+            } />
             <Route path="/personal-plan" element={<PersonalPlanPage />} />
             <Route path="/lk/login" element={<DashboardLoginPage />} />
             <Route path="/lk/:token" element={<DashboardTokenPage />} />
