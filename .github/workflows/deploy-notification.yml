@@ -70,18 +70,9 @@ jobs:
           echo "📋 Chat ID: ${TELEGRAM_CHAT_ID}"
           echo "📋 Bot Token: ${TELEGRAM_BOT_TOKEN:0:10}..." # Показываем только первые 10 символов
           
-          # Формируем текст сообщения через heredoc
-          read -r -d '' MESSAGE_TEXT << EOF || true
-${EMOJI} <b>Деплой ${STATUS}</b>
-
-📦 Сервис: <code>korobka-1</code>
-📝 Коммит: <code>${COMMIT_ID}</code>
-💬 Сообщение: ${COMMIT_MSG}
-👤 Автор: ${COMMIT_AUTHOR}
-⏰ Время: ${TIME}
-
-${MESSAGE}
-EOF
+          # Формируем текст сообщения через printf
+          MESSAGE_TEXT=$(printf '%s <b>Деплой %s</b>\n\n📦 Сервис: <code>korobka-1</code>\n📝 Коммит: <code>%s</code>\n💬 Сообщение: %s\n👤 Автор: %s\n⏰ Время: %s\n\n%s' \
+            "${EMOJI}" "${STATUS}" "${COMMIT_ID}" "${COMMIT_MSG}" "${COMMIT_AUTHOR}" "${TIME}" "${MESSAGE}")
           
           # Отправляем сообщение и сохраняем ответ
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
