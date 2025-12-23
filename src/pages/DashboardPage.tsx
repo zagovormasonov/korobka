@@ -1095,29 +1095,38 @@ const DashboardPage: React.FC = () => {
         }
         
         try {
-          // Дедупликация результатов: оставляем только последнюю запись для каждого test_type
-          const resultsByTestType: {[key: string]: any} = {};
+          // Дедупликация результатов: группируем по test_url (более надежно, чем test_type)
+          // так как могут быть записи с разными test_type для одного теста (старые 'HCL-32' и новые 'bipolar')
+          const resultsByTestUrl: {[key: string]: any} = {};
           data.results.forEach((result: any) => {
-            if (!result || !result.test_type) {
-              console.warn('⚠️ [FETCH RESULTS] Результат не содержит test_type, пропускаем:', result);
+            if (!result) {
+              console.warn('⚠️ [FETCH RESULTS] Результат пустой, пропускаем:', result);
               return;
             }
             
-            // Если для этого test_type уже есть результат, сравниваем по updated_at или created_at
-            const existing = resultsByTestType[result.test_type];
+            // Используем test_url как ключ для группировки (более надежно)
+            // Если test_url нет, используем test_type как fallback
+            const groupKey = result.test_url || result.test_type || 'unknown';
+            
+            if (!groupKey || groupKey === 'unknown') {
+              console.warn('⚠️ [FETCH RESULTS] Результат не содержит test_url и test_type, пропускаем:', result);
+              return;
+            }
+            
+            // Если для этого ключа уже есть результат, сравниваем по updated_at или created_at
+            const existing = resultsByTestUrl[groupKey];
             if (existing) {
-              // Используем updated_at если есть, иначе 
-              
-              created_at
+              // Используем updated_at если есть, иначе created_at
               const existingTime = new Date(existing.updated_at || existing.created_at).getTime();
               const currentTime = new Date(result.updated_at || result.created_at).getTime();
               // Если времена одинаковые, берем запись с большим id (обычно это более новая запись)
               if (currentTime > existingTime || 
                   (currentTime === existingTime && result.id > existing.id)) {
-                resultsByTestType[result.test_type] = result; // Заменяем на более новую запись
+                resultsByTestUrl[groupKey] = result; // Заменяем на более новую запись
+                console.log(`🔄 [FETCH RESULTS] Заменяем старую запись (test_type: ${existing.test_type}, id: ${existing.id}) на новую (test_type: ${result.test_type}, id: ${result.id}) для test_url: ${groupKey}`);
               }
             } else {
-              resultsByTestType[result.test_type] = result;
+              resultsByTestUrl[groupKey] = result;
             }
           });
           
@@ -1275,7 +1284,12 @@ const DashboardPage: React.FC = () => {
   // Функции для модального окна
   const openModal = (testId: number) => {
     setCurrentTestId(testId);
-    setModalText(testResults[testId] || '');
+    // testResults может содержать объекты или строки, преобразуем в строку для модалки
+    const resultValue = testResults[testId];
+    const textValue = typeof resultValue === 'string' 
+      ? resultValue 
+      : (typeof resultValue === 'object' ? JSON.stringify(resultValue) : '');
+    setModalText(textValue);
     setModalVisible(true);
   };
 
@@ -1455,10 +1469,13 @@ const DashboardPage: React.FC = () => {
     }
 
     // Обновляем локальное состояние
-    setTestResults(prev => ({
-      ...prev,
-      [currentTestId]: modalText.trim()
-    }));
+    // Примечание: testResults может содержать объекты (Record<number, number | number[]>), 
+    // но для старых тестов может быть строка. Здесь мы сохраняем строку.
+    setTestResults(prev => {
+      const updated = { ...prev };
+      updated[currentTestId] = modalText.trim() as any; // Приводим к any, так как testResults может содержать разные типы
+      return updated;
+    });
 
     // Сохраняем в БД
     await saveTestResult(currentTestId, modalText.trim());
