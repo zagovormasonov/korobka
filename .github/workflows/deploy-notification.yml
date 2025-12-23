@@ -15,7 +15,7 @@ jobs:
       - name: Wait for Render deployment
         run: |
           echo "⏳ Ожидание завершения деплоя на Render..."
-          sleep 120  # Ждём 2 минуты для завершения деплоя
+          sleep 40  # Ждём 40 секунд для завершения деплоя
       
       - name: Check deployment status
         id: check_deploy
