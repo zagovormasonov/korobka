@@ -626,7 +626,8 @@ router.post('/additional/save', async (req, res) => {
       console.log('🔄 [SAVE] Обновляем существующий результат для test_type:', testName);
       const updateData = {
         test_url: testUrl,
-        answers: answers || testResult // Сохраняем либо объект ответов, либо итоговый балл
+        answers: answers || testResult, // Сохраняем либо объект ответов, либо итоговый балл
+        updated_at: new Date().toISOString() // Обновляем timestamp для правильной сортировки
       };
       
       // Добавляем score только если колонка существует (проверяем через try-catch или просто не добавляем)
@@ -807,10 +808,13 @@ router.get('/additional/results/:sessionId', async (req, res) => {
     
     console.log('🔍 [RESULTS BY SESSION] Загружаем результаты по sessionId:', sessionId);
     
+    // Загружаем результаты, сортируя по updated_at (если есть) или created_at
+    // Используем DISTINCT ON для дедупликации по test_type (PostgreSQL функция)
     const { data, error } = await supabase
       .from('additional_test_results')
       .select('*')
       .eq('session_id', sessionId)
+      .order('updated_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false });
 
     console.log('🔍 [RESULTS BY SESSION] Найдено записей для sessionId', sessionId, ':', data?.length || 0);

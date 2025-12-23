@@ -1095,12 +1095,29 @@ const DashboardPage: React.FC = () => {
         }
         
         try {
+          // Дедупликация результатов: оставляем только последнюю запись для каждого test_type
+          const resultsByTestType: {[key: string]: any} = {};
           data.results.forEach((result: any) => {
-            // Проверяем наличие обязательных полей
             if (!result || !result.test_type) {
               console.warn('⚠️ [FETCH RESULTS] Результат не содержит test_type, пропускаем:', result);
               return;
             }
+            
+            // Если для этого test_type уже есть результат, сравниваем по updated_at или created_at
+            const existing = resultsByTestType[result.test_type];
+            if (existing) {
+              const existingTime = new Date(existing.updated_at || existing.created_at).getTime();
+              const currentTime = new Date(result.updated_at || result.created_at).getTime();
+              if (currentTime > existingTime) {
+                resultsByTestType[result.test_type] = result; // Заменяем на более новую запись
+              }
+            } else {
+              resultsByTestType[result.test_type] = result;
+            }
+          });
+          
+          // Теперь обрабатываем только уникальные результаты (последние для каждого test_type)
+          Object.values(resultsByTestType).forEach((result: any) => {
             
             // Ищем тест по test_type (это config.id, например 'bipolar' для HCL-32)
             let testConfig;
