@@ -1029,7 +1029,21 @@ const DashboardPage: React.FC = () => {
               }
               
               if (test && test.id) {
-                resultsMap[test.id] = result.answers;
+                // Преобразуем answers в строку, если это объект
+                let answersStr: string;
+                if (typeof result.answers === 'string') {
+                  answersStr = result.answers;
+                } else if (typeof result.answers === 'object' && result.answers !== null) {
+                  // Если это объект (JSONB), преобразуем в строку
+                  try {
+                    answersStr = JSON.stringify(result.answers);
+                  } catch (e) {
+                    answersStr = String(result.answers);
+                  }
+                } else {
+                  answersStr = String(result.answers || '');
+                }
+                resultsMap[test.id] = answersStr;
                 console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (test_type: ${result.test_type}, config.id: ${testConfig.id}, config.name: ${testConfig.name})`);
               } else {
                 console.warn(`⚠️ [FETCH RESULTS] Тест с test_type "${result.test_type}" (config.id: ${testConfig.id}, config.name: ${testConfig.name}, config.url: ${testConfig.source?.url}) найден в конфиге, но не найден в recommendedTests`);
@@ -1042,7 +1056,21 @@ const DashboardPage: React.FC = () => {
               try {
                 const test = recommendedTests.find(t => t && t.name === result.test_type);
                 if (test && test.id) {
-                  resultsMap[test.id] = result.answers;
+                  // Преобразуем answers в строку, если это объект
+                  let answersStr: string;
+                  if (typeof result.answers === 'string') {
+                    answersStr = result.answers;
+                  } else if (typeof result.answers === 'object' && result.answers !== null) {
+                    // Если это объект (JSONB), преобразуем в строку
+                    try {
+                      answersStr = JSON.stringify(result.answers);
+                    } catch (e) {
+                      answersStr = String(result.answers);
+                    }
+                  } else {
+                    answersStr = String(result.answers || '');
+                  }
+                  resultsMap[test.id] = answersStr;
                   console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (старый формат)`);
                 } else {
                   console.warn(`⚠️ [FETCH RESULTS] Не найден тест с test_type "${result.test_type}"`);
@@ -1147,10 +1175,28 @@ const DashboardPage: React.FC = () => {
   };
 
   // Функция для обрезки текста
-  const truncateText = (text: string | undefined, maxLength: number = 100) => {
+  const truncateText = (text: string | undefined | any, maxLength: number = 100) => {
     if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
+    
+    // Преобразуем в строку, если это не строка
+    let textStr: string;
+    if (typeof text === 'string') {
+      textStr = text;
+    } else if (typeof text === 'number') {
+      textStr = String(text);
+    } else if (typeof text === 'object') {
+      // Если это объект (например, JSONB из БД), преобразуем в строку
+      try {
+        textStr = JSON.stringify(text);
+      } catch (e) {
+        textStr = String(text);
+      }
+    } else {
+      textStr = String(text);
+    }
+    
+    if (textStr.length <= maxLength) return textStr;
+    return textStr.substring(0, maxLength) + '...';
   };
 
   const saveTestResult = async (testId: number, result: string) => {
