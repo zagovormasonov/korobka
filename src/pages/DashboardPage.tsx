@@ -931,20 +931,27 @@ const DashboardPage: React.FC = () => {
         // Загружаем существующие результаты
         const resultsMap: {[key: number]: string} = {};
         data.results.forEach((result: any) => {
-          // Ищем тест по test_type (теперь это config.id)
-          // Сначала пытаемся найти через getTestConfig по test_type
+          // Ищем тест по test_type (это config.id, например 'bipolar' для HCL-32)
           const testConfig = getTestConfig(result.test_type);
           if (testConfig) {
-            // Находим тест в recommendedTests по названию из конфига
+            // Находим тест в recommendedTests по config.id
+            // Сначала пытаемся найти по id из конфига
             const test = recommendedTests.find(t => {
-              // Сравниваем по name из recommendedTests с name из конфига
-              return t.name === testConfig.name || getTestConfig(t.name)?.id === result.test_type;
+              // Проверяем, совпадает ли id теста в recommendedTests с id конфига
+              const tConfig = getTestConfig(t.name);
+              if (tConfig && tConfig.id === result.test_type) {
+                return true;
+              }
+              // Fallback: проверяем по name, если id не совпал
+              return t.name === testConfig.name;
             });
+            
             if (test) {
               resultsMap[test.id] = result.answers;
-              console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (test_type: ${result.test_type})`);
+              console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (test_type: ${result.test_type}, config.id: ${testConfig.id})`);
             } else {
-              console.warn(`⚠️ [FETCH RESULTS] Тест с test_type "${result.test_type}" найден в конфиге, но не найден в recommendedTests`);
+              console.warn(`⚠️ [FETCH RESULTS] Тест с test_type "${result.test_type}" (config.id: ${testConfig.id}, config.name: ${testConfig.name}) найден в конфиге, но не найден в recommendedTests`);
+              console.warn(`⚠️ [FETCH RESULTS] Доступные тесты в recommendedTests:`, recommendedTests.map(t => ({ id: t.id, name: t.name })));
             }
           } else {
             // Fallback: пытаемся найти по старому способу (по name)
@@ -954,6 +961,7 @@ const DashboardPage: React.FC = () => {
               console.log(`✅ [FETCH RESULTS] Найден результат для теста ${test.name} (старый формат)`);
             } else {
               console.warn(`⚠️ [FETCH RESULTS] Не найден тест с test_type "${result.test_type}"`);
+              console.warn(`⚠️ [FETCH RESULTS] Доступные тесты в recommendedTests:`, recommendedTests.map(t => ({ id: t.id, name: t.name })));
             }
           }
         });
