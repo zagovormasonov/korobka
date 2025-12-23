@@ -468,6 +468,30 @@ const DashboardPage: React.FC = () => {
       console.log('📥 [DASHBOARD] Загружаем данные тестов');
       generateMascotMessage();
       // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
+      
+      // Добавляем слушатель для обновления результатов при возврате на страницу
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && isAuthenticated && authData?.sessionId) {
+          console.log('🔄 [DASHBOARD] Страница стала видимой, обновляем результаты тестов');
+          fetchAdditionalTestResults();
+        }
+      };
+      
+      const handleFocus = () => {
+        if (isAuthenticated && authData?.sessionId) {
+          console.log('🔄 [DASHBOARD] Окно получило фокус, обновляем результаты тестов');
+          fetchAdditionalTestResults();
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', handleFocus);
+      
+      // Очистка слушателей при размонтировании
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('focus', handleFocus);
+      };
     } else if (isValidSessionId && authData?.personalPlanUnlocked === true) {
       console.log('🔓 [DASHBOARD] Персональный план разблокирован, проверяем статус генерации документов');
       // Проверяем статус генерации документов

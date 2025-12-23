@@ -608,27 +608,55 @@ router.post('/additional/save', async (req, res) => {
       .eq('test_type', testName)
       .single();
 
+    // Вычисляем score из answers, если передан объект answers
+    let calculatedScore = testResult;
+    if (answers && typeof answers === 'object') {
+      // Если передан объект answers, вычисляем score
+      calculatedScore = Object.values(answers).reduce((sum: number, val: any) => {
+        if (Array.isArray(val)) {
+          return sum + val.reduce((s: number, v: number) => s + v, 0);
+        }
+        return sum + (typeof val === 'number' ? val : 0);
+      }, 0);
+    }
+    
     let result;
     if (existingResult) {
+      // Обновляем существующий результат
+      console.log('🔄 [SAVE] Обновляем существующий результат для test_type:', testName);
       const { data, error } = await supabase
         .from('additional_test_results')
         .update({
           test_url: testUrl,
-          answers: answers || testResult // Сохраняем либо объект ответов, либо итоговый балл
+          answers: answers || testResult, // Сохраняем либо объект ответов, либо итоговый балл
+          score: calculatedScore // Обновляем score
         })
         .eq('id', existingResult.id)
         .select()
         .single();
       if (error) throw error;
       result = data;
+      console.log('✅ [SAVE] Результат обновлен:', result.id);
     } else {
+      // Вычисляем score из answers, если передан объект answers
+      let calculatedScore = testResult;
+      if (answers && typeof answers === 'object') {
+        calculatedScore = Object.values(answers).reduce((sum: number, val: any) => {
+          if (Array.isArray(val)) {
+            return sum + val.reduce((s: number, v: number) => s + v, 0);
+          }
+          return sum + (typeof val === 'number' ? val : 0);
+        }, 0);
+      }
+      
       const { data, error } = await supabase
       .from('additional_test_results')
       .insert({
         session_id: sessionId,
         test_type: testName,
         test_url: testUrl,
-          answers: answers || testResult
+        answers: answers || testResult,
+        score: calculatedScore
       })
       .select()
       .single();
