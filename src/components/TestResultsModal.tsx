@@ -6,8 +6,7 @@ import {
   WarningOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
-import { TestConfig, TestInterpretation } from '../config/tests/types';
-import { getText } from '../config/tests';
+import { TestConfig, TestInterpretation, getText } from '../config/tests/types';
 
 const { Title, Text, Paragraph } = Typography;
 

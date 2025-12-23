@@ -20,7 +20,8 @@ import {
   HomeOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
-import { getTestConfig, TestConfig, Gender, getText } from '../config/tests';
+import { getTestConfig, TestConfig } from '../config/tests';
+import { Gender, getText } from '../config/tests/types';
 import { apiRequest } from '../config/api';
 import TestResultsModal from '../components/TestResultsModal';
 

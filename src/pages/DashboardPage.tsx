@@ -25,7 +25,7 @@ import {
   ReloadOutlined,
   ArrowRightOutlined
 } from '@ant-design/icons';
-import { getTestConfig } from '../config/tests';
+import { getTestConfig, additionalTests } from '../config/tests';
 import TestResultsModal from '../components/TestResultsModal';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { useAuth } from '../hooks/useAuth';
@@ -1215,7 +1215,6 @@ const DashboardPage: React.FC = () => {
     
     // Если не нашли по name, пробуем найти по URL
     if (!config && test.url) {
-      const { additionalTests } = require('../config/tests');
       config = additionalTests.find((t: any) => t.source?.url === test.url);
       console.log('🔍 [SHOW-RESULTS] Поиск по URL:', test.url, 'результат:', config ? 'найден' : 'не найден');
     }
@@ -2220,7 +2219,6 @@ const DashboardPage: React.FC = () => {
                       
                       // Если не нашли, пробуем найти по URL
                       if (!testConfig && test.url) {
-                        const { additionalTests } = require('../config/tests');
                         testConfig = additionalTests.find((t: any) => t.source?.url === test.url);
                       }
                       
@@ -2313,7 +2311,6 @@ const DashboardPage: React.FC = () => {
                           
                           // Если не нашли, пробуем найти по URL
                           if (!config && test.url) {
-                            const { additionalTests } = require('../config/tests');
                             config = additionalTests.find((t: any) => t.source?.url === test.url);
                           }
                           
