@@ -1191,23 +1191,33 @@ const DashboardPage: React.FC = () => {
   };
 
   const showResults = (test: any) => {
+    console.log('🔍 [SHOW-RESULTS] Поиск конфига для теста:', {
+      name: test.name,
+      url: test.url,
+      testConfigId: test.testConfigId,
+      id: test.id
+    });
+    
     // Пытаемся найти конфиг разными способами
     let config;
     
     // Сначала пробуем по testConfigId (если передан)
     if (test.testConfigId) {
       config = getTestConfig(test.testConfigId);
+      console.log('🔍 [SHOW-RESULTS] Поиск по testConfigId:', test.testConfigId, 'результат:', config ? 'найден' : 'не найден');
     }
     
     // Если не нашли, пробуем по name
     if (!config) {
       config = getTestConfig(test.name);
+      console.log('🔍 [SHOW-RESULTS] Поиск по name:', test.name, 'результат:', config ? 'найден' : 'не найден');
     }
     
     // Если не нашли по name, пробуем найти по URL
     if (!config && test.url) {
       const { additionalTests } = require('../config/tests');
       config = additionalTests.find((t: any) => t.source?.url === test.url);
+      console.log('🔍 [SHOW-RESULTS] Поиск по URL:', test.url, 'результат:', config ? 'найден' : 'не найден');
     }
     
     if (!config) {
@@ -1217,9 +1227,12 @@ const DashboardPage: React.FC = () => {
         testConfigId: test.testConfigId,
         id: test.id
       });
-      message.error('Конфигурация теста не найдена');
+      // Показываем более информативное сообщение
+      message.error(`Конфигурация теста не найдена. Название: ${test.name || 'не указано'}, URL: ${test.url || 'не указан'}`);
       return;
     }
+    
+    console.log('✅ [SHOW-RESULTS] Конфиг найден:', config.id, config.name);
     
     // Получаем answers из testResults
     const resultData = testResults[test.id];
@@ -2200,9 +2213,18 @@ const DashboardPage: React.FC = () => {
                     if (!test || !test.id) return null;
                     
                     let testConfigId;
+                    let testConfig;
                     try {
-                      const config = getTestConfig(test.name);
-                      testConfigId = config?.id || test.id;
+                      // Сначала пробуем найти по name
+                      testConfig = getTestConfig(test.name);
+                      
+                      // Если не нашли, пробуем найти по URL
+                      if (!testConfig && test.url) {
+                        const { additionalTests } = require('../config/tests');
+                        testConfig = additionalTests.find((t: any) => t.source?.url === test.url);
+                      }
+                      
+                      testConfigId = testConfig?.id || test.id;
                     } catch (error) {
                       console.error('❌ [RENDER] Ошибка при вызове getTestConfig для теста:', test.name, error);
                       testConfigId = test.id;
