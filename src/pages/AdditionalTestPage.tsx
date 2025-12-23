@@ -400,7 +400,7 @@ const AdditionalTestPage: React.FC = () => {
                   >
                     📊 Смотреть результаты и интерпретацию
                   </Button>
-                  <Space size="middle">
+                  <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
                     <Button 
                       size="large" 
                       icon={<ReloadOutlined />}
@@ -410,7 +410,7 @@ const AdditionalTestPage: React.FC = () => {
                         setIsCompleted(false);
                         setShowResultsModal(false);
                       }}
-                      style={{ borderRadius: 12, height: 45 }}
+                      style={{ borderRadius: 12, height: 45, flex: 1 }}
                     >
                       Пройти заново
                     </Button>
@@ -418,11 +418,11 @@ const AdditionalTestPage: React.FC = () => {
                       size="large" 
                       icon={<HomeOutlined />}
                       onClick={() => navigate(isDemoSession ? '/test-of-the-tests' : `/dashboard?sessionId=${sessionId}`)}
-                      style={{ borderRadius: 12, height: 45 }}
+                      style={{ borderRadius: 12, height: 45, flex: 1 }}
                     >
                       {isDemoSession ? 'К списку тестов' : 'В кабинет'}
                     </Button>
-                  </Space>
+                  </div>
                 </Space>
               }
             />
@@ -497,7 +497,7 @@ const AdditionalTestPage: React.FC = () => {
               {renderQuestion()}
               </div>
 
-            <div style={{ marginTop: 40, display: 'flex', justifyContent: 'space-between', gap: '15px' }}>
+            <div style={{ marginTop: 40, display: 'flex', gap: '15px' }}>
               <Button
                 icon={<ArrowLeftOutlined />}
                 onClick={handleBack}
@@ -515,7 +515,6 @@ const AdditionalTestPage: React.FC = () => {
                 style={{ 
                   borderRadius: 12, 
                   height: 45, 
-                  minWidth: 150,
                   flex: 1,
                   background: '#4F958B', 
                   borderColor: '#4F958B' 
