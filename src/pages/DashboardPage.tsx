@@ -469,6 +469,26 @@ const DashboardPage: React.FC = () => {
       generateMascotMessage();
       // fetchAdditionalTestResults вызовется автоматически после загрузки recommendedTests
       
+      // Проверяем, были ли обновлены результаты тестов перед загрузкой страницы
+      const checkInitialUpdate = () => {
+        const lastUpdate = localStorage.getItem('test_results_updated');
+        if (lastUpdate) {
+          const updateTime = parseInt(lastUpdate);
+          const now = Date.now();
+          // Если обновление было менее 30 секунд назад, перезагружаем результаты
+          if (now - updateTime < 30000) {
+            console.log('🔄 [DASHBOARD] Обнаружено недавнее обновление результатов при загрузке страницы, перезагружаем...');
+            setTimeout(() => {
+              fetchAdditionalTestResults();
+              localStorage.removeItem('test_results_updated');
+            }, 1000); // Небольшая задержка, чтобы recommendedTests успели загрузиться
+          }
+        }
+      };
+      
+      // Проверяем сразу при монтировании
+      checkInitialUpdate();
+      
       // Добавляем слушатель для обновления результатов при возврате на страницу
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible' && isAuthenticated && authData?.sessionId) {
@@ -551,14 +571,20 @@ const DashboardPage: React.FC = () => {
         if (lastUpdate) {
           const updateTime = parseInt(lastUpdate);
           const now = Date.now();
-          // Если обновление было менее 10 секунд назад, перезагружаем результаты
-          if (now - updateTime < 10000) {
+          // Если обновление было менее 30 секунд назад, перезагружаем результаты
+          if (now - updateTime < 30000) {
             console.log('🔄 [DASHBOARD] Обнаружено обновление результатов, перезагружаем...');
             loadResults();
+            localStorage.removeItem('test_results_updated');
+          } else {
+            // Если флаг старый, удаляем его
             localStorage.removeItem('test_results_updated');
           }
         }
       };
+      
+      // Проверяем сразу при монтировании
+      checkForUpdates();
       
       // Проверяем периодически (каждые 2 секунды)
       const updateInterval = setInterval(checkForUpdates, 2000);

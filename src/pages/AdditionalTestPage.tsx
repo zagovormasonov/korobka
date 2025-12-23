@@ -420,7 +420,14 @@ const AdditionalTestPage: React.FC = () => {
                   <Button 
                     size="large" 
                     icon={<HomeOutlined />}
-                    onClick={() => navigate(isDemoSession ? '/test-of-the-tests' : `/dashboard?sessionId=${sessionId}`)}
+                    onClick={() => {
+                      // Устанавливаем флаг обновления перед навигацией
+                      if (!isDemoSession) {
+                        localStorage.setItem('test_results_updated', Date.now().toString());
+                        console.log('🔄 [TEST-PAGE] Установлен флаг test_results_updated перед переходом в кабинет');
+                      }
+                      navigate(isDemoSession ? '/test-of-the-tests' : `/dashboard?sessionId=${sessionId}`);
+                    }}
                     style={{ borderRadius: 12, height: 45, width: '100%' }}
                   >
                     {isDemoSession ? 'К списку тестов' : 'В кабинет'}
