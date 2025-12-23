@@ -14,79 +14,96 @@ jobs:
       
       - name: Wait for Render deployment and check status
         id: check_deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
           echo "⏳ Ожидание завершения деплоя на Render..."
-          echo "🔍 Стратегия: сначала ждём недоступности (начало деплоя), затем стабильной доступности (конец деплоя)"
           
+          # Используем Render API для проверки статуса деплоя
+          SERVICE_ID="srv-d38pnk15pdvs738pmd7g"  # ID сервиса korobka-1
           MAX_ATTEMPTS=120  # Максимум 20 минут (120 * 10 секунд)
           ATTEMPT=0
-          DEPLOY_STARTED=false
           DEPLOY_SUCCESS=false
-          STABLE_SUCCESS_COUNT=0
-          REQUIRED_STABLE_SUCCESSES=3  # Нужно 3 успешных ответа подряд для стабильности
+          LAST_DEPLOY_STATUS=""
+          STABLE_COUNT=0
           
-          # Фаза 1: Ждём начала деплоя (сервис становится недоступным)
-          echo "📋 Фаза 1: Ожидание начала деплоя (сервис должен стать недоступным)..."
-          INITIAL_WAIT=30  # Даём Render 30 секунд на начало деплоя
-          echo "⏳ Ждём ${INITIAL_WAIT} секунд, чтобы Render начал деплой..."
-          sleep $INITIAL_WAIT
-          
-          while [ $ATTEMPT -lt $MAX_ATTEMPTS ] && [ "$DEPLOY_STARTED" = "false" ]; do
-            ATTEMPT=$((ATTEMPT + 1))
-            echo "📡 Попытка $ATTEMPT/$MAX_ATTEMPTS: проверяем, начался ли деплой..."
-            
-            response=$(curl -s -o /dev/null -w "%{http_code}" https://idenself.com/api/health || echo "000")
-            echo "   HTTP статус: $response"
-            
-            if [ "$response" != "200" ]; then
-              echo "   ✅ Сервис недоступен - деплой начался!"
-              DEPLOY_STARTED=true
-              STABLE_SUCCESS_COUNT=0
-              break
-            else
-              echo "   ⏳ Сервис ещё доступен (старый деплой), ждём начала нового..."
-            fi
-            
-            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
-              sleep 10
-            fi
-          done
-          
-          # Если деплой не начался за разумное время, возможно он очень быстрый или уже завершён
-          if [ "$DEPLOY_STARTED" = "false" ]; then
-            echo "⚠️ Деплой не стал недоступным. Возможно, он очень быстрый или уже завершён."
-            echo "📋 Переходим к проверке стабильности сервиса..."
-            DEPLOY_STARTED=true  # Продолжаем проверку стабильности
-          fi
-          
-          # Фаза 2: Ждём завершения деплоя (сервис снова становится доступным и стабильным)
-          echo "📋 Фаза 2: Ожидание завершения деплоя (сервис должен стать доступным и стабильным)..."
-          ATTEMPT=0  # Сбрасываем счётчик для второй фазы
+          # Даём Render время начать деплой
+          echo "⏳ Ждём 20 секунд, чтобы Render начал деплой..."
+          sleep 20
           
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ] && [ "$DEPLOY_SUCCESS" = "false" ]; do
             ATTEMPT=$((ATTEMPT + 1))
-            echo "📡 Попытка $ATTEMPT/$MAX_ATTEMPTS: проверяем доступность (стабильных ответов: $STABLE_SUCCESS_COUNT/$REQUIRED_STABLE_SUCCESSES)..."
+            echo "📡 Попытка $ATTEMPT/$MAX_ATTEMPTS: проверяем статус деплоя..."
             
-            response=$(curl -s -o /dev/null -w "%{http_code}" https://idenself.com/api/health || echo "000")
-            echo "   HTTP статус: $response"
-            
-            if [ "$response" = "200" ]; then
-              STABLE_SUCCESS_COUNT=$((STABLE_SUCCESS_COUNT + 1))
-              echo "   ✅ Успешный ответ ($STABLE_SUCCESS_COUNT/$REQUIRED_STABLE_SUCCESSES)"
+            # Получаем последний деплой через Render API
+            if [ -n "$RENDER_API_KEY" ]; then
+              # Используем Render API
+              DEPLOY_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+                "https://api.render.com/v1/services/$SERVICE_ID/deploys?limit=1" || echo "{}")
               
-              if [ $STABLE_SUCCESS_COUNT -ge $REQUIRED_STABLE_SUCCESSES ]; then
-                echo "✅ Сервис стабильно доступен! Деплой завершён."
-                echo "status=success" >> $GITHUB_OUTPUT
-                DEPLOY_SUCCESS=true
-                break
+              DEPLOY_STATUS=$(echo "$DEPLOY_RESPONSE" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4 || echo "")
+              
+              if [ -n "$DEPLOY_STATUS" ]; then
+                echo "   📊 Статус деплоя (Render API): $DEPLOY_STATUS"
+                
+                # Проверяем, изменился ли статус
+                if [ "$DEPLOY_STATUS" != "$LAST_DEPLOY_STATUS" ]; then
+                  echo "   🔄 Статус изменился: $LAST_DEPLOY_STATUS -> $DEPLOY_STATUS"
+                  LAST_DEPLOY_STATUS="$DEPLOY_STATUS"
+                fi
+                
+                # Если деплой завершён успешно
+                if [ "$DEPLOY_STATUS" = "live" ]; then
+                  # Дополнительно проверяем health endpoint для уверенности
+                  echo "   🔍 Проверяем health endpoint для подтверждения..."
+                  sleep 5
+                  HEALTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://idenself.com/api/health || echo "000")
+                  
+                  if [ "$HEALTH_RESPONSE" = "200" ]; then
+                    echo "✅ Деплой завершён успешно! (статус: live, health: OK)"
+                    echo "status=success" >> $GITHUB_OUTPUT
+                    DEPLOY_SUCCESS=true
+                    break
+                  else
+                    echo "   ⚠️ Статус 'live', но health endpoint недоступен (HTTP $HEALTH_RESPONSE), продолжаем проверку..."
+                  fi
+                elif [ "$DEPLOY_STATUS" = "build_failed" ] || [ "$DEPLOY_STATUS" = "update_failed" ]; then
+                  echo "❌ Деплой завершился с ошибкой: $DEPLOY_STATUS"
+                  echo "status=failed" >> $GITHUB_OUTPUT
+                  DEPLOY_SUCCESS=true  # Завершаем, но со статусом failed
+                  break
+                else
+                  echo "   ⏳ Деплой в процессе: $DEPLOY_STATUS"
+                fi
+              else
+                echo "   ⚠️ Не удалось получить статус из Render API, используем fallback (health endpoint)..."
+                # Fallback: проверяем health endpoint
+                HEALTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://idenself.com/api/health || echo "000")
+                if [ "$HEALTH_RESPONSE" = "200" ]; then
+                  echo "   ✅ Health endpoint доступен, но статус деплоя неизвестен"
+                fi
               fi
             else
-              # Если сервис снова стал недоступным, сбрасываем счётчик
-              if [ $STABLE_SUCCESS_COUNT -gt 0 ]; then
-                echo "   ⚠️ Сервис снова недоступен, сбрасываем счётчик стабильности"
-                STABLE_SUCCESS_COUNT=0
+              # Fallback: если нет API ключа, используем только health endpoint
+              echo "   ⚠️ RENDER_API_KEY не установлен, используем только health endpoint..."
+              HEALTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://idenself.com/api/health || echo "000")
+              echo "   📊 Health endpoint: HTTP $HEALTH_RESPONSE"
+              
+              if [ "$HEALTH_RESPONSE" = "200" ]; then
+                # Проверяем стабильность (2 успешных ответа подряд)
+                STABLE_COUNT=$((STABLE_COUNT + 1))
+                
+                if [ $STABLE_COUNT -ge 2 ]; then
+                  echo "✅ Сервис стабильно доступен! Деплой завершён."
+                  echo "status=success" >> $GITHUB_OUTPUT
+                  DEPLOY_SUCCESS=true
+                  break
+                else
+                  echo "   ✅ Health endpoint доступен ($STABLE_COUNT/2), продолжаем проверку..."
+                fi
               else
-                echo "   ⏳ Деплой ещё в процессе, сервис недоступен..."
+                STABLE_COUNT=0
+                echo "   ⏳ Health endpoint недоступен (HTTP $HEALTH_RESPONSE), деплой в процессе..."
               fi
             fi
             
@@ -97,7 +114,7 @@ jobs:
           done
           
           if [ "$DEPLOY_SUCCESS" = "false" ]; then
-            echo "❌ Сервис не стал стабильно доступен после $MAX_ATTEMPTS попыток"
+            echo "❌ Деплой не завершился успешно после $MAX_ATTEMPTS попыток"
             echo "status=failed" >> $GITHUB_OUTPUT
           fi
       
@@ -162,4 +179,3 @@ jobs:
             # Не падаем, просто логируем ошибку
             echo "⚠️ Workflow продолжит выполнение, но уведомление не отправлено"
           fi
-
