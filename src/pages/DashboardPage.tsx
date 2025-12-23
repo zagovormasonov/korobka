@@ -516,7 +516,8 @@ const DashboardPage: React.FC = () => {
       console.log('🍎 [SAFARI-DETECT] Обнаружен Safari/iOS, используем специальную обработку ошибок');
     }
     
-    try {
+    // Функция для загрузки результатов
+    const loadResults = () => {
       if (recommendedTests.length > 0 && authData?.sessionId && authData?.personalPlanUnlocked === false) {
         console.log('📋 Рекомендованные тесты загружены, загружаем результаты...');
         
@@ -539,6 +540,53 @@ const DashboardPage: React.FC = () => {
           });
         }
       }
+    };
+    
+    try {
+      loadResults();
+      
+      // Проверяем, были ли обновлены результаты тестов (из другой вкладки/страницы)
+      const checkForUpdates = () => {
+        const lastUpdate = localStorage.getItem('test_results_updated');
+        if (lastUpdate) {
+          const updateTime = parseInt(lastUpdate);
+          const now = Date.now();
+          // Если обновление было менее 10 секунд назад, перезагружаем результаты
+          if (now - updateTime < 10000) {
+            console.log('🔄 [DASHBOARD] Обнаружено обновление результатов, перезагружаем...');
+            loadResults();
+            localStorage.removeItem('test_results_updated');
+          }
+        }
+      };
+      
+      // Проверяем периодически (каждые 2 секунды)
+      const updateInterval = setInterval(checkForUpdates, 2000);
+      
+      // Слушаем события видимости страницы и фокуса окна
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && authData?.sessionId && authData?.personalPlanUnlocked === false) {
+          console.log('🔄 [DASHBOARD] Страница стала видимой, обновляем результаты тестов');
+          loadResults();
+        }
+      };
+      
+      const handleFocus = () => {
+        if (authData?.sessionId && authData?.personalPlanUnlocked === false) {
+          console.log('🔄 [DASHBOARD] Окно получило фокус, обновляем результаты тестов');
+          loadResults();
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', handleFocus);
+      
+      // Очистка при размонтировании
+      return () => {
+        clearInterval(updateInterval);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('focus', handleFocus);
+      };
     } catch (error) {
       console.error('❌ [USE-EFFECT] Критическая ошибка в useEffect:', error);
       console.error('❌ [USE-EFFECT] Error stack:', (error as Error)?.stack);
