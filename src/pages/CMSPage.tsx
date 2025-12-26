@@ -156,6 +156,7 @@ const CMSPage: React.FC = () => {
     // Восстанавливаем последнюю открытую вкладку из localStorage
     return localStorage.getItem('cms_active_tab') || 'overview';
   });
+  const [answersModalTab, setAnswersModalTab] = useState<'primary' | 'additional' | 'plan' | 'preparation' | 'specialist'>('primary');
   const [funnelPeriod, setFunnelPeriod] = useState('all'); // all, day, week, month
   
   // Данные статистики
@@ -176,6 +177,11 @@ const CMSPage: React.FC = () => {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const [deleting, setDeleting] = useState(false);
+  
+  // Состояние для попапа с ответами пользователя
+  const [answersModalVisible, setAnswersModalVisible] = useState(false);
+  const [selectedUserData, setSelectedUserData] = useState<any>(null);
+  const [loadingUserData, setLoadingUserData] = useState(false);
   
   // Данные графика активности
   const [activityData, setActivityData] = useState<ActivityDataItem[]>([]);
@@ -486,6 +492,39 @@ const CMSPage: React.FC = () => {
     setDeleteConfirmModalVisible(false);
     setUserToDelete(null);
     setDeleteConfirmationText('');
+  };
+
+  // Функция для открытия попапа с ответами пользователя
+  const handleViewAnswers = async (user: User) => {
+    setAnswersModalVisible(true);
+    setLoadingUserData(true);
+    setSelectedUserData(null);
+    setAnswersModalTab('primary');
+    
+    try {
+      const token = localStorage.getItem('cms_token');
+      if (!token) {
+        message.error('Ошибка авторизации');
+        return;
+      }
+
+      const response = await apiRequest(`api/cms/users/${user.sessionId}/data`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedUserData(data.data);
+      } else {
+        const errorData = await response.json();
+        message.error(errorData.error || 'Ошибка загрузки данных');
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки данных пользователя:', error);
+      message.error('Ошибка сети при загрузке данных');
+    } finally {
+      setLoadingUserData(false);
+    }
   };
 
   // Обновляем онлайн статус пользователей на основе данных из WebSocket
@@ -1289,17 +1328,27 @@ const CMSPage: React.FC = () => {
                           {
                             title: 'Действия',
                             key: 'actions',
-                            width: 100,
+                            width: 200,
                             fixed: 'right' as const,
                             render: (record: any) => (
-                              <Button
-                                danger
-                                icon={<DeleteOutlined />}
-                                onClick={() => handleDeleteUser(record)}
-                                size="small"
-                              >
-                                Удалить
-                              </Button>
+                              <Space>
+                                <Button
+                                  type="primary"
+                                  icon={<EyeOutlined />}
+                                  onClick={() => handleViewAnswers(record)}
+                                  size="small"
+                                >
+                                  Смотреть ответы
+                                </Button>
+                                <Button
+                                  danger
+                                  icon={<DeleteOutlined />}
+                                  onClick={() => handleDeleteUser(record)}
+                                  size="small"
+                                >
+                                  Удалить
+                                </Button>
+                              </Space>
                             )
                           }
                         ]}
@@ -1687,6 +1736,193 @@ const CMSPage: React.FC = () => {
           <p style={{ color: '#ff4d4f', marginTop: '10px', fontSize: '12px' }}>
             Фраза не совпадает. Пожалуйста, введите точную фразу.
           </p>
+        )}
+      </Modal>
+
+      {/* Модальное окно с ответами пользователя */}
+      <Modal
+        title="Ответы пользователя"
+        open={answersModalVisible}
+        onCancel={() => {
+          setAnswersModalVisible(false);
+          setSelectedUserData(null);
+        }}
+        footer={null}
+        width={900}
+        style={{ top: 20 }}
+      >
+        {loadingUserData ? (
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <Spin size="large" tip="Загрузка данных..." />
+          </div>
+        ) : selectedUserData ? (
+          <div>
+            {/* Топ-бар с разделами */}
+            <div style={{ 
+              borderBottom: '2px solid #f0f0f0', 
+              marginBottom: '20px',
+              display: 'flex',
+              gap: '8px',
+              flexWrap: 'wrap'
+            }}>
+              <Button
+                type={answersModalTab === 'primary' ? 'primary' : 'default'}
+                onClick={() => setAnswersModalTab('primary')}
+                style={{ marginBottom: '8px' }}
+              >
+                Ответы на первичный тест
+              </Button>
+              <Button
+                type={answersModalTab === 'additional' ? 'primary' : 'default'}
+                onClick={() => setAnswersModalTab('additional')}
+                style={{ marginBottom: '8px' }}
+              >
+                Результаты доп. тестов
+              </Button>
+              <Button
+                type={answersModalTab === 'plan' ? 'primary' : 'default'}
+                onClick={() => setAnswersModalTab('plan')}
+                style={{ marginBottom: '8px' }}
+              >
+                Персональный план
+              </Button>
+              <Button
+                type={answersModalTab === 'preparation' ? 'primary' : 'default'}
+                onClick={() => setAnswersModalTab('preparation')}
+                style={{ marginBottom: '8px' }}
+              >
+                Подготовка к сеансу
+              </Button>
+              <Button
+                type={answersModalTab === 'specialist' ? 'primary' : 'default'}
+                onClick={() => setAnswersModalTab('specialist')}
+                style={{ marginBottom: '8px' }}
+              >
+                Для специалиста
+              </Button>
+            </div>
+
+            {/* Контент разделов */}
+            <div style={{ maxHeight: '60vh', overflowY: 'auto', padding: '10px' }}>
+              {answersModalTab === 'primary' && (
+                <div>
+                  <Title level={4}>Ответы на первичный тест</Title>
+                  {selectedUserData.primaryTestAnswers && selectedUserData.primaryTestAnswers.length > 0 ? (
+                    <List
+                      dataSource={selectedUserData.primaryTestAnswers}
+                      renderItem={(item: any, index: number) => (
+                        <List.Item style={{ padding: '16px 0', borderBottom: '1px solid #f0f0f0' }}>
+                          <div style={{ width: '100%' }}>
+                            <Text strong style={{ fontSize: '14px', display: 'block', marginBottom: '8px' }}>
+                              {index + 1}. {item.questionText}
+                            </Text>
+                            <div style={{ marginLeft: '20px' }}>
+                              <Text style={{ display: 'block', marginBottom: '4px' }}>
+                                <strong>Ответ:</strong> {item.answer}
+                              </Text>
+                              {item.additionalText && (
+                                <Text style={{ display: 'block', color: '#595959', fontStyle: 'italic' }}>
+                                  <strong>Комментарий:</strong> {item.additionalText}
+                                </Text>
+                              )}
+                            </div>
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                  ) : (
+                    <Text type="secondary">Ответы на первичный тест отсутствуют</Text>
+                  )}
+                </div>
+              )}
+
+              {answersModalTab === 'additional' && (
+                <div>
+                  <Title level={4}>Результаты дополнительных тестов</Title>
+                  {selectedUserData.additionalTestsResults && selectedUserData.additionalTestsResults.length > 0 ? (
+                    <List
+                      dataSource={selectedUserData.additionalTestsResults}
+                      renderItem={(item: any) => (
+                        <List.Item style={{ padding: '16px 0', borderBottom: '1px solid #f0f0f0' }}>
+                          <div style={{ width: '100%' }}>
+                            <Text strong style={{ fontSize: '14px', display: 'block', marginBottom: '8px' }}>
+                              {item.testName}
+                            </Text>
+                            <div style={{ marginLeft: '20px' }}>
+                              <Text style={{ whiteSpace: 'pre-wrap' }}>{item.result}</Text>
+                            </div>
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                  ) : (
+                    <Text type="secondary">Дополнительные тесты не пройдены</Text>
+                  )}
+                </div>
+              )}
+
+              {answersModalTab === 'plan' && (
+                <div>
+                  <Title level={4}>Персональный план</Title>
+                  {selectedUserData.personalPlan ? (
+                    <div style={{ 
+                      whiteSpace: 'pre-wrap', 
+                      lineHeight: '1.8',
+                      padding: '16px',
+                      background: '#f9f9f9',
+                      borderRadius: '4px'
+                    }}>
+                      {selectedUserData.personalPlan}
+                    </div>
+                  ) : (
+                    <Text type="secondary">Персональный план не сгенерирован</Text>
+                  )}
+                </div>
+              )}
+
+              {answersModalTab === 'preparation' && (
+                <div>
+                  <Title level={4}>Подготовка к сеансу с психологом и психиатром</Title>
+                  {selectedUserData.sessionPreparation ? (
+                    <div style={{ 
+                      whiteSpace: 'pre-wrap', 
+                      lineHeight: '1.8',
+                      padding: '16px',
+                      background: '#f9f9f9',
+                      borderRadius: '4px'
+                    }}>
+                      {selectedUserData.sessionPreparation}
+                    </div>
+                  ) : (
+                    <Text type="secondary">Подготовка к сеансу не сгенерирована</Text>
+                  )}
+                </div>
+              )}
+
+              {answersModalTab === 'specialist' && (
+                <div>
+                  <Title level={4}>Документ для психолога/психиатра</Title>
+                  {selectedUserData.psychologistDocument ? (
+                    <div style={{ 
+                      whiteSpace: 'pre-wrap', 
+                      lineHeight: '1.8',
+                      padding: '16px',
+                      background: '#f9f9f9',
+                      borderRadius: '4px'
+                    }}>
+                      {selectedUserData.psychologistDocument}
+                    </div>
+                  ) : (
+                    <Text type="secondary">Документ для специалиста не сгенерирован</Text>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <Text type="secondary">Данные не загружены</Text>
+          </div>
         )}
       </Modal>
     </Layout>
