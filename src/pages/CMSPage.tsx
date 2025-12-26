@@ -19,7 +19,8 @@ import {
   Tooltip,
   Switch,
   Checkbox,
-  DatePicker
+  DatePicker,
+  Modal
 } from 'antd';
 import { 
   PieChart, 
@@ -46,7 +47,8 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   LeftOutlined,
-  RightOutlined
+  RightOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/ru';
@@ -167,6 +169,13 @@ const CMSPage: React.FC = () => {
   const [onlineSessionIds, setOnlineSessionIds] = useState<string[]>([]); // Список онлайн sessionId из WebSocket
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
+  
+  // Состояние для удаления пользователя
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+  const [deleting, setDeleting] = useState(false);
   
   // Данные графика активности
   const [activityData, setActivityData] = useState<ActivityDataItem[]>([]);
@@ -417,6 +426,66 @@ const CMSPage: React.FC = () => {
       newSet.add(sessionId);
     }
     setVisiblePasswords(newSet);
+  };
+
+  // Функции для удаления пользователя
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setDeleteModalVisible(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!userToDelete) return;
+    setDeleteModalVisible(false);
+    setDeleteConfirmModalVisible(true);
+    setDeleteConfirmationText('');
+  };
+
+  const handleDeleteFinal = async () => {
+    if (!userToDelete) return;
+    
+    const requiredText = 'Да, я действительно хочу удалить этого пользователя';
+    if (deleteConfirmationText !== requiredText) {
+      message.error('Пожалуйста, введите точную фразу подтверждения');
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem('cms_token');
+      if (!token) {
+        message.error('Ошибка авторизации');
+        return;
+      }
+
+      const response = await apiRequest(`api/cms/users/${userToDelete.sessionId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        message.success('Пользователь успешно удален');
+        setUsers(users.filter(u => u.sessionId !== userToDelete.sessionId));
+        setDeleteConfirmModalVisible(false);
+        setUserToDelete(null);
+        setDeleteConfirmationText('');
+      } else {
+        const data = await response.json();
+        message.error(data.error || 'Ошибка при удалении пользователя');
+      }
+    } catch (error) {
+      console.error('Ошибка удаления пользователя:', error);
+      message.error('Ошибка сети при удалении пользователя');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModalVisible(false);
+    setDeleteConfirmModalVisible(false);
+    setUserToDelete(null);
+    setDeleteConfirmationText('');
   };
 
   // Обновляем онлайн статус пользователей на основе данных из WebSocket
@@ -1216,6 +1285,22 @@ const CMSPage: React.FC = () => {
                               );
                             },
                             sorter: (a, b) => a.funnel.questionsAnswered - b.funnel.questionsAnswered
+                          },
+                          {
+                            title: 'Действия',
+                            key: 'actions',
+                            width: 100,
+                            fixed: 'right' as const,
+                            render: (record: any) => (
+                              <Button
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={() => handleDeleteUser(record)}
+                                size="small"
+                              >
+                                Удалить
+                              </Button>
+                            )
                           }
                         ]}
                       />
@@ -1538,6 +1623,72 @@ const CMSPage: React.FC = () => {
           )}
         </Content>
       </Layout>
+
+      {/* Модальное окно первого подтверждения удаления */}
+      <Modal
+        title="Подтверждение удаления"
+        open={deleteModalVisible}
+        onOk={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        okText="Продолжить"
+        cancelText="Отмена"
+        okButtonProps={{ danger: true }}
+      >
+        <p>Вы уверены, что хотите удалить пользователя <strong>{userToDelete?.nickname}</strong>?</p>
+        <p style={{ color: '#ff4d4f', marginTop: '10px' }}>
+          ⚠️ Это действие удалит все данные пользователя, включая:
+        </p>
+        <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
+          <li>Результаты первичного теста</li>
+          <li>Результаты дополнительных тестов</li>
+          <li>Аналитику и статистику</li>
+          <li>Все связанные записи в базе данных</li>
+        </ul>
+        <p style={{ color: '#ff4d4f', marginTop: '10px', fontWeight: 'bold' }}>
+          Это действие необратимо!
+        </p>
+      </Modal>
+
+      {/* Модальное окно второго подтверждения с обязательным вводом фразы */}
+      <Modal
+        title="Финальное подтверждение удаления"
+        open={deleteConfirmModalVisible}
+        onOk={handleDeleteFinal}
+        onCancel={handleDeleteCancel}
+        okText="Удалить пользователя"
+        cancelText="Отмена"
+        okButtonProps={{ 
+          danger: true, 
+          disabled: deleteConfirmationText !== 'Да, я действительно хочу удалить этого пользователя',
+          loading: deleting
+        }}
+      >
+        <p style={{ marginBottom: '20px' }}>
+          Для подтверждения удаления пользователя <strong>{userToDelete?.nickname}</strong> введите следующую фразу:
+        </p>
+        <div style={{ 
+          background: '#f5f5f5', 
+          padding: '15px', 
+          borderRadius: '4px', 
+          marginBottom: '15px',
+          textAlign: 'center',
+          fontWeight: 'bold',
+          fontSize: '16px'
+        }}>
+          Да, я действительно хочу удалить этого пользователя
+        </div>
+        <Input
+          placeholder="Введите фразу подтверждения"
+          value={deleteConfirmationText}
+          onChange={(e) => setDeleteConfirmationText(e.target.value)}
+          status={deleteConfirmationText && deleteConfirmationText !== 'Да, я действительно хочу удалить этого пользователя' ? 'error' : ''}
+        />
+        {deleteConfirmationText && deleteConfirmationText !== 'Да, я действительно хочу удалить этого пользователя' && (
+          <p style={{ color: '#ff4d4f', marginTop: '10px', fontSize: '12px' }}>
+            Фраза не совпадает. Пожалуйста, введите точную фразу.
+          </p>
+        )}
+      </Modal>
     </Layout>
   );
 };

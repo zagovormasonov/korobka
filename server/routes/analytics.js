@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { sendTelegramNotification } from '../utils/telegram-notifications.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,6 +75,16 @@ router.post('/track', async (req, res) => {
             // Не прерываем выполнение, это не критично
           } else {
             console.log(`✅ [ANALYTICS] Создана запись для нового пользователя: ${sessionId}`);
+            
+            // Отправляем уведомление в Telegram
+            const testType = metadata?.test_type || 'primary';
+            const message = `🧪 <b>Кто-то начал тест</b>
+
+🆔 Session ID: <code>${sessionId}</code>
+📋 Тип теста: ${testType === 'primary' ? 'Первичный тест' : testType}
+⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
+            
+            await sendTelegramNotification(message);
           }
         }
       } catch (userError) {

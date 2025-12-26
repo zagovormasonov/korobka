@@ -696,6 +696,60 @@ router.get('/users', checkAuth, async (req, res) => {
   }
 });
 
+// Удаление пользователя со всеми данными
+router.delete('/users/:sessionId', checkAuth, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    console.log('🗑️ [CMS] Удаление пользователя:', sessionId);
+    
+    // Проверяем, существует ли пользователь
+    const { data: user, error: userError } = await supabase
+      .from('primary_test_results')
+      .select('session_id, nickname')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+    
+    if (userError) throw userError;
+    
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    
+    console.log('🗑️ [CMS] Удаляем пользователя:', user.nickname || user.session_id);
+    
+    // Удаляем события аналитики (нет CASCADE, удаляем вручную)
+    const { error: analyticsError } = await supabase
+      .from('analytics_events')
+      .delete()
+      .eq('session_id', sessionId);
+    
+    if (analyticsError) {
+      console.error('⚠️ [CMS] Ошибка удаления событий аналитики:', analyticsError);
+      // Продолжаем удаление, даже если есть ошибка с аналитикой
+    } else {
+      console.log('✅ [CMS] События аналитики удалены');
+    }
+    
+    // Удаляем основную запись пользователя (CASCADE удалит все связанные данные)
+    const { error: deleteError } = await supabase
+      .from('primary_test_results')
+      .delete()
+      .eq('session_id', sessionId);
+    
+    if (deleteError) throw deleteError;
+    
+    console.log('✅ [CMS] Пользователь успешно удален:', sessionId);
+    
+    res.json({ 
+      success: true, 
+      message: 'Пользователь и все связанные данные успешно удалены' 
+    });
+  } catch (error) {
+    console.error('❌ [CMS] Ошибка удаления пользователя:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // График активности по времени
 router.get('/stats/activity-by-hour', checkAuth, async (req, res) => {
   try {

@@ -82,15 +82,21 @@ const AdditionalTestPage: React.FC = () => {
     }
   }, [testId, navigate, sessionId]);
 
-  // Сохранение прогресса
+  // Сохранение прогресса при каждом изменении
   useEffect(() => {
-    if (!testId || Object.keys(answers).length === 0) return;
+    if (!testId || !config || isCompleted) return; // Не сохраняем, если тест завершен
     
-    localStorage.setItem(`test_progress_${testId}`, JSON.stringify({
-      answers,
-      currentIndex: currentQuestionIndex
-    }));
-  }, [answers, currentQuestionIndex, testId]);
+    // Сохраняем прогресс только если есть ответы или индекс вопроса изменился
+    if (Object.keys(answers).length > 0 || currentQuestionIndex > 0) {
+      localStorage.setItem(`test_progress_${testId}`, JSON.stringify({
+        answers,
+        currentIndex: currentQuestionIndex,
+        testId: testId, // Сохраняем testId для проверки при восстановлении
+        timestamp: Date.now() // Добавляем timestamp для отладки
+      }));
+      console.log('💾 [PROGRESS] Прогресс сохранен:', { testId, currentIndex: currentQuestionIndex, answersCount: Object.keys(answers).length });
+    }
+  }, [answers, currentQuestionIndex, testId, config, isCompleted]);
 
   if (!config) return null;
 

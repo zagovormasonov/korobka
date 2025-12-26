@@ -263,6 +263,22 @@ router.post('/create-credentials', async (req, res) => {
     // а затем нажать кнопку "Перейти к персональному плану"
     console.log('ℹ️ [DASHBOARD] Персональный план будет разблокирован после прохождения дополнительных тестов');
 
+    // Отправляем уведомление в Telegram о регистрации аккаунта
+    try {
+      const { sendTelegramNotification } = await import('../utils/telegram-notifications.js');
+      const message = `✅ <b>Кто-то завершил тест и зарегистрировал аккаунт</b>
+
+👤 Никнейм: <b>${nickname}</b>
+🆔 Session ID: <code>${sessionId}</code>
+⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
+      
+      await sendTelegramNotification(message);
+      console.log('✅ [DASHBOARD] Уведомление о регистрации отправлено в Telegram');
+    } catch (telegramError) {
+      console.error('⚠️ [DASHBOARD] Ошибка отправки уведомления в Telegram:', telegramError);
+      // Не прерываем выполнение, это не критично
+    }
+
     res.json({ 
       success: true, 
       dashboardToken,

@@ -62,7 +62,7 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
     }
     const maxOption = Math.max(...q.options.map(o => o.value));
     return sum + (isNaN(maxOption) ? 0 : maxOption);
-  }, 0);
+      }, 0);
 
   const percentage = maxPossibleScore > 0 ? Math.round((score / maxPossibleScore) * 100) : 0;
 
@@ -78,19 +78,45 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Обработчики для iOS - улучшенная поддержка touch событий
+  const handleClose = React.useCallback((e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (onCancel) {
+      onCancel();
+    }
+  }, [onCancel]);
+
+  const handleRetry = React.useCallback((e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (onRetry) {
+      onRetry();
+    }
+  }, [onRetry]);
+
   return (
     <Modal
       open={visible}
-      onCancel={onCancel}
+      onCancel={handleClose}
+      maskClosable={true}
+      keyboard={true}
       footer={[
         <Button 
           key="retry" 
           icon={<ReloadOutlined />} 
-          onClick={onRetry}
+          onClick={handleRetry}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           style={{ 
             fontSize: isMobile ? '14px' : '16px',
             height: isMobile ? '40px' : 'auto',
-            padding: isMobile ? '0 12px' : undefined
+            padding: isMobile ? '0 12px' : undefined,
+            touchAction: 'manipulation'
           }}
         >
           Пройти заново
@@ -98,13 +124,16 @@ const TestResultsModal: React.FC<TestResultsModalProps> = ({
         <Button 
           key="close" 
           type="primary" 
-          onClick={onCancel} 
+          onClick={handleClose}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           style={{ 
             background: '#4F958B', 
             borderColor: '#4F958B',
             fontSize: isMobile ? '14px' : '16px',
             height: isMobile ? '40px' : 'auto',
-            padding: isMobile ? '0 12px' : undefined
+            padding: isMobile ? '0 12px' : undefined,
+            touchAction: 'manipulation'
           }}
         >
           Понятно
