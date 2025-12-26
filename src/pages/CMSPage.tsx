@@ -508,20 +508,26 @@ const CMSPage: React.FC = () => {
         return;
       }
 
+      console.log('📋 [CMS-FRONT] Загружаем данные для пользователя:', user.sessionId);
+      
       const response = await apiRequest(`api/cms/users/${user.sessionId}/data`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ [CMS-FRONT] Данные получены:', data);
         setSelectedUserData(data.data);
       } else {
         const errorData = await response.json();
+        console.error('❌ [CMS-FRONT] Ошибка ответа:', errorData);
         message.error(errorData.error || 'Ошибка загрузки данных');
+        setSelectedUserData(null);
       }
     } catch (error) {
-      console.error('Ошибка загрузки данных пользователя:', error);
+      console.error('❌ [CMS-FRONT] Ошибка загрузки данных пользователя:', error);
       message.error('Ошибка сети при загрузке данных');
+      setSelectedUserData(null);
     } finally {
       setLoadingUserData(false);
     }

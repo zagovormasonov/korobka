@@ -700,19 +700,33 @@ router.get('/users', checkAuth, async (req, res) => {
 router.get('/users/:sessionId/data', checkAuth, async (req, res) => {
   try {
     const { sessionId } = req.params;
-    console.log('📋 [CMS] Получение всех данных пользователя:', sessionId);
+    console.log('📋 [CMS] Получение всех данных пользователя, sessionId:', sessionId);
+    console.log('📋 [CMS] Тип sessionId:', typeof sessionId);
     
-    // Получаем данные первичного теста
+    // Получаем данные первичного теста (используем maybeSingle для корректной обработки отсутствия записи)
     const { data: primaryTest, error: primaryError } = await supabase
       .from('primary_test_results')
-      .select('answers, personal_plan, session_preparation, psychologist_document, nickname, email')
+      .select('answers, personal_plan, session_preparation, psychologist_document, nickname, email, session_id')
       .eq('session_id', sessionId)
-      .single();
+      .maybeSingle();
     
-    if (primaryError || !primaryTest) {
-      console.error('❌ [CMS] Ошибка получения первичного теста:', primaryError);
+    if (primaryError) {
+      console.error('❌ [CMS] Ошибка Supabase при получении первичного теста:', primaryError);
+      return res.status(500).json({ success: false, error: 'Ошибка базы данных: ' + primaryError.message });
+    }
+    
+    if (!primaryTest) {
+      console.warn('⚠️ [CMS] Пользователь не найден для sessionId:', sessionId);
+      // Попробуем найти пользователя без учета регистра или с другими вариантами
+      const { data: allUsers } = await supabase
+        .from('primary_test_results')
+        .select('session_id')
+        .limit(5);
+      console.log('📊 [CMS] Примеры session_id в БД:', allUsers?.map(u => u.session_id));
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
+    
+    console.log('✅ [CMS] Пользователь найден:', primaryTest.nickname || primaryTest.session_id);
     
     // Получаем вопросы первичного теста (используем тот же массив, что и в tests.js)
     const questions = [
