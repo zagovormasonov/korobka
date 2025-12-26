@@ -1334,7 +1334,7 @@ const CMSPage: React.FC = () => {
                           {
                             title: 'Действия',
                             key: 'actions',
-                            width: 200,
+                            width: 150,
                             fixed: 'right' as const,
                             render: (record: any) => (
                               <Space>
@@ -1344,16 +1344,14 @@ const CMSPage: React.FC = () => {
                                   onClick={() => handleViewAnswers(record)}
                                   size="small"
                                 >
-                                  Смотреть ответы
+                                  Ответы
                                 </Button>
                                 <Button
                                   danger
                                   icon={<DeleteOutlined />}
                                   onClick={() => handleDeleteUser(record)}
                                   size="small"
-                                >
-                                  Удалить
-                                </Button>
+                                />
                               </Space>
                             )
                           }
