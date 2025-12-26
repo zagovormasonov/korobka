@@ -706,7 +706,7 @@ router.get('/users/:sessionId/data', checkAuth, async (req, res) => {
     // Получаем данные первичного теста (используем maybeSingle для корректной обработки отсутствия записи)
     const { data: primaryTest, error: primaryError } = await supabase
       .from('primary_test_results')
-      .select('answers, personal_plan, session_preparation, psychologist_document, nickname, email, session_id')
+      .select('answers, personal_plan, nickname, email, session_id')
       .eq('session_id', sessionId)
       .maybeSingle();
     
