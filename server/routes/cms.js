@@ -808,52 +808,42 @@ router.get('/users/:sessionId/data', checkAuth, async (req, res) => {
       });
     }
     
-    // Получаем персональный план (если есть)
+    // Получаем персональный план (если есть в БД)
     let personalPlan = null;
     if (primaryTest.personal_plan) {
       personalPlan = primaryTest.personal_plan;
     }
     
-    // Получаем подготовку к сеансу через API (генерируется на лету)
+    // Подготовка к сеансу - только если уже сгенерирована (не генерируем!)
     let sessionPreparation = null;
-    try {
-      const baseUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
-      const prepResponse = await fetch(`${baseUrl}/api/ai/session-preparation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-        signal: AbortSignal.timeout(120000) // 2 минуты timeout
-      });
-      if (prepResponse.ok) {
-        const prepData = await prepResponse.json();
-        sessionPreparation = prepData.preparation || null;
-      } else {
-        console.warn('⚠️ [CMS] Подготовка к сеансу не получена, статус:', prepResponse.status);
-      }
-    } catch (error) {
-      console.error('❌ [CMS] Ошибка получения подготовки к сеансу:', error);
-      sessionPreparation = null; // Не показываем ошибку, просто null
+    // Проверяем, есть ли флаг генерации
+    const { data: prepCheck } = await supabase
+      .from('primary_test_results')
+      .select('session_preparation_generated')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+    
+    if (prepCheck?.session_preparation_generated) {
+      // Если документ был сгенерирован, можно попробовать получить его из БД
+      // Но текстовой версии нет, только PDF, поэтому оставляем null
+      // В будущем можно добавить поле для хранения текста, если нужно
+      sessionPreparation = null; // Текстовой версии нет в БД
     }
     
-    // Получаем документ для специалиста через API (генерируется на лету)
+    // Документ для специалиста - только если уже сгенерирован (не генерируем!)
     let psychologistDocument = null;
-    try {
-      const baseUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
-      const docResponse = await fetch(`${baseUrl}/api/ai/psychologist-pdf`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-        signal: AbortSignal.timeout(120000) // 2 минуты timeout
-      });
-      if (docResponse.ok) {
-        const docData = await docResponse.json();
-        psychologistDocument = docData.psychologistPdf || null;
-      } else {
-        console.warn('⚠️ [CMS] Документ для специалиста не получен, статус:', docResponse.status);
-      }
-    } catch (error) {
-      console.error('❌ [CMS] Ошибка получения документа для специалиста:', error);
-      psychologistDocument = null; // Не показываем ошибку, просто null
+    // Проверяем, есть ли флаг генерации
+    const { data: docCheck } = await supabase
+      .from('primary_test_results')
+      .select('psychologist_pdf_generated')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+    
+    if (docCheck?.psychologist_pdf_generated) {
+      // Если документ был сгенерирован, можно попробовать получить его из БД
+      // Но текстовой версии нет, только PDF, поэтому оставляем null
+      // В будущем можно добавить поле для хранения текста, если нужно
+      psychologistDocument = null; // Текстовой версии нет в БД
     }
     
     res.json({
