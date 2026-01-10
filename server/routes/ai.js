@@ -96,6 +96,7 @@ function createAxiosConfig() {
 
 // Функция для вызова Gemini API через официальный SDK
 async function callGeminiAI(prompt, maxTokens = 10000) {
+  let responseData = null; // Сохраняем для уведомлений об ошибках
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     
@@ -218,6 +219,7 @@ async function callGeminiAI(prompt, maxTokens = 10000) {
     let data;
     try {
       data = JSON.parse(responseText);
+      responseData = data; // Сохраняем для возможных уведомлений
     } catch (parseError) {
       console.error('❌ [GEMINI-3.0] Ошибка парсинга JSON ответа:', parseError);
       console.error('❌ [GEMINI-3.0] Текст ответа (первые 500 символов):', responseText.substring(0, 500));
@@ -235,16 +237,42 @@ async function callGeminiAI(prompt, maxTokens = 10000) {
       throw new Error(`v1beta API returned no candidates: ${JSON.stringify(data)}`);
     }
     
-    // Проверяем наличие content и parts
-    if (!data.candidates[0].content || !data.candidates[0].content.parts || data.candidates[0].content.parts.length === 0) {
-      console.error('❌ [GEMINI-3.0] Нет content.parts в ответе:', JSON.stringify(data.candidates[0], null, 2));
-      throw new Error(`v1beta API returned invalid candidate structure: ${JSON.stringify(data.candidates[0])}`);
+    const candidate = data.candidates[0];
+    
+    // КРИТИЧЕСКИ ВАЖНО: Проверяем finishReason ПЕРЕД проверкой content
+    if (candidate.finishReason === 'MAX_TOKENS') {
+      console.warn('⚠️ [GEMINI-3.0] Ответ обрезан из-за MAX_TOKENS, finishReason:', candidate.finishReason);
+      
+      // Если есть частичный контент, используем его
+      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+        const partialText = candidate.content.parts[0].text;
+        if (partialText) {
+          console.warn('⚠️ [GEMINI-3.0] Используем частичный ответ (обрезан), длина:', partialText.length);
+          console.warn('⚠️ [GEMINI-3.0] Рекомендуется увеличить maxOutputTokens или уменьшить размер промпта');
+          return partialText;
+        }
+      }
+      
+      // Если контента нет - это критическая ошибка
+      console.error('❌ [GEMINI-3.0] MAX_TOKENS но нет контента! Структура:', JSON.stringify(candidate, null, 2));
+      throw new Error(`v1beta API returned MAX_TOKENS with empty content. Текущий maxOutputTokens: ${maxTokens || 40960}. Увеличьте лимит или уменьшите размер промпта.`);
     }
     
-    const text = data.candidates[0].content.parts[0].text;
+    // Проверяем другие finishReason (SAFETY, RECITATION и т.д.)
+    if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+      console.warn(`⚠️ [GEMINI-3.0] Неожиданный finishReason: ${candidate.finishReason}`);
+    }
+    
+    // Проверяем наличие content и parts
+    if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+      console.error('❌ [GEMINI-3.0] Нет content.parts в ответе:', JSON.stringify(candidate, null, 2));
+      throw new Error(`v1beta API returned invalid candidate structure: ${JSON.stringify(candidate)}`);
+    }
+    
+    const text = candidate.content.parts[0].text;
     
     if (!text) {
-      console.error('❌ [GEMINI-3.0] Нет text в ответе:', JSON.stringify(data.candidates[0].content.parts[0], null, 2));
+      console.error('❌ [GEMINI-3.0] Нет text в ответе:', JSON.stringify(candidate.content.parts[0], null, 2));
       throw new Error(`v1beta API returned no text in response`);
     }
     
@@ -259,6 +287,24 @@ async function callGeminiAI(prompt, maxTokens = 10000) {
       stack: error.stack,
       fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
     });
+    
+    // КРИТИЧЕСКОЕ: Отправляем уведомление в Telegram для критических ошибок
+    if (error.message.includes('MAX_TOKENS') || 
+        error.message.includes('invalid candidate structure') ||
+        error.message.includes('no candidates')) {
+      try {
+        const { sendErrorToTelegram } = await import('../utils/telegram-errors.js');
+        await sendErrorToTelegram(error, {
+          route: 'callGeminiAI',
+          promptLength: prompt?.length || 0,
+          maxTokens: maxTokens || 'default',
+          finishReason: responseData?.candidates?.[0]?.finishReason || 'unknown'
+        });
+        console.log('📢 [GEMINI-3.0] Критическая ошибка отправлена в Telegram');
+      } catch (notifError) {
+        console.error('❌ Не удалось отправить уведомление в Telegram:', notifError);
+      }
+    }
     
     // Проверяем, если ошибка связана с неверной моделью
     if (error.message.includes('model') || error.message.includes('not found') || error.message.includes('Invalid')) {
