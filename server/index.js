@@ -8,6 +8,78 @@ import { createServer } from 'http';
 import { initializeWebSocket, getOnlineUsers, getOnlineCount } from './websocket.js';
 import { sendErrorToTelegram } from './utils/telegram-errors.js';
 import testRoutes from './routes/tests.js';
+
+// Перехватываем console.error() для отправки всех ошибок в Telegram
+// Это нужно для того, чтобы все события типа "error" в Render отправлялись в Telegram
+const originalConsoleError = console.error;
+const errorNotificationCache = new Map(); // Кэш для дебаунса одинаковых ошибок
+const DEBOUNCE_TIME = 60000; // 1 минута - не отправляем одинаковые ошибки чаще раза в минуту
+
+console.error = function(...args) {
+  // Вызываем оригинальный console.error
+  originalConsoleError.apply(console, args);
+  
+  // Формируем сообщение об ошибке
+  const errorMessage = args
+    .map(arg => {
+      if (arg instanceof Error) {
+        return `${arg.name}: ${arg.message}\n${arg.stack || ''}`;
+      }
+      return String(arg);
+    })
+    .join(' ');
+  
+  // Пропускаем ошибки, которые уже обрабатываются через sendErrorToTelegram
+  // (чтобы избежать дублирования)
+  const skipPatterns = [
+    '[TELEGRAM-ERROR]',
+    '[GLOBAL-ERROR-HANDLER]',
+    'Не удалось отправить ошибку в Telegram'
+  ];
+  
+  if (skipPatterns.some(pattern => errorMessage.includes(pattern))) {
+    return;
+  }
+  
+  // Создаем ключ для дебаунса (первые 200 символов сообщения)
+  const cacheKey = errorMessage.substring(0, 200);
+  const now = Date.now();
+  const lastSent = errorNotificationCache.get(cacheKey);
+  
+  // Если эта ошибка уже отправлялась недавно, пропускаем
+  if (lastSent && (now - lastSent) < DEBOUNCE_TIME) {
+    return;
+  }
+  
+  // Обновляем кэш
+  errorNotificationCache.set(cacheKey, now);
+  
+  // Очищаем старые записи из кэша (старше 10 минут)
+  for (const [key, timestamp] of errorNotificationCache.entries()) {
+    if (now - timestamp > 600000) {
+      errorNotificationCache.delete(key);
+    }
+  }
+  
+  // Отправляем в Telegram асинхронно (не блокируем выполнение)
+  setImmediate(async () => {
+    try {
+      // Создаем объект ошибки из сообщения
+      const error = new Error(errorMessage.substring(0, 500));
+      error.stack = errorMessage;
+      error.name = 'ConsoleError';
+      
+      await sendErrorToTelegram(error, {
+        source: 'console.error',
+        originalArgs: args.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      // Используем оригинальный console.error, чтобы избежать рекурсии
+      originalConsoleError('❌ Не удалось отправить console.error в Telegram:', err);
+    }
+  });
+};
 import paymentRoutes from './routes/payments.js';
 import aiRoutes from './routes/ai.js';
 import telegramRoutes from './routes/telegram.js';
