@@ -472,6 +472,29 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Personal plan not generated yet' });
     }
 
+    // Получаем информацию о пользователе для уведомления
+    const { data: userData } = await supabase
+      .from('primary_test_results')
+      .select('nickname, email')
+      .eq('session_id', sessionId)
+      .single();
+
+    // Отправляем уведомление в Telegram
+    try {
+      const { sendTelegramNotification } = await import('../utils/telegram-notifications.js');
+      const message = `📄 <b>Персональный план успешно сгенерирован и открыт</b>
+
+👤 Никнейм: <b>${userData?.nickname || 'Не указан'}</b>
+🆔 Session ID: <code>${sessionId}</code>
+⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
+      
+      await sendTelegramNotification(message);
+      console.log('✅ [DOWNLOAD-PERSONAL-PLAN] Уведомление об открытии персонального плана отправлено в Telegram');
+    } catch (telegramError) {
+      console.error('⚠️ [DOWNLOAD-PERSONAL-PLAN] Ошибка отправки уведомления в Telegram:', telegramError);
+      // Не прерываем выполнение, это не критично
+    }
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="personal-plan.pdf"');
     res.send(pdfBuffer);
@@ -528,6 +551,29 @@ router.get('/download/session-preparation/:sessionId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session preparation not generated yet' });
     }
 
+    // Получаем информацию о пользователе для уведомления
+    const { data: userData } = await supabase
+      .from('primary_test_results')
+      .select('nickname, email')
+      .eq('session_id', sessionId)
+      .single();
+
+    // Отправляем уведомление в Telegram
+    try {
+      const { sendTelegramNotification } = await import('../utils/telegram-notifications.js');
+      const message = `📋 <b>Подготовка к психологу успешно сгенерирована и открыта</b>
+
+👤 Никнейм: <b>${userData?.nickname || 'Не указан'}</b>
+🆔 Session ID: <code>${sessionId}</code>
+⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
+      
+      await sendTelegramNotification(message);
+      console.log('✅ [DOWNLOAD-SESSION-PREPARATION] Уведомление об открытии подготовки к сеансу отправлено в Telegram');
+    } catch (telegramError) {
+      console.error('⚠️ [DOWNLOAD-SESSION-PREPARATION] Ошибка отправки уведомления в Telegram:', telegramError);
+      // Не прерываем выполнение, это не критично
+    }
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="session-preparation.pdf"');
     res.send(pdfBuffer);
@@ -582,6 +628,29 @@ router.get('/download/psychologist-pdf/:sessionId', async (req, res) => {
 
     if (!pdfBuffer) {
       return res.status(404).json({ success: false, error: 'Psychologist PDF not generated yet' });
+    }
+
+    // Получаем информацию о пользователе для уведомления
+    const { data: userData } = await supabase
+      .from('primary_test_results')
+      .select('nickname, email')
+      .eq('session_id', sessionId)
+      .single();
+
+    // Отправляем уведомление в Telegram
+    try {
+      const { sendTelegramNotification } = await import('../utils/telegram-notifications.js');
+      const message = `👨‍⚕️ <b>Документ для психолога/психиатра успешно сгенерирован и открыт</b>
+
+👤 Никнейм: <b>${userData?.nickname || 'Не указан'}</b>
+🆔 Session ID: <code>${sessionId}</code>
+⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
+      
+      await sendTelegramNotification(message);
+      console.log('✅ [DOWNLOAD-PSYCHOLOGIST-PDF] Уведомление об открытии документа для психолога отправлено в Telegram');
+    } catch (telegramError) {
+      console.error('⚠️ [DOWNLOAD-PSYCHOLOGIST-PDF] Ошибка отправки уведомления в Telegram:', telegramError);
+      // Не прерываем выполнение, это не критично
     }
 
     res.setHeader('Content-Type', 'application/pdf');

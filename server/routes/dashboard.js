@@ -306,6 +306,13 @@ router.post('/unlock-personal-plan', async (req, res) => {
 
     console.log('🔓 [DASHBOARD] Разблокируем персональный план для:', sessionId);
 
+    // Получаем информацию о пользователе для уведомления
+    const { data: userData } = await supabase
+      .from('primary_test_results')
+      .select('nickname, email')
+      .eq('session_id', sessionId)
+      .single();
+
     // Обновляем флаг в БД
     const { data, error } = await supabase
       .from('primary_test_results')
@@ -320,6 +327,22 @@ router.post('/unlock-personal-plan', async (req, res) => {
 
     console.log('✅ [DASHBOARD] Персональный план разблокирован');
     console.log('📊 [DASHBOARD] Обновленные данные:', JSON.stringify(data, null, 2));
+
+    // Отправляем уведомление в Telegram
+    try {
+      const { sendTelegramNotification } = await import('../utils/telegram-notifications.js');
+      const message = `🎉 <b>Кто-то завершил все доп тесты и получил персональный план</b>
+
+👤 Никнейм: <b>${userData?.nickname || 'Не указан'}</b>
+🆔 Session ID: <code>${sessionId}</code>
+⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
+      
+      await sendTelegramNotification(message);
+      console.log('✅ [DASHBOARD] Уведомление о завершении всех тестов отправлено в Telegram');
+    } catch (telegramError) {
+      console.error('⚠️ [DASHBOARD] Ошибка отправки уведомления в Telegram:', telegramError);
+      // Не прерываем выполнение, это не критично
+    }
 
     res.json({ success: true });
   } catch (error) {
