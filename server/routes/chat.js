@@ -127,7 +127,7 @@ router.post('/image', upload.single('image'), async (req, res) => {
       contents: [{ parts }],
       generationConfig: {
         // image generation обычно не требует большого текста
-        maxOutputTokens: 1024
+        maxOutputTokens: 5120
       }
     };
 
@@ -293,7 +293,7 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
               parts: parts
             }],
             generationConfig: {
-              maxOutputTokens: 8192
+              maxOutputTokens: 40960
             }
           };
           
@@ -380,7 +380,7 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
         const model = genAI.getGenerativeModel({ 
           model: modelName,
           generationConfig: {
-            maxOutputTokens: 8192, // Увеличиваем лимит для больших ответов
+            maxOutputTokens: 40960, // Увеличиваем лимит для больших ответов
           }
         });
         

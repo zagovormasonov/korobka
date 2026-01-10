@@ -5,7 +5,7 @@ const router = express.Router();
 /**
  * Вызов Gemini API через v1beta API (как в /chat)
  */
-async function callGeminiAI(prompt, maxTokens = 8192) {
+async function callGeminiAI(prompt, maxTokens = 40960) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY не установлен в переменных окружения');
