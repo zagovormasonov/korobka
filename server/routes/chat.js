@@ -124,11 +124,8 @@ router.post('/image', upload.single('image'), async (req, res) => {
     ];
 
     const requestBody = {
-      contents: [{ parts }],
-      generationConfig: {
-        // image generation обычно не требует большого текста
-        maxOutputTokens: 5120
-      }
+      contents: [{ parts }]
+      // Убрали maxOutputTokens - используем максимальные значения API по умолчанию
     };
 
     console.log(`🖼️ [${requestId}] Генерация изображения:`, {
@@ -291,10 +288,8 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
           const requestBody = {
             contents: [{
               parts: parts
-            }],
-            generationConfig: {
-              maxOutputTokens: 40960
-            }
+            }]
+            // Убрали maxOutputTokens - используем максимальные значения API по умолчанию
           };
           
           // Если есть история, добавляем её
@@ -378,10 +373,8 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
         
         // Для остальных моделей используем обычный SDK
         const model = genAI.getGenerativeModel({ 
-          model: modelName,
-          generationConfig: {
-            maxOutputTokens: 40960, // Увеличиваем лимит для больших ответов
-          }
+          model: modelName
+          // Убрали maxOutputTokens - используем максимальные значения API по умолчанию
         });
         
         // Если есть история, создаем чат с контекстом

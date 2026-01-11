@@ -17,10 +17,8 @@ async function callGeminiAI(prompt, maxTokens = 40960) {
   const requestBody = {
     contents: [{
       parts: [{ text: prompt }]
-    }],
-    generationConfig: {
-      maxOutputTokens: maxTokens
-    }
+    }]
+    // Убрали maxOutputTokens - используем максимальные значения API по умолчанию
   };
 
   // Проверяем доступность fetch (для Node.js < 18 может потребоваться node-fetch)

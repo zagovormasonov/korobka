@@ -95,7 +95,8 @@ function createAxiosConfig() {
 }
 
 // Функция для вызова Gemini API через официальный SDK
-async function callGeminiAI(prompt, maxTokens = 10000) {
+async function callGeminiAI(prompt, maxTokens = null) {
+  // Параметр maxTokens больше не используется - API использует максимальные значения по умолчанию
   let responseData = null; // Сохраняем для уведомлений об ошибках
   try {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -136,10 +137,8 @@ async function callGeminiAI(prompt, maxTokens = 10000) {
     const requestBody = {
       contents: [{
         parts: [{ text: prompt }]
-      }],
-      generationConfig: {
-        maxOutputTokens: maxTokens || 40960
-      }
+      }]
+      // Убрали maxOutputTokens - используем максимальные значения API по умолчанию
     };
     
     console.log('🚀 Отправляем запрос к v1beta API...');
@@ -248,14 +247,14 @@ async function callGeminiAI(prompt, maxTokens = 10000) {
         const partialText = candidate.content.parts[0].text;
         if (partialText) {
           console.warn('⚠️ [GEMINI-3.0] Используем частичный ответ (обрезан), длина:', partialText.length);
-          console.warn('⚠️ [GEMINI-3.0] Рекомендуется увеличить maxOutputTokens или уменьшить размер промпта');
+          console.warn('⚠️ [GEMINI-3.0] Ответ был обрезан, но частичный контент используется');
           return partialText;
         }
       }
       
       // Если контента нет - это критическая ошибка
       console.error('❌ [GEMINI-3.0] MAX_TOKENS но нет контента! Структура:', JSON.stringify(candidate, null, 2));
-      throw new Error(`v1beta API returned MAX_TOKENS with empty content. Текущий maxOutputTokens: ${maxTokens || 40960}. Увеличьте лимит или уменьшите размер промпта.`);
+      throw new Error(`v1beta API returned MAX_TOKENS with empty content. API использует максимальные значения по умолчанию.`);
     }
     
     // Проверяем другие finishReason (SAFETY, RECITATION и т.д.)
@@ -297,7 +296,7 @@ async function callGeminiAI(prompt, maxTokens = 10000) {
         await sendErrorToTelegram(error, {
           route: 'callGeminiAI',
           promptLength: prompt?.length || 0,
-          maxTokens: maxTokens || 'default',
+          maxTokens: 'не используется (API использует максимальные значения)',
           finishReason: responseData?.candidates?.[0]?.finishReason || 'unknown'
         });
         console.log('📢 [GEMINI-3.0] Критическая ошибка отправлена в Telegram');
@@ -428,7 +427,7 @@ ${JSON.stringify(answers)}
 
 ФОРМАТ ОТВЕТА: Только текст сообщения, без дополнительных объяснений.`;
 
-    const message = await callGeminiAI(prompt, 6000);
+    const message = await callGeminiAI(prompt);
     
     // Генерируем рекомендуемые тесты для payment страницы
     const recommendedTests = await analyzeAndRecommendTests(answers);
@@ -657,7 +656,7 @@ router.post('/mascot-message/dashboard', async (req, res) => {
 
     console.log('🚀 Отправляем запрос к Gemini AI для генерации нового сообщения...');
     
-    const message = await callGeminiAI(prompt, 7000);
+    const message = await callGeminiAI(prompt);
     
     // Сохраняем сгенерированное сообщение и список тестов в БД
     console.log('💾 Сохраняем сообщение Луми и список тестов в БД...');
@@ -846,7 +845,7 @@ router.post('/personal-plan', async (req, res) => {
       console.log('📝 [PERSONAL-PLAN] Содержит ли промпт данные пользователя:', prompt.includes(userAnswersJson.substring(0, 50)));
       console.log('🚀 [PERSONAL-PLAN] Вызываем Gemini API...');
       
-      const plan = await callGeminiAI(prompt, 80000);
+      const plan = await callGeminiAI(prompt);
       console.log('✅ [PERSONAL-PLAN] План получен от Gemini, длина:', plan?.length || 0);
     
       // Сохраняем план в БД для будущего использования
@@ -960,7 +959,7 @@ router.post('/session-preparation', async (req, res) => {
       console.log('📝 [SESSION-PREPARATION] Финальный промпт сформирован, длина:', prompt.length);
       console.log('🚀 [SESSION-PREPARATION] Вызываем Gemini API...');
       
-      const preparation = await callGeminiAI(prompt, 80000);
+      const preparation = await callGeminiAI(prompt);
       console.log('✅ [SESSION-PREPARATION] Подготовка получена от Gemini, длина:', preparation?.length || 0);
       
     res.json({ success: true, preparation });
@@ -1192,7 +1191,7 @@ ${historyContext}
     console.log('🚀 [FEEDBACK-CHAT] Отправляем запрос к Gemini API...');
     let analysis;
     try {
-      analysis = await callGeminiAI(prompt, 40000);
+      analysis = await callGeminiAI(prompt);
       console.log('✅ [FEEDBACK-CHAT] Получен ответ от Gemini, длина:', analysis?.length);
     } catch (geminiError) {
       console.error('❌ [FEEDBACK-CHAT] Ошибка Gemini API:', geminiError);
@@ -1390,7 +1389,7 @@ ${allTests.map((test, index) => `${index + 1}. ${test.name} (ID: ${test.id})`).j
 
 ФОРМАТ ОТВЕТА: Верни ТОЛЬКО номера рекомендуемых тестов через запятую (например: 1,3,6,7), без дополнительного текста.`;
 
-    const recommendedTestNumbers = await callGeminiAI(analysisPrompt, 2000);
+    const recommendedTestNumbers = await callGeminiAI(analysisPrompt);
     console.log('🔬 Рекомендации от Gemini:', recommendedTestNumbers);
     
     // Парсим номера тестов из ответа Gemini
@@ -1624,7 +1623,7 @@ router.post('/psychologist-pdf', async (req, res) => {
       .replace('{example_pdf}', examplePdf);
 
     console.log('🚀 [PSYCHOLOGIST-PDF] Вызываем Gemini API...');
-    const psychologistPdf = await callGeminiAI(prompt, 60000);
+    const psychologistPdf = await callGeminiAI(prompt);
     console.log('✅ [PSYCHOLOGIST-PDF] PDF для психолога и психиатра получен от Gemini, длина:', psychologistPdf?.length || 0);
 
     res.json({ 
