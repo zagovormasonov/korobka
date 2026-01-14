@@ -97,6 +97,7 @@ router.post('/image', upload.single('image'), async (req, res) => {
 
     const prompt = (req.body?.prompt || '').toString();
     const imageFile = req.file;
+    const history = req.body?.history;
 
     if (!prompt.trim()) {
       return res.status(400).json({ success: false, error: 'Нужно указать промпт' });
@@ -117,17 +118,76 @@ router.post('/image', upload.single('image'), async (req, res) => {
     const modelName = rawModel.startsWith('models/') ? rawModel : `models/${rawModel}`;
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
 
-    const parts = [
+    // Формируем массив contents для истории + текущего сообщения
+    const contents = [];
+    
+    // Парсим и добавляем историю
+    if (history && history !== '[]' && history !== '') {
+      let parsedHistory;
+      try {
+        parsedHistory = JSON.parse(history);
+      } catch (parseError) {
+        console.error(`❌ [${requestId}] Ошибка парсинга истории:`, parseError);
+        parsedHistory = [];
+      }
+      
+      if (parsedHistory.length > 0) {
+        console.log(`📚 [${requestId}] Добавляем историю чата:`, parsedHistory.length, 'сообщений');
+        
+        for (const msg of parsedHistory) {
+          const msgParts = [];
+          
+          // Добавляем текстовый контент
+          if (msg.content) {
+            msgParts.push({ text: msg.content });
+          }
+          
+          // Добавляем изображение из истории, если есть
+          if (msg.image && msg.image.dataUrl) {
+            try {
+              // Извлекаем base64 из dataUrl (формат: data:image/png;base64,...)
+              const base64Match = msg.image.dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+              if (base64Match) {
+                const mimeType = `image/${base64Match[1]}`;
+                const base64Data = base64Match[2];
+                msgParts.push({
+                  inlineData: {
+                    mimeType: mimeType,
+                    data: base64Data
+                  }
+                });
+              }
+            } catch (imgError) {
+              console.error(`⚠️ [${requestId}] Ошибка обработки изображения из истории:`, imgError);
+            }
+          }
+          
+          if (msgParts.length > 0) {
+            contents.push({
+              role: msg.role === 'user' ? 'user' : 'model',
+              parts: msgParts
+            });
+          }
+        }
+      }
+    }
+
+    // Добавляем текущее сообщение
+    const currentParts = [
       { text: prompt }
     ];
     
     // Добавляем изображение только если оно есть
     if (imageFile) {
-      parts.push(fileToGenerativePart(imageFile.path, imageFile.mimetype));
+      currentParts.push(fileToGenerativePart(imageFile.path, imageFile.mimetype));
     }
+    
+    contents.push({
+      parts: currentParts
+    });
 
     const requestBody = {
-      contents: [{ parts }]
+      contents: contents
       // Убрали maxOutputTokens - используем максимальные значения API по умолчанию
     };
 
@@ -136,7 +196,8 @@ router.post('/image', upload.single('image'), async (req, res) => {
       promptLen: prompt.length,
       hasImage: !!imageFile,
       mimeType: imageFile?.mimetype || 'нет',
-      sizeMb: imageFile ? (imageFile.size / 1024 / 1024).toFixed(2) : 'нет'
+      sizeMb: imageFile ? (imageFile.size / 1024 / 1024).toFixed(2) : 'нет',
+      historyLength: contents.length - 1 // -1 потому что последний элемент - текущее сообщение
     });
 
     const response = await fetch(apiUrl, {

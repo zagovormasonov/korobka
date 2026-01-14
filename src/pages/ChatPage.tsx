@@ -256,6 +256,14 @@ const ChatPage: React.FC = () => {
       if (imageFile) {
         formData.append('image', imageFile);
       }
+      
+      // Добавляем историю для контекста
+      const history = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        image: msg.image ? { mimeType: msg.image.mimeType, dataUrl: msg.image.dataUrl } : undefined
+      }));
+      formData.append('history', JSON.stringify(history));
 
       const response = await fetch(`${API_BASE_URL}/api/chat/image`, {
         method: 'POST',
