@@ -132,40 +132,18 @@ router.post('/image', upload.single('image'), async (req, res) => {
       }
       
       if (parsedHistory.length > 0) {
-        console.log(`📚 [${requestId}] Добавляем историю чата:`, parsedHistory.length, 'сообщений');
+        // Ограничиваем историю последними 10 сообщениями, чтобы не перегружать API
+        const recentHistory = parsedHistory.slice(-10);
+        console.log(`📚 [${requestId}] Добавляем историю чата:`, recentHistory.length, 'из', parsedHistory.length, 'сообщений');
         
-        for (const msg of parsedHistory) {
-          const msgParts = [];
-          
-          // Добавляем текстовый контент
-          if (msg.content) {
-            msgParts.push({ text: msg.content });
-          }
-          
-          // Добавляем изображение из истории, если есть
-          if (msg.image && msg.image.dataUrl) {
-            try {
-              // Извлекаем base64 из dataUrl (формат: data:image/png;base64,...)
-              const base64Match = msg.image.dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
-              if (base64Match) {
-                const mimeType = `image/${base64Match[1]}`;
-                const base64Data = base64Match[2];
-                msgParts.push({
-                  inlineData: {
-                    mimeType: mimeType,
-                    data: base64Data
-                  }
-                });
-              }
-            } catch (imgError) {
-              console.error(`⚠️ [${requestId}] Ошибка обработки изображения из истории:`, imgError);
-            }
-          }
-          
-          if (msgParts.length > 0) {
+        for (const msg of recentHistory) {
+          // Передаем только текстовую часть истории
+          // Изображения не передаем, так как для них требуется thought_signature
+          // и они уже были показаны пользователю
+          if (msg.content && msg.content.trim()) {
             contents.push({
               role: msg.role === 'user' ? 'user' : 'model',
-              parts: msgParts
+              parts: [{ text: msg.content }]
             });
           }
         }
