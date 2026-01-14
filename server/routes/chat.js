@@ -30,7 +30,9 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 20 * 1024 * 1024 // 20MB лимит (соответствует лимиту inline data в Gemini API)
+    fileSize: 20 * 1024 * 1024, // 20MB лимит (соответствует лимиту inline data в Gemini API)
+    fieldSize: 10 * 1024 * 1024, // 10MB лимит для полей (для истории чата с изображениями)
+    fields: 20 // Максимальное количество полей
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
