@@ -102,15 +102,14 @@ router.post('/image', upload.single('image'), async (req, res) => {
       return res.status(400).json({ success: false, error: 'Нужно указать промпт' });
     }
 
-    if (!imageFile) {
-      return res.status(400).json({ success: false, error: 'Нужно прикрепить изображение' });
-    }
-
-    if (!imageFile.mimetype?.startsWith('image/')) {
+    // Изображение теперь опционально - можно генерировать только по текстовому промпту
+    if (imageFile && !imageFile.mimetype?.startsWith('image/')) {
       return res.status(400).json({ success: false, error: 'В режиме генерации изображений можно загружать только изображения' });
     }
 
-    uploadedFiles.push(imageFile.path);
+    if (imageFile) {
+      uploadedFiles.push(imageFile.path);
+    }
 
     // Nano Banana Pro (по вашему уточнению): gemini-3-pro-image-preview.
     // Важно: API ожидает формат "models/<id>", поэтому нормализуем значение.
@@ -119,9 +118,13 @@ router.post('/image', upload.single('image'), async (req, res) => {
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
 
     const parts = [
-      { text: prompt },
-      fileToGenerativePart(imageFile.path, imageFile.mimetype)
+      { text: prompt }
     ];
+    
+    // Добавляем изображение только если оно есть
+    if (imageFile) {
+      parts.push(fileToGenerativePart(imageFile.path, imageFile.mimetype));
+    }
 
     const requestBody = {
       contents: [{ parts }]
@@ -131,8 +134,9 @@ router.post('/image', upload.single('image'), async (req, res) => {
     console.log(`🖼️ [${requestId}] Генерация изображения:`, {
       modelName,
       promptLen: prompt.length,
-      mimeType: imageFile.mimetype,
-      sizeMb: (imageFile.size / 1024 / 1024).toFixed(2)
+      hasImage: !!imageFile,
+      mimeType: imageFile?.mimetype || 'нет',
+      sizeMb: imageFile ? (imageFile.size / 1024 / 1024).toFixed(2) : 'нет'
     });
 
     const response = await fetch(apiUrl, {

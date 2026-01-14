@@ -238,10 +238,6 @@ const ChatPage: React.FC = () => {
       return;
     }
     const imageFile = fileList.find(f => (f.type || '').startsWith('image/'))?.originFileObj;
-    if (!imageFile) {
-      antMessage.warning('Прикрепите изображение (1 шт.)');
-      return;
-    }
 
     const userMessage: Message = {
       role: 'user',
@@ -257,7 +253,9 @@ const ChatPage: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('prompt', promptText);
-      formData.append('image', imageFile);
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
 
       const response = await fetch(`${API_BASE_URL}/api/chat/image`, {
         method: 'POST',
