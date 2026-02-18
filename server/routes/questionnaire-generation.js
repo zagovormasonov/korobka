@@ -27,7 +27,7 @@ function parseJSONFromResponse(text) {
 /**
  * Вызов OpenAI Chat Completions API
  */
-async function callOpenAI(systemPrompt, userMessage, temperature = 0.5, maxTokens = 4096) {
+async function callOpenAI(systemPrompt, userMessage, temperature = 0.5) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY не установлен в переменных окружения');
@@ -48,8 +48,7 @@ async function callOpenAI(systemPrompt, userMessage, temperature = 0.5, maxToken
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ],
-        temperature,
-        max_completion_tokens: maxTokens
+        temperature
       },
       {
         headers: {
@@ -119,7 +118,7 @@ type всегда "text". В options — 4 примера ответов, кот
 
     const userMessage = buildUserContext(req.body);
 
-    const content = await callOpenAI(systemPrompt, userMessage, 0.5, 4096);
+    const content = await callOpenAI(systemPrompt, userMessage, 0.5);
     console.log('📥 [QUESTIONNAIRE] Ответ от OpenAI (Part 1):', content.substring(0, 500));
 
     const questions = parseJSONFromResponse(content);
@@ -158,7 +157,7 @@ type всегда "text". В options — 4 примера ответов.`;
 
     const userMessage = buildUserContext(req.body);
 
-    const content = await callOpenAI(systemPrompt, userMessage, 0.5, 4096);
+    const content = await callOpenAI(systemPrompt, userMessage, 0.5);
     console.log('📥 [QUESTIONNAIRE] Ответ от OpenAI (Part 2):', content.substring(0, 500));
 
     const questions = parseJSONFromResponse(content);
@@ -197,7 +196,7 @@ type всегда "text". В options — 4 примера ответов.`;
 
     const userMessage = buildUserContext(req.body);
 
-    const content = await callOpenAI(systemPrompt, userMessage, 0.5, 4096);
+    const content = await callOpenAI(systemPrompt, userMessage, 0.5);
     console.log('📥 [QUESTIONNAIRE] Ответ от OpenAI (Part 3):', content.substring(0, 500));
 
     const questions = parseJSONFromResponse(content);
@@ -255,7 +254,7 @@ router.post('/generate-results', async (req, res) => {
       answersDescription ? `\nВСЕ ОТВЕТЫ:\n${answersDescription}` : ''
     ].filter(Boolean).join('\n');
 
-    const content = await callOpenAI(systemPrompt, userMessage, 0.5, 4096);
+    const content = await callOpenAI(systemPrompt, userMessage, 0.5);
     console.log('📥 [QUESTIONNAIRE] Ответ от OpenAI (Results):', content.substring(0, 500));
 
     const generatedData = parseJSONFromResponse(content);

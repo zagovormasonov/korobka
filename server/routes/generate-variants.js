@@ -67,8 +67,7 @@ router.post('/generate-variants', async (req, res) => {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage }
           ],
-          temperature: 0.7,
-          max_completion_tokens: 1024
+          temperature: 0.7
         },
         {
           headers: {
