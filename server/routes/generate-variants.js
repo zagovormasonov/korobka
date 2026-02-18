@@ -57,24 +57,35 @@ router.post('/generate-variants', async (req, res) => {
     console.log('🚀 [GENERATE-VARIANTS] Отправляем запрос к OpenAI API...');
     const startTime = Date.now();
 
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        temperature: 0.7,
-        max_tokens: 1024
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+    let response;
+    try {
+      response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage }
+          ],
+          temperature: 0.7,
+          max_completion_tokens: 1024
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          }
         }
+      );
+    } catch (err) {
+      if (err.response) {
+        console.error('❌ [GENERATE-VARIANTS] Статус:', err.response.status);
+        console.error('❌ [GENERATE-VARIANTS] Тело ответа:', JSON.stringify(err.response.data, null, 2));
+        const message = err.response.data?.error?.message || JSON.stringify(err.response.data);
+        throw new Error(`OpenAI API error (${err.response.status}): ${message}`);
       }
-    );
+      throw err;
+    }
 
     const elapsed = Date.now() - startTime;
     console.log(`⏱️ [GENERATE-VARIANTS] Время ответа OpenAI API: ${(elapsed / 1000).toFixed(2)}с`);

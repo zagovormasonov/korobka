@@ -39,31 +39,43 @@ async function callOpenAI(systemPrompt, userMessage, temperature = 0.5, maxToken
   console.log('📋 [QUESTIONNAIRE] Model:', model);
   const startTime = Date.now();
 
-  const response = await axios.post(
-    'https://api.openai.com/v1/chat/completions',
-    {
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage }
-      ],
-      temperature,
-      max_tokens: maxTokens
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        temperature,
+        max_completion_tokens: maxTokens
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        }
       }
+    );
+
+    const elapsed = Date.now() - startTime;
+    console.log(`⏱️ [QUESTIONNAIRE] Время ответа OpenAI API: ${(elapsed / 1000).toFixed(2)}с`);
+
+    const content = response.data.choices[0].message.content;
+    console.log(`✅ [QUESTIONNAIRE] Ответ получен, длина: ${content.length} символов`);
+    return content;
+  } catch (err) {
+    const elapsed = Date.now() - startTime;
+    console.error(`❌ [QUESTIONNAIRE] OpenAI API ошибка через ${(elapsed / 1000).toFixed(2)}с`);
+    if (err.response) {
+      console.error('❌ [QUESTIONNAIRE] Статус:', err.response.status);
+      console.error('❌ [QUESTIONNAIRE] Тело ответа:', JSON.stringify(err.response.data, null, 2));
+      const message = err.response.data?.error?.message || JSON.stringify(err.response.data);
+      throw new Error(`OpenAI API error (${err.response.status}): ${message}`);
     }
-  );
-
-  const elapsed = Date.now() - startTime;
-  console.log(`⏱️ [QUESTIONNAIRE] Время ответа OpenAI API: ${(elapsed / 1000).toFixed(2)}с`);
-
-  const content = response.data.choices[0].message.content;
-  console.log(`✅ [QUESTIONNAIRE] Ответ получен, длина: ${content.length} символов`);
-  return content;
+    throw err;
+  }
 }
 
 /**
