@@ -81,23 +81,50 @@ async function callOpenAI(systemPrompt, userMessage, temperature = 0.5) {
  * Формирует строку с контекстом пользователя из тела запроса
  */
 function buildUserContext(body) {
-  const { symptoms = [], generalDescription = '', answersPart1 = {}, answersPart2 = {} } = body;
+  const formatValue = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (Array.isArray(val)) return val.join(', ');
+    if (typeof val === 'object') {
+      return Object.entries(val).map(([k, v]) => `Вопрос ${k}: ${v}`).join('\n');
+    }
+    return String(val);
+  };
 
-  const symptomsText = Array.isArray(symptoms) && symptoms.length > 0
-    ? `Выбранные симптомы: ${symptoms.join(', ')}`
-    : 'Симптомы не указаны';
+  const parts = [];
 
-  const descText = generalDescription ? `Описание ситуации: ${generalDescription}` : '';
+  const symptoms = body.selectedSymptoms || body.symptoms;
+  if (symptoms) {
+    parts.push(`Выбранные симптомы: ${formatValue(symptoms)}`);
+  } else {
+    parts.push(`Выбранные симптомы: не указаны`);
+  }
 
-  const answers1Text = Object.keys(answersPart1).length > 0
-    ? `\nОТВЕТЫ (ЧАСТЬ 1):\n${Object.entries(answersPart1).map(([k, v]) => `Вопрос ${k}: ${v}`).join('\n')}`
-    : '';
+  if (body.generalDescription) {
+    parts.push(`Жалоба пациента: ${formatValue(body.generalDescription)}`);
+  }
 
-  const answers2Text = Object.keys(answersPart2).length > 0
-    ? `\nОТВЕТЫ (ЧАСТЬ 2):\n${Object.entries(answersPart2).map(([k, v]) => `Вопрос ${k}: ${v}`).join('\n')}`
-    : '';
+  if (body.answersFinalFormal && Object.keys(body.answersFinalFormal).length > 0) {
+    parts.push(`Ответы на формальные вопросы:\n${formatValue(body.answersFinalFormal)}`);
+  }
 
-  return [symptomsText, descText, answers1Text, answers2Text].filter(Boolean).join('\n');
+  if (body.answersMiniTest && Object.keys(body.answersMiniTest).length > 0) {
+    parts.push(`Ответы на мини-тест:\n${formatValue(body.answersMiniTest)}`);
+  }
+
+  if (body.answersPart1 && Object.keys(body.answersPart1).length > 0) {
+    parts.push(`Ответы на уточняющие вопросы (часть 1):\n${formatValue(body.answersPart1)}`);
+  }
+
+  if (body.answersPart2 && Object.keys(body.answersPart2).length > 0) {
+    parts.push(`Ответы на уточняющие вопросы (часть 2):\n${formatValue(body.answersPart2)}`);
+  }
+
+  if (body.answersPart3 && Object.keys(body.answersPart3).length > 0) {
+    parts.push(`Ответы на уточняющие вопросы (часть 3):\n${formatValue(body.answersPart3)}`);
+  }
+
+  return parts.join('\n\n');
 }
 
 /**
@@ -302,20 +329,7 @@ router.post('/generate-results', async (req, res) => {
 
 Обязательно используй заголовки (## и ###), жирный текст (**) и маркированные списки (-). Текст должен быть на русском языке.`;
 
-    const allAnswers = { ...answersPart1, ...answersPart2, ...answersPart3 };
-    const answersDescription = Object.entries(allAnswers)
-      .map(([questionId, answer]) => `Вопрос ${questionId}: ${answer}`)
-      .join('\n');
-
-    const symptomsText = Array.isArray(symptoms) && symptoms.length > 0
-      ? `Выбранные симптомы: ${symptoms.join(', ')}`
-      : 'Симптомы не указаны';
-
-    const userMessage = [
-      symptomsText,
-      generalDescription ? `Описание ситуации: ${generalDescription}` : '',
-      answersDescription ? `\nВСЕ ОТВЕТЫ:\n${answersDescription}` : ''
-    ].filter(Boolean).join('\n');
+    const userMessage = buildUserContext(req.body);
 
     const content = await callOpenAI(systemPrompt, userMessage, 0.5);
     console.log('📥 [QUESTIONNAIRE] Ответ от OpenAI (Results):', content.substring(0, 500));
