@@ -234,6 +234,11 @@ async function testSupabaseConnection() {
   }
 }
 
+// Редирект с главной страницы на основной сайт
+app.get('/', (req, res) => {
+  res.redirect(301, 'https://idenself.ru');
+});
+
 // Routes
 app.use('/api/tests', testRoutes);
 app.use('/api/payments', paymentRoutes);
