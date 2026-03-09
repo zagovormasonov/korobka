@@ -128,9 +128,9 @@ async function callGeminiAI(prompt, maxTokens = null) {
       console.log('🌐 Прокси отключен, используем прямое подключение');
     }
     
-    // Используем Gemini 3.0 Pro через v1beta API (как в chat.js)
-    console.log('🔧 Используем Gemini 3.0 Pro через v1beta API...');
-    const modelName = 'models/gemini-3-pro-preview';
+    // Используем Gemini 3.1 Pro через v1beta API (как в chat.js)
+    console.log('🔧 Используем Gemini 3.1 Pro через v1beta API...');
+    const modelName = 'models/gemini-3.1-pro-preview';
     
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
     
@@ -152,7 +152,7 @@ async function callGeminiAI(prompt, maxTokens = null) {
       body: JSON.stringify(requestBody)
     });
     
-    console.log('📥 [GEMINI-3.0] Статус ответа от v1beta API:', response.status, response.statusText);
+    console.log('📥 [GEMINI-3.1] Статус ответа от v1beta API:', response.status, response.statusText);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -168,14 +168,14 @@ async function callGeminiAI(prompt, maxTokens = null) {
         const retryAfter = response.headers.get('Retry-After');
         const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 5000; // По умолчанию 5 секунд
         
-        console.warn(`⚠️ [GEMINI-3.0] Превышен лимит запросов (429). Retry-After: ${retryAfter || 'не указан'}`);
-        console.warn(`⏳ [GEMINI-3.0] Ждем ${waitTime / 1000}с перед retry...`);
+        console.warn(`⚠️ [GEMINI-3.1] Превышен лимит запросов (429). Retry-After: ${retryAfter || 'не указан'}`);
+        console.warn(`⏳ [GEMINI-3.1] Ждем ${waitTime / 1000}с перед retry...`);
         
         // Ждем перед повторной попыткой (максимум 10 секунд)
         await new Promise(resolve => setTimeout(resolve, Math.min(waitTime, 10000)));
         
         // Пробуем еще раз (только один retry)
-        console.log('🔄 [GEMINI-3.0] Повторная попытка после задержки...');
+        console.log('🔄 [GEMINI-3.1] Повторная попытка после задержки...');
         const retryResponse = await fetch(apiUrl, {
           method: 'POST',
           headers: {
@@ -192,7 +192,7 @@ async function callGeminiAI(prompt, maxTokens = null) {
           } catch (e) {
             retryErrorData = { error: retryErrorText };
           }
-          console.error('❌ [GEMINI-3.0] Повторная попытка также не удалась:', retryResponse.status, JSON.stringify(retryErrorData));
+          console.error('❌ [GEMINI-3.1] Повторная попытка также не удалась:', retryResponse.status, JSON.stringify(retryErrorData));
           throw new Error(`v1beta API error (${retryResponse.status}): Превышен лимит запросов. Попробуйте позже.`);
         }
         
@@ -202,11 +202,11 @@ async function callGeminiAI(prompt, maxTokens = null) {
             !retryData.candidates[0].content || !retryData.candidates[0].content.parts ||
             !Array.isArray(retryData.candidates[0].content.parts) || retryData.candidates[0].content.parts.length === 0 ||
             !retryData.candidates[0].content.parts[0].text) {
-          console.error('❌ [GEMINI-3.0] Неожиданная структура ответа от v1beta API после retry:', JSON.stringify(retryData));
+          console.error('❌ [GEMINI-3.1] Неожиданная структура ответа от v1beta API после retry:', JSON.stringify(retryData));
           throw new Error('Неожиданная структура ответа от Gemini 3.0 Pro v1beta API');
         }
         const text = retryData.candidates[0].content.parts[0].text;
-        console.log('✅ [GEMINI-3.0] Retry успешен, получен ответ, длина:', text.length);
+        console.log('✅ [GEMINI-3.1] Retry успешен, получен ответ, длина:', text.length);
         return text;
       }
       
@@ -224,7 +224,7 @@ async function callGeminiAI(prompt, maxTokens = null) {
       console.error('❌ [GEMINI-3.0] Текст ответа (первые 500 символов):', responseText.substring(0, 500));
       throw new Error(`Failed to parse v1beta API response: ${parseError.message}`);
     }
-    console.log('📥 [GEMINI-3.0] Получен ответ от v1beta API, структура:', {
+    console.log('📥 [GEMINI-3.1] Получен ответ от v1beta API, структура:', {
       hasCandidates: !!data.candidates,
       candidatesLength: data.candidates?.length || 0,
       hasError: !!data.error
@@ -232,7 +232,7 @@ async function callGeminiAI(prompt, maxTokens = null) {
     
     // Проверяем наличие candidates и обработываем возможные ошибки
     if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
-      console.error('❌ [GEMINI-3.0] Нет candidates в ответе:', JSON.stringify(data, null, 2));
+      console.error('❌ [GEMINI-3.1] Нет candidates в ответе:', JSON.stringify(data, null, 2));
       throw new Error(`v1beta API returned no candidates: ${JSON.stringify(data)}`);
     }
     
@@ -240,42 +240,42 @@ async function callGeminiAI(prompt, maxTokens = null) {
     
     // КРИТИЧЕСКИ ВАЖНО: Проверяем finishReason ПЕРЕД проверкой content
     if (candidate.finishReason === 'MAX_TOKENS') {
-      console.warn('⚠️ [GEMINI-3.0] Ответ обрезан из-за MAX_TOKENS, finishReason:', candidate.finishReason);
+      console.warn('⚠️ [GEMINI-3.1] Ответ обрезан из-за MAX_TOKENS, finishReason:', candidate.finishReason);
       
       // Если есть частичный контент, используем его
       if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
         const partialText = candidate.content.parts[0].text;
         if (partialText) {
-          console.warn('⚠️ [GEMINI-3.0] Используем частичный ответ (обрезан), длина:', partialText.length);
-          console.warn('⚠️ [GEMINI-3.0] Ответ был обрезан, но частичный контент используется');
+          console.warn('⚠️ [GEMINI-3.1] Используем частичный ответ (обрезан), длина:', partialText.length);
+          console.warn('⚠️ [GEMINI-3.1] Ответ был обрезан, но частичный контент используется');
           return partialText;
         }
       }
       
       // Если контента нет - это критическая ошибка
-      console.error('❌ [GEMINI-3.0] MAX_TOKENS но нет контента! Структура:', JSON.stringify(candidate, null, 2));
+      console.error('❌ [GEMINI-3.1] MAX_TOKENS но нет контента! Структура:', JSON.stringify(candidate, null, 2));
       throw new Error(`v1beta API returned MAX_TOKENS with empty content. API использует максимальные значения по умолчанию.`);
     }
     
     // Проверяем другие finishReason (SAFETY, RECITATION и т.д.)
     if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-      console.warn(`⚠️ [GEMINI-3.0] Неожиданный finishReason: ${candidate.finishReason}`);
+      console.warn(`⚠️ [GEMINI-3.1] Неожиданный finishReason: ${candidate.finishReason}`);
     }
     
     // Проверяем наличие content и parts
     if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-      console.error('❌ [GEMINI-3.0] Нет content.parts в ответе:', JSON.stringify(candidate, null, 2));
+      console.error('❌ [GEMINI-3.1] Нет content.parts в ответе:', JSON.stringify(candidate, null, 2));
       throw new Error(`v1beta API returned invalid candidate structure: ${JSON.stringify(candidate)}`);
     }
     
     const text = candidate.content.parts[0].text;
     
     if (!text) {
-      console.error('❌ [GEMINI-3.0] Нет text в ответе:', JSON.stringify(candidate.content.parts[0], null, 2));
+      console.error('❌ [GEMINI-3.1] Нет text в ответе:', JSON.stringify(candidate.content.parts[0], null, 2));
       throw new Error(`v1beta API returned no text in response`);
     }
     
-    console.log('✅ Gemini 3.0 Pro ответ получен через v1beta API, длина:', text.length, 'символов');
+    console.log('✅ Gemini 3.1 Pro ответ получен через v1beta API, длина:', text.length, 'символов');
     console.log('⏱️ Время окончания:', new Date().toISOString());
     return text;
     

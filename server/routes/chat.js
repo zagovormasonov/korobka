@@ -306,10 +306,10 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
       }
     }
 
-    // Пробуем разные модели с fallback (начиная с Gemini 3.0 Pro Preview)
+    // Пробуем разные модели с fallback (начиная с Gemini 3.1 Pro Preview)
     // Используем v1beta API для доступа к preview моделям
     const models = [
-      'models/gemini-3-pro-preview', // Gemini 3.0 Pro (v1beta)
+      'models/gemini-3.1-pro-preview', // Gemini 3.1 Pro (v1beta)
       'gemini-2.5-pro',              // Fallback на 2.5 Pro
       'gemini-2.0-flash-exp',        // Экспериментальная 2.0
       'gemini-1.5-flash',            // Стабильная быстрая модель
@@ -325,7 +325,7 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
         console.log(`📊 [${requestId}] Количество частей в запросе: ${parts.length} (текст: ${parts.filter(p => p.text).length}, файлы: ${parts.filter(p => p.inlineData).length})`);
         
         // Для preview моделей используем прямой вызов v1beta API
-        if (modelName === 'models/gemini-3-pro-preview') {
+        if (modelName === 'models/gemini-3.1-pro-preview') {
           console.log(`🔧 [${requestId}] Используем v1beta API для preview модели`);
           
           const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
@@ -380,7 +380,7 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
               console.warn(`⚠️ [${requestId}] Превышен лимит запросов (429) для ${modelName}. Retry-After: ${retryAfter || 'не указан'}`);
               console.warn(`⏳ [${requestId}] Пробуем следующую модель или ждем ${waitTime / 1000}с...`);
               
-              // Если это первая модель (gemini-3-pro-preview), пробуем следующую без задержки
+              // Если это первая модель (gemini-3.1-pro-preview), пробуем следующую без задержки
               // Если это последняя модель, пробуем retry с задержкой
               if (models.indexOf(modelName) === 0) {
                 // Это первая модель, просто пробуем следующую
