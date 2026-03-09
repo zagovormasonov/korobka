@@ -107,6 +107,23 @@ const projectRoot = path.resolve(__dirname, '..');
 // Загружаем переменные окружения из .env в корне проекта
 dotenv.config({ path: path.join(projectRoot, '.env') });
 
+const app = express();
+
+// --- РЕДИРЕКТ ДОМЕНА (ДОЛЖЕН БЫТЬ ПЕРВЫМ) ---
+app.use((req, res, next) => {
+  const host = req.hostname || req.get('host') || '';
+  if (host === 'idenself.com' || host === 'www.idenself.com') {
+    const redirectUrl = `https://idenself.ru${req.originalUrl}`;
+    console.log(`🔀 Domain Redirect: ${host}${req.originalUrl} → ${redirectUrl}`);
+    return res.redirect(301, redirectUrl);
+  }
+  next();
+});
+// --------------------------------------------
+
+const PORT = process.env.PORT || 5000;
+const FRONTEND_URL = process.env.FRONTEND_URL;
+
 // Проверка обязательных переменных окружения
 function checkEnvironmentVariables() {
   const requiredVars = [
@@ -131,9 +148,7 @@ function checkEnvironmentVariables() {
 // Проверяем переменные окружения
 checkEnvironmentVariables();
 
-const app = express();
-const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = process.env.FRONTEND_URL;
+// Middleware
 
 // Middleware
 // CORS настройки
@@ -219,34 +234,18 @@ async function testSupabaseConnection() {
     console.log('🔍 Проверка подключения к Supabase...');
     console.log(`📡 Supabase URL: ${supabaseUrl}`);
 
-    const { data, error } = await supabase.from('primary_test_results').select('count').limit(1);
+    const { data, error } = await supabase.from('primary_test_results').select('count', { count: 'exact', head: true });
 
     if (error) {
       console.error('❌ Ошибка подключения к Supabase:', error.message);
-      console.error('💡 Проверьте переменные окружения SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY');
-      process.exit(1);
+      return;
     }
 
     console.log('✅ Подключение к Supabase успешно!');
   } catch (error) {
-    console.error('❌ Ошибка подключения к Supabase:');
-    console.error(`🔴 ${error.message}`);
-    console.error('💡 Проверьте переменные окружения в файле .env');
-    process.exit(1);
+    console.error('❌ Исключение при подключении к Supabase:', error.message);
   }
 }
-
-// Редирект со всех страниц idenself.com на idenself.ru
-app.use((req, res, next) => {
-  const host = req.hostname || req.get('host') || '';
-  // Если запрос пришёл с idenself.com (или www.idenself.com) — редиректим на idenself.ru
-  if (host === 'idenself.com' || host === 'www.idenself.com') {
-    const redirectUrl = `https://idenself.ru${req.originalUrl}`;
-    console.log(`🔀 Redirect: ${host}${req.originalUrl} → ${redirectUrl}`);
-    return res.redirect(301, redirectUrl);
-  }
-  next();
-});
 
 // Routes
 app.use('/api/tests', testRoutes);
