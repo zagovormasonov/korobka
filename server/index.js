@@ -112,6 +112,12 @@ const app = express();
 // --- РЕДИРЕКТ ДОМЕНА (ДОЛЖЕН БЫТЬ ПЕРВЫМ) ---
 app.use((req, res, next) => {
   const host = req.hostname || req.get('host') || '';
+
+  // Исключаем роут /chat из редиректа
+  if (req.path === '/chat' || req.path.startsWith('/chat/')) {
+    return next();
+  }
+
   if (host === 'idenself.com' || host === 'www.idenself.com') {
     const redirectUrl = `https://idenself.ru${req.originalUrl}`;
     console.log(`🔀 Domain Redirect: ${host}${req.originalUrl} → ${redirectUrl}`);
