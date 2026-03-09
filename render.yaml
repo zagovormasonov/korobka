@@ -43,10 +43,8 @@ services:
       - key: DISABLE_PDF
         value: true
       - key: FRONTEND_URL
-        value: https://idenself.com
+        value: https://idenself.ru
       - key: REACT_APP_FRONTEND_URL
-        value: https://idenself.com
+        value: https://idenself.ru
       - key: VITE_API_BASE_URL
-        value: https://idenself.com
-      - key: NODE_ENV
-        value: production
+        value: https://idenself.ru

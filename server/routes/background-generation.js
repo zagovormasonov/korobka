@@ -14,7 +14,7 @@ router.post('/start', async (req, res) => {
   try {
     console.log('🚀 [BACKGROUND-GENERATION] Запуск фоновой генерации документов');
     const { sessionId } = req.body;
-    
+
     if (!sessionId) {
       console.error('❌ [BACKGROUND-GENERATION] SessionId не передан');
       return res.status(400).json({ success: false, error: 'SessionId is required' });
@@ -35,8 +35,8 @@ router.post('/start', async (req, res) => {
     // Если генерация уже завершена - возвращаем статус
     if (existingData.documents_generation_completed) {
       console.log('✅ [BACKGROUND-GENERATION] Генерация уже завершена для sessionId:', sessionId);
-      return res.json({ 
-        success: true, 
+      return res.json({
+        success: true,
         message: 'Generation already completed',
         status: 'completed',
         documents: {
@@ -50,8 +50,8 @@ router.post('/start', async (req, res) => {
     // Если генерация уже запущена, но не завершена - возвращаем статус in_progress с информацией о документах
     if (existingData.documents_generation_started) {
       console.log('⏳ [BACKGROUND-GENERATION] Генерация уже запущена для sessionId:', sessionId);
-      return res.json({ 
-        success: true, 
+      return res.json({
+        success: true,
         message: 'Generation already in progress',
         status: 'in_progress',
         documents: {
@@ -64,11 +64,11 @@ router.post('/start', async (req, res) => {
 
     // Генерация еще не запускалась - запускаем её
     console.log('🚀 [BACKGROUND-GENERATION] Запускаем генерацию для sessionId:', sessionId);
-    
+
     // Отмечаем, что генерация началась
     const { error: updateError } = await supabase
       .from('primary_test_results')
-      .update({ 
+      .update({
         documents_generation_started: true,
         documents_generation_started_at: new Date().toISOString()
       })
@@ -86,8 +86,8 @@ router.post('/start', async (req, res) => {
     });
 
     console.log('✅ [BACKGROUND-GENERATION] Фоновая генерация запущена для sessionId:', sessionId);
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Background generation started',
       status: 'started'
     });
@@ -102,7 +102,7 @@ router.post('/start', async (req, res) => {
 router.get('/status/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
-    
+
     if (!sessionId) {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
@@ -146,8 +146,8 @@ router.get('/status/:sessionId', async (req, res) => {
 
     res.json({
       success: true,
-      status: data.documents_generation_completed ? 'completed' : 
-              data.documents_generation_started ? 'in_progress' : 'not_started',
+      status: data.documents_generation_completed ? 'completed' :
+        data.documents_generation_started ? 'in_progress' : 'not_started',
       documents: {
         personal_plan: data.personal_plan_generated,
         session_preparation: data.session_preparation_generated,
@@ -170,7 +170,7 @@ async function generateDocumentsInBackground(sessionId) {
   try {
     // Отмечаем, что генерация запущена
     global.generationInProgress.add(sessionId);
-    
+
     console.log('🔄 [BACKGROUND-GENERATION] ===== ФУНКЦИЯ generateDocumentsInBackground ЗАПУЩЕНА =====');
     console.log('🔄 [BACKGROUND-GENERATION] Начинаем последовательную генерацию документов для sessionId:', sessionId);
     console.log('⏰ [BACKGROUND-GENERATION] Время начала:', new Date().toISOString());
@@ -178,12 +178,12 @@ async function generateDocumentsInBackground(sessionId) {
     console.log('🔄 [BACKGROUND-GENERATION] Memory usage:', process.memoryUsage());
     console.log('🔄 [BACKGROUND-GENERATION] Node version:', process.version);
     console.log('🔄 [BACKGROUND-GENERATION] Platform:', process.platform);
-    
+
     // Используем относительный URL для внутренних запросов
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://idenself.com' 
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? 'https://idenself.ru'
       : `http://127.0.0.1:${process.env.PORT || 5000}`;
-    
+
     // Проверяем, не запущена ли уже генерация
     console.log('🔍 [BACKGROUND-GENERATION] Запрашиваем данные из БД для sessionId:', sessionId);
     const { data: existingData, error: fetchError } = await supabase
@@ -191,7 +191,7 @@ async function generateDocumentsInBackground(sessionId) {
       .select('documents_generation_started, documents_generation_completed, personal_plan_generated, session_preparation_generated, psychologist_pdf_generated')
       .eq('session_id', sessionId)
       .single();
-    
+
     console.log('📊 [BACKGROUND-GENERATION] Результат запроса к БД:', {
       hasData: !!existingData,
       hasError: !!fetchError,
@@ -221,7 +221,7 @@ async function generateDocumentsInBackground(sessionId) {
       console.log('🔄 [BACKGROUND-GENERATION] Продолжаем генерацию с того места, где остановились...');
       // НЕ выходим из функции, продолжаем генерацию
     }
-    
+
     // 1. Генерируем персональный план (если еще не сгенерирован)
     if (!existingData.personal_plan_generated) {
       console.log('📝 [BACKGROUND-GENERATION] === ЭТАП 1: Генерация персонального плана ===');
@@ -240,21 +240,21 @@ async function generateDocumentsInBackground(sessionId) {
 
         console.log('📥 [BACKGROUND-GENERATION] Получен ответ от AI API:', planResponse.status, planResponse.statusText);
         console.log('⏰ [BACKGROUND-GENERATION] Время получения ответа:', new Date().toISOString());
-        
+
         if (planResponse.ok) {
           // Получаем PDF blob и сохраняем в БД в разных форматах
           const planPdfBuffer = await planResponse.arrayBuffer();
           const pdfBase64 = Buffer.from(planPdfBuffer).toString('base64');
-          
+
           const { error: updateError } = await supabase
             .from('primary_test_results')
-            .update({ 
+            .update({
               personal_plan_generated: true,
               personal_plan_pdf: Buffer.from(planPdfBuffer),  // BYTEA формат
               personal_plan_pdf_base64: pdfBase64  // Base64 формат
             })
             .eq('session_id', sessionId);
-          
+
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
@@ -293,16 +293,16 @@ async function generateDocumentsInBackground(sessionId) {
           // Получаем PDF blob и сохраняем в БД в разных форматах
           const sessionPdfBuffer = await sessionResponse.arrayBuffer();
           const pdfBase64 = Buffer.from(sessionPdfBuffer).toString('base64');
-          
+
           const { error: updateError } = await supabase
             .from('primary_test_results')
-            .update({ 
+            .update({
               session_preparation_generated: true,
               session_preparation_pdf: Buffer.from(sessionPdfBuffer),  // BYTEA формат
               session_preparation_pdf_base64: pdfBase64  // Base64 формат
             })
             .eq('session_id', sessionId);
-          
+
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
@@ -338,21 +338,21 @@ async function generateDocumentsInBackground(sessionId) {
         });
 
         console.log('📥 [BACKGROUND-GENERATION] Получен ответ от psychologist API:', pdfResponse.status, pdfResponse.statusText);
-        
+
         if (pdfResponse.ok) {
           // Получаем PDF blob и сохраняем в БД в разных форматах
           const pdfBuffer = await pdfResponse.arrayBuffer();
           const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
-          
+
           const { error: updateError } = await supabase
             .from('primary_test_results')
-            .update({ 
+            .update({
               psychologist_pdf_generated: true,
               psychologist_pdf: Buffer.from(pdfBuffer),  // BYTEA формат
               psychologist_pdf_base64: pdfBase64  // Base64 формат
             })
             .eq('session_id', sessionId);
-          
+
           if (updateError) {
             console.error('❌ [BACKGROUND-GENERATION] Ошибка обновления БД:', updateError);
           } else {
@@ -376,7 +376,7 @@ async function generateDocumentsInBackground(sessionId) {
     // Отмечаем, что генерация завершена
     await supabase
       .from('primary_test_results')
-      .update({ 
+      .update({
         documents_generation_completed: true,
         documents_generation_completed_at: new Date().toISOString()
       })
@@ -390,7 +390,7 @@ async function generateDocumentsInBackground(sessionId) {
     console.error('❌ [BACKGROUND-GENERATION] SessionId:', sessionId);
     console.error('❌ [BACKGROUND-GENERATION] Error name:', error.name);
     console.error('❌ [BACKGROUND-GENERATION] Error message:', error.message);
-    
+
     // Отправляем ошибку в Telegram
     sendErrorToTelegram(error, {
       route: 'background-generation',
@@ -399,12 +399,12 @@ async function generateDocumentsInBackground(sessionId) {
     }).catch(err => {
       console.error('❌ Не удалось отправить ошибку в Telegram:', err);
     });
-    
+
     // Отмечаем ошибку в БД
     try {
       await supabase
         .from('primary_test_results')
-        .update({ 
+        .update({
           documents_generation_completed: false,
           documents_generation_completed_at: new Date().toISOString()
         })
@@ -427,9 +427,9 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
     console.log('📥 [DOWNLOAD-PERSONAL-PLAN] SessionId из params:', req.params.sessionId);
     console.log('📥 [DOWNLOAD-PERSONAL-PLAN] Полный путь:', req.path);
     console.log('📥 [DOWNLOAD-PERSONAL-PLAN] Метод:', req.method);
-    
+
     const { sessionId } = req.params;
-    
+
     if (!sessionId) {
       console.error('❌ [DOWNLOAD-PERSONAL-PLAN] SessionId не передан');
       return res.status(400).json({ success: false, error: 'SessionId is required' });
@@ -487,7 +487,7 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
 👤 Никнейм: <b>${userData?.nickname || 'Не указан'}</b>
 🆔 Session ID: <code>${sessionId}</code>
 ⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
-      
+
       await sendTelegramNotification(message);
       console.log('✅ [DOWNLOAD-PERSONAL-PLAN] Уведомление об открытии персонального плана отправлено в Telegram');
     } catch (telegramError) {
@@ -509,7 +509,7 @@ router.get('/download/personal-plan/:sessionId', async (req, res) => {
 router.get('/download/session-preparation/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
-    
+
     if (!sessionId) {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
@@ -566,7 +566,7 @@ router.get('/download/session-preparation/:sessionId', async (req, res) => {
 👤 Никнейм: <b>${userData?.nickname || 'Не указан'}</b>
 🆔 Session ID: <code>${sessionId}</code>
 ⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
-      
+
       await sendTelegramNotification(message);
       console.log('✅ [DOWNLOAD-SESSION-PREPARATION] Уведомление об открытии подготовки к сеансу отправлено в Telegram');
     } catch (telegramError) {
@@ -588,7 +588,7 @@ router.get('/download/session-preparation/:sessionId', async (req, res) => {
 router.get('/download/psychologist-pdf/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
-    
+
     if (!sessionId) {
       return res.status(400).json({ success: false, error: 'SessionId is required' });
     }
@@ -645,7 +645,7 @@ router.get('/download/psychologist-pdf/:sessionId', async (req, res) => {
 👤 Никнейм: <b>${userData?.nickname || 'Не указан'}</b>
 🆔 Session ID: <code>${sessionId}</code>
 ⏰ Время: ${new Date().toLocaleString('ru-RU')}`;
-      
+
       await sendTelegramNotification(message);
       console.log('✅ [DOWNLOAD-PSYCHOLOGIST-PDF] Уведомление об открытии документа для психолога отправлено в Telegram');
     } catch (telegramError) {

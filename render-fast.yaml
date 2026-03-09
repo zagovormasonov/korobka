@@ -41,10 +41,10 @@ services:
       - key: DISABLE_PROXY
         value: true
       - key: FRONTEND_URL
-        value: https://idenself.com
+        value: https://idenself.ru
       - key: REACT_APP_FRONTEND_URL
-        value: https://idenself.com
+        value: https://idenself.ru
       - key: VITE_API_BASE_URL
-        value: https://idenself.com
+        value: https://idenself.ru
       - key: NODE_ENV
         value: production

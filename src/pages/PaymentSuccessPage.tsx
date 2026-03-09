@@ -22,7 +22,7 @@ const PaymentSuccessPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const sessionId = searchParams.get('sessionId');
-  
+
   // Устанавливаем цвет статус-бара для градиентного фона
   useThemeColor('#FFED82');
 
@@ -30,9 +30,9 @@ const PaymentSuccessPage: React.FC = () => {
     if (sessionId) {
       // Просто проверяем, что сессия валидна
       setLoading(false);
-      
+
       // Tracking: успешная оплата
-      trackEvent('payment_success', sessionId, { 
+      trackEvent('payment_success', sessionId, {
         amount: 10,
         payment_method: 'tinkoff'
       });
@@ -102,10 +102,10 @@ const PaymentSuccessPage: React.FC = () => {
       if (data.success) {
         setDashboardToken(data.dashboardToken);
         message.success('Данные успешно сохранены! Переходим в личный кабинет...');
-        
+
         // Сохраняем токен и автоматически логиним пользователя
         sessionStorage.setItem('dashboardToken', data.dashboardToken);
-        
+
         // Перенаправляем в личный кабинет через 1 секунду
         setTimeout(() => {
           navigate('/dashboard');
@@ -122,12 +122,12 @@ const PaymentSuccessPage: React.FC = () => {
   };
 
   const copyToClipboard = () => {
-    const textToCopy = `Данные для входа idenself.com
+    const textToCopy = `Данные для входа idenself.ru
 Логин: ${nickname}
 Пароль: ${password}
 
 #тесты #план #прл #психолог`;
-    
+
     navigator.clipboard.writeText(textToCopy).then(() => {
       message.success('Текст скопирован в буфер обмена!');
     }).catch(() => {
@@ -137,10 +137,10 @@ const PaymentSuccessPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         minHeight: 'calc(100vh + 100px)',
         padding: '40px 20px 140px 20px',
         position: 'relative'
@@ -153,7 +153,7 @@ const PaymentSuccessPage: React.FC = () => {
           height: 'calc(100vh + 150px)',
           zIndex: -1
         }}>
-          <Silk 
+          <Silk
             speed={8.7}
             scale={0.5}
             color="#ffe59e"
@@ -172,10 +172,10 @@ const PaymentSuccessPage: React.FC = () => {
 
   if (error) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         minHeight: 'calc(100vh + 100px)',
         padding: '40px 20px 140px 20px',
         position: 'relative'
@@ -188,7 +188,7 @@ const PaymentSuccessPage: React.FC = () => {
           height: 'calc(100vh + 150px)',
           zIndex: -1
         }}>
-          <Silk 
+          <Silk
             speed={8.7}
             scale={0.5}
             color="#ffe59e"
@@ -197,11 +197,11 @@ const PaymentSuccessPage: React.FC = () => {
             rotation={0}
           />
         </div>
-        <Card style={{ 
-          textAlign: 'center', 
-          padding: '40px', 
-          borderRadius: '24px', 
-          boxShadow: 'none', 
+        <Card style={{
+          textAlign: 'center',
+          padding: '40px',
+          borderRadius: '24px',
+          boxShadow: 'none',
           backgroundColor: 'rgba(255, 255, 255, 0.25)',
           backdropFilter: 'blur(10px)',
           WebkitBackdropFilter: 'blur(10px)',
@@ -209,8 +209,8 @@ const PaymentSuccessPage: React.FC = () => {
         }}>
           <Title level={2} type="danger">Ошибка</Title>
           <Paragraph>{error}</Paragraph>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             onClick={() => navigate('/')}
             style={{
               backgroundColor: '#4F958B',
@@ -227,10 +227,10 @@ const PaymentSuccessPage: React.FC = () => {
   }
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
       minHeight: 'calc(100vh + 100px)',
       padding: '40px 20px 140px 20px',
       position: 'relative'
@@ -243,7 +243,7 @@ const PaymentSuccessPage: React.FC = () => {
         height: 'calc(100vh + 150px)',
         zIndex: -1
       }}>
-        <Silk 
+        <Silk
           speed={8.7}
           scale={0.5}
           color="#FFED82"
@@ -252,9 +252,9 @@ const PaymentSuccessPage: React.FC = () => {
           rotation={0}
         />
       </div>
-      <Card style={{ 
-        width: '100%', 
-        maxWidth: '500px', 
+      <Card style={{
+        width: '100%',
+        maxWidth: '500px',
         padding: '40px 24px',
         borderRadius: '24px',
         boxShadow: 'none',
@@ -266,23 +266,23 @@ const PaymentSuccessPage: React.FC = () => {
         {step === 1 ? (
           <>
             <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-              <CheckCircleOutlined 
-                style={{ 
-                  fontSize: '48px', 
-                  color: '#4F958B', 
-                  marginBottom: '16px' 
-                }} 
+              <CheckCircleOutlined
+                style={{
+                  fontSize: '48px',
+                  color: '#4F958B',
+                  marginBottom: '16px'
+                }}
               />
               <Title level={2} style={{ color: '#333', marginBottom: '8px', fontFamily: 'Comfortaa, sans-serif', fontSize: '24px' }}>
                 Оплата прошла успешно!
               </Title>
             </div>
 
-            <div style={{ 
-              background: 'rgb(255, 246, 234)', 
-              border: 'none', 
-              borderRadius: '12px', 
-              padding: '16px', 
+            <div style={{
+              background: 'rgb(255, 246, 234)',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '16px',
               marginBottom: '30px',
               textAlign: 'center'
             }}>
@@ -292,7 +292,7 @@ const PaymentSuccessPage: React.FC = () => {
             </div>
 
             <Form layout="vertical" requiredMark={false}>
-              <Form.Item 
+              <Form.Item
                 label="Придумайте ник"
               >
                 <Input
@@ -318,7 +318,7 @@ const PaymentSuccessPage: React.FC = () => {
                 />
               </Form.Item>
 
-              <Form.Item 
+              <Form.Item
                 label="Пароль"
               >
                 <Input.Password
@@ -344,7 +344,7 @@ const PaymentSuccessPage: React.FC = () => {
                 />
               </Form.Item>
 
-              <Form.Item 
+              <Form.Item
                 label="Подтверждение пароля"
               >
                 <Input.Password
@@ -370,12 +370,12 @@ const PaymentSuccessPage: React.FC = () => {
                 />
               </Form.Item>
 
-              <Button 
-                type="primary" 
-                size="large" 
+              <Button
+                type="primary"
+                size="large"
                 onClick={handleFirstStep}
-                style={{ 
-                  width: '100%', 
+                style={{
+                  width: '100%',
                   marginTop: '20px',
                   height: '56px',
                   borderRadius: '28px',
@@ -394,27 +394,27 @@ const PaymentSuccessPage: React.FC = () => {
         ) : (
           <>
             <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-              <CheckCircleOutlined 
-                style={{ 
-                  fontSize: '48px', 
-                  color: '#4F958B', 
-                  marginBottom: '16px' 
-                }} 
+              <CheckCircleOutlined
+                style={{
+                  fontSize: '48px',
+                  color: '#4F958B',
+                  marginBottom: '16px'
+                }}
               />
               <Title level={3} style={{ color: '#333', marginBottom: '8px', fontFamily: 'Comfortaa, sans-serif', fontSize: '20px' }}>
                 Сохраните данные для входа
               </Title>
             </div>
 
-            <div style={{ 
-              background: 'rgb(255, 246, 234)', 
-              border: 'none', 
-              borderRadius: '12px', 
-              padding: '16px', 
+            <div style={{
+              background: 'rgb(255, 246, 234)',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '16px',
               marginBottom: '20px'
             }}>
               <Text style={{ color: '#333', fontSize: '14px' }}>
-                Сохраните данные для входа в заметки или менеджер паролей, чтобы не забыть, 
+                Сохраните данные для входа в заметки или менеджер паролей, чтобы не забыть,
                 иначе данные могут быть утеряны
               </Text>
             </div>
@@ -423,34 +423,34 @@ const PaymentSuccessPage: React.FC = () => {
               <Text strong style={{ marginBottom: '8px', display: 'block' }}>
                 Пример текста:
               </Text>
-              
-              <div style={{ 
-                background: '#f5f5f5', 
-                border: '1px solid #d9d9d9', 
-                borderRadius: '8px', 
+
+              <div style={{
+                background: '#f5f5f5',
+                border: '1px solid #d9d9d9',
+                borderRadius: '8px',
                 padding: '16px',
                 position: 'relative'
               }}>
-                <pre style={{ 
-                  margin: 0, 
-                  fontFamily: 'monospace', 
+                <pre style={{
+                  margin: 0,
+                  fontFamily: 'monospace',
                   fontSize: '13px',
                   whiteSpace: 'pre-wrap'
                 }}>
-{`Данные для входа idenself.com
+                  {`Данные для входа idenself.ru
 Логин: ${nickname}
 Пароль: ${password}
 
 #тесты #план #прл #психолог`}
                 </pre>
-                
+
                 <Button
                   type="text"
                   icon={<CopyOutlined />}
                   onClick={copyToClipboard}
-                  style={{ 
-                    position: 'absolute', 
-                    top: '8px', 
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
                     right: '8px',
                     background: 'rgba(255, 255, 255, 0.8)'
                   }}
@@ -459,7 +459,7 @@ const PaymentSuccessPage: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <Checkbox 
+              <Checkbox
                 checked={dataSaved}
                 onChange={(e) => setDataSaved(e.target.checked)}
               >
@@ -467,13 +467,13 @@ const PaymentSuccessPage: React.FC = () => {
               </Checkbox>
             </div>
 
-            <Button 
-              type="primary" 
-              size="large" 
+            <Button
+              type="primary"
+              size="large"
               onClick={saveCredentials}
               loading={saving}
               disabled={!dataSaved}
-              style={{ 
+              style={{
                 width: '100%',
                 height: '56px',
                 borderRadius: '28px',
@@ -490,8 +490,8 @@ const PaymentSuccessPage: React.FC = () => {
             </Button>
 
             {dashboardToken && (
-              <div style={{ 
-                textAlign: 'center', 
+              <div style={{
+                textAlign: 'center',
                 marginTop: '20px',
                 color: '#999999'
               }}>

@@ -11,11 +11,11 @@ let isHeartbeatActive = false;
 function getSocket(): Socket {
   if (!socket || !socket.connected) {
     // @ts-ignore
-    const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL || 
-                      ((import.meta as any).env?.MODE === 'development' ? 'http://localhost:5000' : 'https://idenself.com');
-    
+    const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL ||
+      ((import.meta as any).env?.MODE === 'development' ? 'http://localhost:5000' : 'https://idenself.ru');
+
     console.log('🔌 [WS] Подключаемся к WebSocket:', apiBaseUrl);
-    
+
     socket = io(apiBaseUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -25,11 +25,11 @@ function getSocket(): Socket {
 
     socket.on('connect', () => {
       console.log('✅ [WS] Подключено к WebSocket, ID:', socket?.id);
-      
+
       // При переподключении отправляем user_online снова
       const sessionId = getOrCreateSessionId();
       const currentPath = window.location.pathname;
-      
+
       if (!currentPath.startsWith('/chat') && !currentPath.startsWith('/cms')) {
         socket?.emit('user_online', { sessionId, page: currentPath });
         console.log('🟢 [WS] user_online отправлен:', { sessionId, page: currentPath });
@@ -44,7 +44,7 @@ function getSocket(): Socket {
       console.error('❌ [WS] Ошибка подключения:', error.message);
     });
   }
-  
+
   return socket;
 }
 
@@ -61,7 +61,7 @@ export const trackEvent = async (
 ) => {
   try {
     const pageUrl = window.location.pathname;
-    
+
     await apiRequest('api/analytics/track', {
       method: 'POST',
       body: JSON.stringify({
@@ -71,7 +71,7 @@ export const trackEvent = async (
         metadata
       })
     });
-    
+
     console.log(`📊 [ANALYTICS] Событие отправлено: ${eventType}`, metadata);
   } catch (error) {
     console.error(`❌ [ANALYTICS] Ошибка отправки события ${eventType}:`, error);
@@ -86,10 +86,10 @@ export const trackEvent = async (
 export const getOrCreateSessionId = (): string => {
   // Приоритет: sessionId из dashboard/test (localStorage) > sessionStorage > новый
   let sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
-  
+
   console.log('🔍 [SESSION] Ищем sessionId в localStorage:', localStorage.getItem('sessionId'));
   console.log('🔍 [SESSION] Ищем sessionId в sessionStorage:', sessionStorage.getItem('sessionId'));
-  
+
   if (!sessionId) {
     // Проверяем testProgress
     const testProgress = localStorage.getItem('testProgress');
@@ -105,7 +105,7 @@ export const getOrCreateSessionId = (): string => {
       }
     }
   }
-  
+
   if (!sessionId) {
     // Создаём новый только если нигде не нашли
     sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
@@ -114,7 +114,7 @@ export const getOrCreateSessionId = (): string => {
   } else {
     console.log('✅ [SESSION] Используем существующий sessionId:', sessionId);
   }
-  
+
   return sessionId;
 };
 
@@ -128,60 +128,60 @@ export const startHeartbeat = () => {
     console.log('⚠️ [WS] Heartbeat уже активен, пропускаем');
     return;
   }
-  
+
   const currentPath = window.location.pathname;
-  
+
   // Не подключаемся для /chat и /cms
   if (currentPath.startsWith('/chat') || currentPath.startsWith('/cms')) {
     console.log('📊 [WS] Пропускаем WebSocket для', currentPath);
     return;
   }
-  
+
   isHeartbeatActive = true;
   console.log('🚀 [WS] Запускаем heartbeat систему');
-  
+
   const sessionId = getOrCreateSessionId();
   console.log('🔑 [WS] Session ID:', sessionId);
-  
+
   const socket = getSocket();
-  
+
   // Отправляем статус "онлайн" при подключении (если уже подключен)
   if (socket.connected) {
     socket.emit('user_online', { sessionId, page: currentPath });
     console.log('🟢 [WS] user_online отправлен сразу:', { sessionId, page: currentPath });
   }
-  
+
   // Heartbeat каждые 30 секунд
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
   }
-  
+
   heartbeatInterval = setInterval(() => {
     const path = window.location.pathname;
-    
+
     // Проверяем что не перешли на /chat или /cms
     if (path.startsWith('/chat') || path.startsWith('/cms')) {
       console.log('🛑 [WS] Остановка heartbeat - перешли на', path);
       stopHeartbeat();
       return;
     }
-    
+
     // Отправляем heartbeat только если вкладка активна
     if (document.visibilityState === 'visible' && socket.connected) {
       socket.emit('heartbeat', { sessionId, page: path });
       console.log('💓 [WS] Heartbeat отправлен');
     }
   }, 30000);
-  
+
   // Отключаемся при закрытии страницы
   const handleBeforeUnload = () => {
     console.log('👋 [WS] Закрытие страницы');
     if (heartbeatInterval) clearInterval(heartbeatInterval);
     socket.disconnect();
   };
-  
+
   window.addEventListener('beforeunload', handleBeforeUnload);
-  
+
   // Паузим heartbeat если вкладка неактивна
   const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
@@ -195,7 +195,7 @@ export const startHeartbeat = () => {
       console.log('😴 [WS] Вкладка неактивна');
     }
   };
-  
+
   document.addEventListener('visibilitychange', handleVisibilityChange);
 };
 
@@ -207,11 +207,11 @@ function stopHeartbeat() {
     clearInterval(heartbeatInterval);
     heartbeatInterval = null;
   }
-  
+
   if (socket && socket.connected) {
     socket.disconnect();
   }
-  
+
   isHeartbeatActive = false;
   console.log('🛑 [WS] Heartbeat остановлен');
 }

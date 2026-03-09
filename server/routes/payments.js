@@ -42,8 +42,8 @@ router.post('/create', async (req, res) => {
     }
     
     console.log('🆔 OrderId:', orderId, '(длина:', orderId.length, 'символов)');
-    // Принудительно используем idenself.com для перенаправлений после оплаты
-    const baseUrl = process.env.FRONTEND_URL || 'https://idenself.com';
+    // Принудительно используем idenself.ru для перенаправлений после оплаты
+    const baseUrl = process.env.FRONTEND_URL || 'https://idenself.ru';
     console.log('🌐 Base URL для платежей:', baseUrl);
     console.log('🌐 SuccessURL:', `${baseUrl}/payment-success?sessionId=${sessionId}`);
     console.log('🌐 FailURL:', `${baseUrl}/payment?sessionId=${sessionId}&payment=failed`);
