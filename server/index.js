@@ -118,7 +118,7 @@ app.use((req, res, next) => {
     req.path.startsWith('/assets/') ||
     req.path.startsWith('/static/');
 
-  if (req.path === '/chat' || req.path.startsWith('/chat/') || isAsset) {
+  if (req.path === '/chat' || req.path.startsWith('/chat/') || req.path.startsWith('/api/') || isAsset) {
     return next();
   }
 
@@ -341,7 +341,7 @@ if (process.env.NODE_ENV === 'production') {
       req.path.startsWith('/static/');
 
     if ((host === 'idenself.com' || host === 'www.idenself.com') &&
-      !(req.path === '/chat' || req.path.startsWith('/chat/') || isAsset)) {
+      !(req.path === '/chat' || req.path.startsWith('/chat/') || req.path.startsWith('/api/') || isAsset)) {
       return res.redirect(302, `https://idenself.ru${req.originalUrl}`);
     }
 
