@@ -120,8 +120,8 @@ app.use((req, res, next) => {
 
   if (host === 'idenself.com' || host === 'www.idenself.com') {
     const redirectUrl = `https://idenself.ru${req.originalUrl}`;
-    console.log(`🔀 Domain Redirect: ${host}${req.originalUrl} → ${redirectUrl}`);
-    return res.redirect(301, redirectUrl);
+    console.log(`🔀 Domain Redirect (302): ${host}${req.originalUrl} → ${redirectUrl}`);
+    return res.redirect(302, redirectUrl);
   }
   next();
 });
@@ -330,10 +330,11 @@ if (process.env.NODE_ENV === 'production') {
       return res.status(404).json({ error: 'API endpoint not found' });
     }
 
-    // Дополнительная проверка: если домен idenself.com — редиректим (на случай если middleware выше не сработал)
+    // Дополнительная проверка: если домен idenself.com — редиректим (исключая /chat)
     const host = req.hostname || req.get('host') || '';
-    if (host === 'idenself.com' || host === 'www.idenself.com') {
-      return res.redirect(301, `https://idenself.ru${req.originalUrl}`);
+    if ((host === 'idenself.com' || host === 'www.idenself.com') &&
+      !(req.path === '/chat' || req.path.startsWith('/chat/'))) {
+      return res.redirect(302, `https://idenself.ru${req.originalUrl}`);
     }
 
     // Устанавливаем правильные заголовки для HTML
