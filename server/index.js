@@ -113,8 +113,12 @@ const app = express();
 app.use((req, res, next) => {
   const host = req.hostname || req.get('host') || '';
 
-  // Исключаем роут /chat из редиректа
-  if (req.path === '/chat' || req.path.startsWith('/chat/')) {
+  // Исключаем роут /chat и статические ассеты из редиректа
+  const isAsset = /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|txt|json|map)$/.test(req.path) ||
+    req.path.startsWith('/assets/') ||
+    req.path.startsWith('/static/');
+
+  if (req.path === '/chat' || req.path.startsWith('/chat/') || isAsset) {
     return next();
   }
 
@@ -330,10 +334,14 @@ if (process.env.NODE_ENV === 'production') {
       return res.status(404).json({ error: 'API endpoint not found' });
     }
 
-    // Дополнительная проверка: если домен idenself.com — редиректим (исключая /chat)
+    // Дополнительная проверка: если домен idenself.com — редиректим (исключая /chat и ассеты)
     const host = req.hostname || req.get('host') || '';
+    const isAsset = /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|txt|json|map)$/.test(req.path) ||
+      req.path.startsWith('/assets/') ||
+      req.path.startsWith('/static/');
+
     if ((host === 'idenself.com' || host === 'www.idenself.com') &&
-      !(req.path === '/chat' || req.path.startsWith('/chat/'))) {
+      !(req.path === '/chat' || req.path.startsWith('/chat/') || isAsset)) {
       return res.redirect(302, `https://idenself.ru${req.originalUrl}`);
     }
 
