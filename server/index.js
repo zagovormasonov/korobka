@@ -278,6 +278,202 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api', questionnaireGenerationRoutes);
 app.use('/api/errors', clientErrorsRoutes);
 
+// --- Helper: вызов Gemini API с указанной моделью и температурой ---
+async function aiGenerate(modelType, systemPrompt, userMessage, temperature = 0.5) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY не установлен');
+
+  const modelMap = {
+    trackers: 'gemini-3.1-flash-lite-preview',
+  };
+  const modelName = modelMap[modelType] || 'gemini-3.1-pro-preview';
+
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+  const requestBody = {
+    contents: [{ parts: [{ text: systemPrompt + '\n\n' + userMessage }] }],
+    generationConfig: { temperature },
+  };
+
+  console.log(`🤖 [AI-GENERATE] model=${modelName}, temp=${temperature}, promptLen=${(systemPrompt + userMessage).length}`);
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`❌ [AI-GENERATE] Ошибка ${response.status}:`, errorText.substring(0, 500));
+    throw new Error(`Gemini API error (${response.status}): ${errorText.substring(0, 300)}`);
+  }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Gemini API вернул пустой ответ');
+
+  return text;
+}
+
+function parseJsonFromAI(raw) {
+  let cleaned = raw.trim();
+  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) cleaned = fenceMatch[1].trim();
+  return JSON.parse(cleaned);
+}
+
+// --- Tracker endpoints ---
+
+app.post('/api/tracker/generate-indicators', async (req, res) => {
+  try {
+    const { goals, diagnosticSummary } = req.body;
+
+    if (!goals || !Array.isArray(goals) || goals.length === 0) {
+      return res.status(400).json({ success: false, error: 'goals is required (массив целей)' });
+    }
+
+    const systemPrompt = `Ты — профессиональный психолог. На основе выбранных пользователем целей и результатов диагностики предложи ровно 10 показателей для ежедневного отслеживания.
+
+Для каждого показателя укажи:
+- id: уникальный slug (латиница, kebab-case)
+- label: название на русском (кратко, 2–5 слов)
+- timeEstimateSec: минимальное время заполнения в секундах (10, 15, 20, 25 или 30)
+
+Показатели должны быть конкретными и измеримыми. Включи:
+- Субъективные оценки (настроение, тревога, энергия)
+- Поведенческие (сон, физическая активность, питание)
+- Социальные (общение, изоляция)
+
+Возвращай JSON:
+{
+  "indicators": [
+    { "id": "mood", "label": "Настроение", "timeEstimateSec": 10 }
+  ]
+}`;
+
+    let userMessage = 'Выбранные цели: ' + JSON.stringify(goals);
+    if (diagnosticSummary) {
+      userMessage += '\n\nРезультаты диагностики: ' + JSON.stringify(diagnosticSummary);
+    }
+
+    console.log('📊 [TRACKER] generate-indicators, goals:', goals.length, ', hasDiagnostic:', !!diagnosticSummary);
+
+    const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
+    const parsed = parseJsonFromAI(raw);
+
+    res.json(parsed);
+  } catch (error) {
+    console.error('❌ [TRACKER] Ошибка generate-indicators:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/tracker/generate-blocks', async (req, res) => {
+  try {
+    const { indicators, goals, diagnosticSummary } = req.body;
+
+    if (!indicators || !Array.isArray(indicators) || indicators.length === 0) {
+      return res.status(400).json({ success: false, error: 'indicators is required (массив показателей)' });
+    }
+
+    const systemPrompt = `Ты — профессиональный психолог, создающий ежедневный трекер психического здоровья.
+
+На основе выбранных показателей для отслеживания создай блоки конструктора трекера. Для каждого показателя создай ОДИН блок наиболее подходящего типа.
+
+Доступные типы блоков:
+
+1. "text_input" — Текстовое поле с микрофоном.
+   Плюсы: свободная рефлексия, глубина ответа.
+   Минусы: занимает 15–30 сек, требует усилий.
+   Предпочтителен для: описание чувств, заметки, открытые вопросы.
+
+2. "single_choice" — Выбор одного варианта из карточек.
+   Плюсы: быстро (5–10 сек), однозначный ответ.
+   Минусы: ограниченная детализация.
+   Предпочтителен для: настроение, уровень энергии, общее самочувствие.
+
+3. "multi_choice" — Множественный выбор чипсов.
+   Плюсы: несколько вариантов, быстрый выбор.
+   Минусы: нет числовой оценки.
+   Предпочтителен для: эмоции за день, симптомы, виды активности.
+
+4. "likert_scale" — Шкала Лайкерта (5–7 пунктов с подписями).
+   Плюсы: тонкая градация, подписи на каждом пункте.
+   Минусы: утомительна при множестве вопросов.
+   Предпочтителен для: согласие/несогласие с утверждениями, самооценка.
+
+5. "slider" — Числовой слайдер (0–100) с единицей измерения.
+   Плюсы: интуитивный, визуальный.
+   Минусы: субъективная шкала.
+   Предпочтителен для: уровень тревоги %, качество сна %, продуктивность %.
+
+6. "number_input" — Ввод числа с единицей измерения.
+   Плюсы: точные данные.
+   Минусы: требует ввода с клавиатуры.
+   Предпочтителен для: часы сна, стаканы воды, минуты медитации.
+
+7. "stepper" — Счётчик с кнопками +/−.
+   Плюсы: быстрый для малых чисел.
+   Минусы: только целые числа.
+   Предпочтителен для: количество приёмов пищи, тренировок, панических атак.
+
+8. "yes_no" — Да/Нет.
+   Плюсы: мгновенный ответ (3 сек).
+   Минусы: нет детализации.
+   Предпочтителен для: привычки — лекарства, спорт, прогулка, медитация.
+
+9. "ranking" — Перетаскивание для ранжирования.
+   Плюсы: расстановка приоритетов.
+   Минусы: сложнее на мобильном, 15–20 сек.
+   Предпочтителен для: "что больше всего беспокоит сегодня".
+
+10. "time_range" — Временной диапазон (начало-конец).
+    Плюсы: точные временные данные.
+    Минусы: подходит только для временных показателей.
+    Предпочтителен для: время сна (лёг/встал), рабочие часы.
+
+Для каждого блока верни:
+- indicatorId: id показателя
+- type: один из вышеперечисленных типов
+- label: вопрос-инструкция на русском
+- options: массив вариантов (для single_choice, multi_choice, likert_scale). Для остальных — [].
+- min/max/step: для slider, number_input, stepper. Для остальных — null.
+- unit: единица измерения для slider и number_input. Для остальных — null.
+
+Возвращай JSON:
+{
+  "blocks": [
+    {
+      "indicatorId": "mood",
+      "type": "single_choice",
+      "label": "Как ваше настроение сегодня?",
+      "options": ["Отличное", "Хорошее", "Среднее", "Плохое", "Очень плохое"],
+      "min": null, "max": null, "step": null, "unit": null
+    }
+  ]
+}`;
+
+    let userMessage = 'Выбранные показатели: ' + JSON.stringify(indicators);
+    if (goals) {
+      userMessage += '\n\nЦели: ' + JSON.stringify(goals);
+    }
+    if (diagnosticSummary) {
+      userMessage += '\n\nРезультаты диагностики: ' + JSON.stringify(diagnosticSummary);
+    }
+
+    console.log('🧩 [TRACKER] generate-blocks, indicators:', indicators.length, ', hasGoals:', !!goals, ', hasDiagnostic:', !!diagnosticSummary);
+
+    const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.4);
+    const parsed = parseJsonFromAI(raw);
+
+    res.json(parsed);
+  } catch (error) {
+    console.error('❌ [TRACKER] Ошибка generate-blocks:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
