@@ -661,21 +661,18 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
 
 app.post('/api/tracker/generate-feedback', async (req, res) => {
   try {
-    const { answers, goals, goalsText, history } = req.body;
-
-    if (!answers) {
-      return res.status(400).json({ success: false, error: 'answers is required (ответы текущего чек-ина)' });
-    }
-
-    console.log('📥 [TRACKER] generate-feedback, hasAnswers:', !!answers, ', hasGoals:', !!goals, ', hasGoalsText:', !!goalsText, ', historyCount:', history?.length || 0);
+    const { answers, blocks, goals, goalsText, previousCheckins } = req.body;
+    console.log('[generate-feedback] Received request, answers keys:', answers ? Object.keys(answers).length : 0);
 
     const systemPrompt = `Ты — Луми, дружелюбный ИИ-помощник по ментальному здоровью. Ты анализируешь ежедневные чек-ины пользователя и даёшь тёплую, поддерживающую и полезную обратную связь на русском языке.
 
 Стиль обратной связи:
-- Ищи паттерны и тренды между чек-инами: что растёт, что снижается, какие закономерности. Если предыдущих чек-инов нет, анализируй связи внутри текущего.
-- Находи неочевидные связи между ответами: например, связь сна с раздражительностью, социальной активности с энергией.
+- Если есть данные предыдущих чек-инов — ищи паттерны и тренды: что растёт, что снижается, какие закономерности.
+- Если предыдущих чек-инов НЕТ — анализируй только связи внутри текущего чек-ина. НЕ упоминай предыдущие дни, тренды или динамику.
+- Находи неочевидные связи между ответами внутри чек-ина: например, связь сна с раздражительностью, социальной активности с энергией.
+- Комментируй ВСЕ текстовые ответы пользователя — они особенно важны, потому что человек потратил время, чтобы их написать.
 - Валидируй состояние пользователя, а не поучай. Вместо советов — признание того, через что он проходит.
-- Подмечай неочевидные позитивные моменты, которые пользователь сам мог не заметить: «вы отметили низкую энергию, но всё равно вышли на прогулку — это говорит об устойчивости».
+- Подмечай неочевидные позитивные моменты, которые пользователь сам мог не заметить.
 - Если видишь тренд на ухудшение — мягко предупреди и дай прогноз, а не банальный совет.
 
 Правила:
@@ -683,41 +680,53 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
 - Обращайся на "вы"
 - НЕ используй Markdown-разметку, пиши простым текстом
 - НИКОГДА не задавай вопросов. Это единоразовая обратная связь, а не диалог.
+- НИКОГДА не выдумывай данные. Если предыдущих чек-инов нет, НЕ пиши "по сравнению с прошлыми днями", "динамика показывает" и подобное.
 - НИКОГДА не давай очевидных советов типа "подышите квадратом", "выпейте стакан воды", "прогуляйтесь", "ложитесь пораньше". Если даёшь совет — он должен быть неочевидным и конкретным, основанным на данных этого пользователя.
 
 Возвращай только текст обратной связи, без JSON и обёрток.`;
 
-    let userMessage = `Ответы сегодняшнего чек-ина:\n${JSON.stringify(answers, null, 2)}`;
+    let readableAnswers = '';
+    if (blocks && blocks.steps && Array.isArray(blocks.steps)) {
+      for (const step of blocks.steps) {
+        if (step.title) readableAnswers += `\n[${step.title}]\n`;
+        if (Array.isArray(step.blocks)) {
+          for (const block of step.blocks) {
+            const blockId = block.id || block.blockId;
+            const answer = answers && blockId ? answers[blockId] : undefined;
+            if (answer === undefined || answer === null || answer === '') continue;
+            const question = block.label || block.question || blockId;
+            readableAnswers += `- ${question}: ${typeof answer === 'object' ? JSON.stringify(answer) : answer}\n`;
+          }
+        }
+      }
+    }
+
+    let userMessage = readableAnswers.trim()
+      ? `Ответы сегодняшнего чек-ина:\n${readableAnswers}`
+      : `Ответы сегодняшнего чек-ина (сырые данные):\n${JSON.stringify(answers, null, 2)}`;
 
     if (goals && Array.isArray(goals) && goals.length > 0) {
-      const goalsListText = goals.map((g, i) => `${i + 1}. ${g.label || g}`).join('\n');
-      userMessage += `\n\nЦели пользователя:\n${goalsListText}`;
+      userMessage += `\n\nЦели пользователя:\n${goals.map((g, i) => `${i + 1}. ${g.label || g}`).join('\n')}`;
     }
     if (goalsText) {
       userMessage += `\n\nУточнение целей своими словами: "${goalsText}"`;
     }
-    if (history && Array.isArray(history) && history.length > 0) {
-      userMessage += '\n\nПредыдущие чек-ины (от новых к старым):';
-      for (const entry of history) {
-        userMessage += `\n--- ${entry.date || 'без даты'} ---\n${JSON.stringify(entry.answers, null, 2)}`;
-      }
+    if (previousCheckins && previousCheckins.length > 0) {
+      userMessage += `\n\nПредыдущие чек-ины (от новых к старым):`;
+      previousCheckins.forEach((c) => {
+        userMessage += `\n--- ${c.date} ---\n${JSON.stringify(c.answers, null, 2)}`;
+      });
+    } else {
+      userMessage += `\n\nЭто первый чек-ин пользователя. Предыдущих данных нет.`;
     }
 
-    console.log('📝 [TRACKER] generate-feedback userMessage preview:', userMessage.slice(0, 500));
-
     const feedback = await aiGenerate('trackers', systemPrompt, userMessage, 0.6, true);
-    console.log('✅ [TRACKER] generate-feedback AI success, length:', feedback.length);
+    console.log('[generate-feedback] Generated feedback, length:', typeof feedback === 'string' ? feedback.length : 0);
 
-    console.log('📤 [TRACKER] generate-feedback → client:', feedback.slice(0, 200));
-    res.json({ feedback });
+    res.json({ feedback: typeof feedback === 'string' ? feedback : String(feedback) });
   } catch (error) {
-    console.error('❌ [TRACKER] generate-feedback failed:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
-    });
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Error generating feedback:', error);
+    res.status(500).json({ error: 'Failed to generate feedback', details: error.message });
   }
 });
 
