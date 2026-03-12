@@ -330,6 +330,48 @@ function parseJsonFromAI(raw) {
 
 // --- Tracker endpoints ---
 
+app.post('/api/tracker/generate-goals', async (req, res) => {
+  try {
+    const { diagnosticSummary } = req.body;
+    if (!diagnosticSummary) {
+      return res.status(400).json({ error: 'diagnosticSummary is required' });
+    }
+
+    console.log('📥 [TRACKER] generate-goals, hasDiagnostic:', !!diagnosticSummary);
+
+    const systemPrompt = `Ты — профессиональный психолог. На основе результатов диагностики пользователя предложи 5–8 целей для ежедневного отслеживания психического здоровья.
+
+Каждая цель — конкретное направление работы над собой, сформулированное позитивно (например, «Снизить уровень тревожности» вместо «Не тревожиться»).
+
+Возвращай JSON:
+{
+  "goals": [
+    { "id": "unique-slug", "label": "Текст цели на русском" }
+  ]
+}`;
+
+    const userMessage = `Результаты диагностики пользователя:\n${JSON.stringify(diagnosticSummary, null, 2)}`;
+    console.log('📝 [TRACKER] generate-goals userMessage preview:', userMessage.slice(0, 500));
+
+    const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
+    console.log('✅ [TRACKER] generate-goals AI success:', raw.slice(0, 300));
+
+    const parsed = parseJsonFromAI(raw);
+    const goals = Array.isArray(parsed.goals) ? parsed.goals : [];
+
+    console.log('📤 [TRACKER] generate-goals → client:', goals.length, 'goals');
+    res.json({ goals });
+  } catch (error) {
+    console.error('❌ [TRACKER] generate-goals failed:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
+    });
+    res.status(500).json({ error: 'Failed to generate goals', details: error.message });
+  }
+});
+
 app.post('/api/tracker/generate-indicators', async (req, res) => {
   try {
     const { goals, goalsText, diagnosticSummary } = req.body;
