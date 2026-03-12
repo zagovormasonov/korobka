@@ -452,7 +452,7 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
 
     const systemPrompt = `Ты — профессиональный психолог, создающий ежедневный трекер психического здоровья.
 
-На основе выбранных показателей создай пошаговый трекер. Сгруппируй показатели в тематические шаги (3–7 шагов). Каждый шаг содержит 1–5 блоков. Для каждого блока выбери наиболее подходящий тип и заполни его параметры.
+На основе выбранных показателей создай пошаговый трекер. Сгруппируй показатели в тематические шаги (3–7 шагов). Каждый шаг ОБЯЗАТЕЛЬНО содержит 2–5 блоков — не 1 блок! Группируй связанные показатели в один шаг. Для каждого блока выбери наиболее подходящий тип и заполни его параметры.
 
 Доступные типы блоков и их параметры:
 
@@ -526,6 +526,16 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
           "label": "Какие эмоции вы испытывали сегодня?",
           "options": ["Радость", "Спокойствие", "Тревога", "Грусть", "Раздражение", "Злость", "Апатия", "Воодушевление"],
           "timeEstimateSec": 15
+        },
+        {
+          "indicatorId": "anxiety-level",
+          "type": "slider_plain",
+          "label": "Уровень тревоги прямо сейчас",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "defaultValue": 3,
+          "timeEstimateSec": 8
         }
       ]
     },
@@ -661,13 +671,14 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
 
 app.post('/api/tracker/generate-feedback', async (req, res) => {
   try {
-    const { answers, blocks, goals, goalsText, previousCheckins } = req.body;
+    const { answers, blocks, goals, goalsText, previousCheckins, checkinDate, diagnosticsDate } = req.body;
     console.log('[generate-feedback] Received request, answers keys:', answers ? Object.keys(answers).length : 0);
 
     const systemPrompt = `Ты — Луми, дружелюбный ИИ-помощник по ментальному здоровью. Ты анализируешь ежедневные чек-ины пользователя и даёшь тёплую, поддерживающую и полезную обратную связь на русском языке.
 
 Стиль обратной связи:
-- Если есть данные предыдущих чек-инов — ищи паттерны и тренды: что растёт, что снижается, какие закономерности.
+- Тебе доступны дата/время текущего чек-ина и дата диагностики. Используй это для контекста: сколько дней прошло с диагностики, в какое время суток заполнен чек-ин (утро/вечер), интервалы между чек-инами.
+- Если есть данные предыдущих чек-инов — ищи паттерны и тренды: что растёт, что снижается, какие закономерности. Ссылайся на конкретные даты.
 - Если предыдущих чек-инов НЕТ — анализируй только связи внутри текущего чек-ина. НЕ упоминай предыдущие дни, тренды или динамику.
 - Находи неочевидные связи между ответами внутри чек-ина: например, связь сна с раздражительностью, социальной активности с энергией.
 - Комментируй ВСЕ текстовые ответы пользователя — они особенно важны, потому что человек потратил время, чтобы их написать.
@@ -685,6 +696,14 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
 
 Возвращай только текст обратной связи, без JSON и обёрток.`;
 
+    const formatDate = (d) => {
+      if (!d) return null;
+      const dt = new Date(d);
+      return dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+    const checkinDateStr = formatDate(checkinDate);
+    const diagDateStr = formatDate(diagnosticsDate);
+
     let readableAnswers = '';
     if (blocks && blocks.steps && Array.isArray(blocks.steps)) {
       for (const step of blocks.steps) {
@@ -701,7 +720,12 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
       }
     }
 
-    let userMessage = readableAnswers.trim()
+    let userMessage = '';
+    if (checkinDateStr) userMessage += `Дата и время текущего чек-ина: ${checkinDateStr}\n`;
+    if (diagDateStr) userMessage += `Дата прохождения диагностики: ${diagDateStr}\n`;
+    userMessage += '\n';
+
+    userMessage += readableAnswers.trim()
       ? `Ответы сегодняшнего чек-ина:\n${readableAnswers}`
       : `Ответы сегодняшнего чек-ина (сырые данные):\n${JSON.stringify(answers, null, 2)}`;
 
@@ -714,7 +738,7 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
     if (previousCheckins && previousCheckins.length > 0) {
       userMessage += `\n\nПредыдущие чек-ины (от новых к старым):`;
       previousCheckins.forEach((c) => {
-        userMessage += `\n--- ${c.date} ---\n${JSON.stringify(c.answers, null, 2)}`;
+        userMessage += `\n--- ${formatDate(c.date) || c.date} ---\n${JSON.stringify(c.answers, null, 2)}`;
       });
     } else {
       userMessage += `\n\nЭто первый чек-ин пользователя. Предыдущих данных нет.`;
