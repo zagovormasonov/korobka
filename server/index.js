@@ -327,7 +327,7 @@ function parseJsonFromAI(raw) {
 
 app.post('/api/tracker/generate-indicators', async (req, res) => {
   try {
-    const { goals, diagnosticSummary } = req.body;
+    const { goals, goalsText, diagnosticSummary } = req.body;
 
     if (!goals || !Array.isArray(goals) || goals.length === 0) {
       return res.status(400).json({ success: false, error: 'goals is required (массив целей)' });
@@ -352,12 +352,15 @@ app.post('/api/tracker/generate-indicators', async (req, res) => {
   ]
 }`;
 
-    let userMessage = 'Выбранные цели: ' + JSON.stringify(goals);
-    if (diagnosticSummary) {
-      userMessage += '\n\nРезультаты диагностики: ' + JSON.stringify(diagnosticSummary);
-    }
+    const goalsListText = Array.isArray(goals)
+      ? goals.map((g, i) => `${i + 1}. ${g.label || g}`).join('\n')
+      : JSON.stringify(goals);
 
-    console.log('📊 [TRACKER] generate-indicators, goals:', goals.length, ', hasDiagnostic:', !!diagnosticSummary);
+    let userMessage = `Выбранные цели пользователя:\n${goalsListText}`;
+    if (goalsText) userMessage += `\n\nПользователь уточнил цели своими словами:\n"${goalsText}"`;
+    if (diagnosticSummary) userMessage += `\n\nРезультаты диагностики:\n${JSON.stringify(diagnosticSummary, null, 2)}`;
+
+    console.log('📊 [TRACKER] generate-indicators, goals:', goals.length, ', hasGoalsText:', !!goalsText, ', hasDiagnostic:', !!diagnosticSummary);
 
     const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
     const parsed = parseJsonFromAI(raw);
@@ -371,7 +374,7 @@ app.post('/api/tracker/generate-indicators', async (req, res) => {
 
 app.post('/api/tracker/generate-blocks', async (req, res) => {
   try {
-    const { indicators, goals, diagnosticSummary } = req.body;
+    const { indicators, goals, goalsText, diagnosticSummary } = req.body;
 
     if (!indicators || !Array.isArray(indicators) || indicators.length === 0) {
       return res.status(400).json({ success: false, error: 'indicators is required (массив показателей)' });
@@ -454,15 +457,20 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
   ]
 }`;
 
-    let userMessage = 'Выбранные показатели: ' + JSON.stringify(indicators);
-    if (goals) {
-      userMessage += '\n\nЦели: ' + JSON.stringify(goals);
-    }
-    if (diagnosticSummary) {
-      userMessage += '\n\nРезультаты диагностики: ' + JSON.stringify(diagnosticSummary);
-    }
+    const indicatorsListText = Array.isArray(indicators)
+      ? indicators.map((ind, i) => `${i + 1}. ${ind.label || ind.id} (id: ${ind.id}, ~${ind.timeEstimateSec || '?'}с)`).join('\n')
+      : JSON.stringify(indicators);
 
-    console.log('🧩 [TRACKER] generate-blocks, indicators:', indicators.length, ', hasGoals:', !!goals, ', hasDiagnostic:', !!diagnosticSummary);
+    const goalsListText = Array.isArray(goals)
+      ? goals.map((g, i) => `${i + 1}. ${g.label || g}`).join('\n')
+      : '';
+
+    let userMessage = `Выбранные показатели для отслеживания:\n${indicatorsListText}`;
+    if (goalsListText) userMessage += `\n\nЦели пользователя:\n${goalsListText}`;
+    if (goalsText) userMessage += `\n\nПользователь уточнил цели своими словами:\n"${goalsText}"`;
+    if (diagnosticSummary) userMessage += `\n\nКонтекст диагностики:\n${JSON.stringify(diagnosticSummary, null, 2)}`;
+
+    console.log('🧩 [TRACKER] generate-blocks, indicators:', indicators.length, ', hasGoals:', !!goals, ', hasGoalsText:', !!goalsText, ', hasDiagnostic:', !!diagnosticSummary);
 
     const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.4);
     const parsed = parseJsonFromAI(raw);
