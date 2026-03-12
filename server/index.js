@@ -376,8 +376,8 @@ app.post('/api/tracker/generate-indicators', async (req, res) => {
   try {
     const { goals, goalsText, diagnosticSummary } = req.body;
 
-    if (!goals || !Array.isArray(goals) || goals.length === 0) {
-      return res.status(400).json({ success: false, error: 'goals is required (массив целей)' });
+    if ((!goals || (Array.isArray(goals) && goals.length === 0)) && !goalsText) {
+      return res.status(400).json({ success: false, error: 'goals or goalsText is required' });
     }
 
     const systemPrompt = `Ты — профессиональный психолог. На основе выбранных пользователем целей и результатов диагностики предложи ровно 10 показателей для ежедневного отслеживания.
@@ -399,15 +399,19 @@ app.post('/api/tracker/generate-indicators', async (req, res) => {
   ]
 }`;
 
-    const goalsListText = Array.isArray(goals)
-      ? goals.map((g, i) => `${i + 1}. ${g.label || g}`).join('\n')
-      : JSON.stringify(goals);
+    let userMessage = '';
+    if (goals && Array.isArray(goals) && goals.length > 0) {
+      const goalsListText = goals.map((g, i) => `${i + 1}. ${g.label || g}`).join('\n');
+      userMessage += `Выбранные цели пользователя:\n${goalsListText}`;
+    }
+    if (goalsText) {
+      userMessage += `${userMessage ? '\n\n' : ''}Пользователь описал цели своими словами:\n"${goalsText}"`;
+    }
+    if (diagnosticSummary) {
+      userMessage += `${userMessage ? '\n\n' : ''}Результаты диагностики:\n${JSON.stringify(diagnosticSummary, null, 2)}`;
+    }
 
-    let userMessage = `Выбранные цели пользователя:\n${goalsListText}`;
-    if (goalsText) userMessage += `\n\nПользователь уточнил цели своими словами:\n"${goalsText}"`;
-    if (diagnosticSummary) userMessage += `\n\nРезультаты диагностики:\n${JSON.stringify(diagnosticSummary, null, 2)}`;
-
-    console.log('📥 [TRACKER] generate-indicators, goals:', goals.length, ', hasGoalsText:', !!goalsText, ', hasDiagnostic:', !!diagnosticSummary);
+    console.log('📥 [TRACKER] generate-indicators, goals:', goals?.length || 0, ', hasGoalsText:', !!goalsText, ', hasDiagnostic:', !!diagnosticSummary);
     console.log('📝 [TRACKER] userMessage preview:', userMessage.slice(0, 500));
 
     const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
