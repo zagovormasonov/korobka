@@ -320,7 +320,12 @@ function parseJsonFromAI(raw) {
   let cleaned = raw.trim();
   const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenceMatch) cleaned = fenceMatch[1].trim();
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    console.error('❌ [TRACKER] JSON parse failed, raw:', raw.slice(0, 500));
+    throw e;
+  }
 }
 
 // --- Tracker endpoints ---
@@ -360,14 +365,24 @@ app.post('/api/tracker/generate-indicators', async (req, res) => {
     if (goalsText) userMessage += `\n\nПользователь уточнил цели своими словами:\n"${goalsText}"`;
     if (diagnosticSummary) userMessage += `\n\nРезультаты диагностики:\n${JSON.stringify(diagnosticSummary, null, 2)}`;
 
-    console.log('📊 [TRACKER] generate-indicators, goals:', goals.length, ', hasGoalsText:', !!goalsText, ', hasDiagnostic:', !!diagnosticSummary);
+    console.log('📥 [TRACKER] generate-indicators, goals:', goals.length, ', hasGoalsText:', !!goalsText, ', hasDiagnostic:', !!diagnosticSummary);
+    console.log('📝 [TRACKER] userMessage preview:', userMessage.slice(0, 500));
 
     const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
-    const parsed = parseJsonFromAI(raw);
+    console.log('✅ [TRACKER] generate-indicators AI success:', raw.slice(0, 300));
 
+    const parsed = parseJsonFromAI(raw);
+    const indicatorCount = parsed.indicators?.length || 0;
+
+    console.log('📤 [TRACKER] generate-indicators → client:', indicatorCount, 'indicators');
     res.json(parsed);
   } catch (error) {
-    console.error('❌ [TRACKER] Ошибка generate-indicators:', error.message);
+    console.error('❌ [TRACKER] generate-indicators failed:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
+    });
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -470,14 +485,24 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
     if (goalsText) userMessage += `\n\nПользователь уточнил цели своими словами:\n"${goalsText}"`;
     if (diagnosticSummary) userMessage += `\n\nКонтекст диагностики:\n${JSON.stringify(diagnosticSummary, null, 2)}`;
 
-    console.log('🧩 [TRACKER] generate-blocks, indicators:', indicators.length, ', hasGoals:', !!goals, ', hasGoalsText:', !!goalsText, ', hasDiagnostic:', !!diagnosticSummary);
+    console.log('📥 [TRACKER] generate-blocks, indicators:', indicators.length, ', hasGoals:', !!goals, ', hasGoalsText:', !!goalsText, ', hasDiagnostic:', !!diagnosticSummary);
+    console.log('📝 [TRACKER] userMessage preview:', userMessage.slice(0, 500));
 
     const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.4);
-    const parsed = parseJsonFromAI(raw);
+    console.log('✅ [TRACKER] generate-blocks AI success:', raw.slice(0, 300));
 
+    const parsed = parseJsonFromAI(raw);
+    const blockCount = parsed.blocks?.length || 0;
+
+    console.log('📤 [TRACKER] generate-blocks → client:', blockCount, 'blocks');
     res.json(parsed);
   } catch (error) {
-    console.error('❌ [TRACKER] Ошибка generate-blocks:', error.message);
+    console.error('❌ [TRACKER] generate-blocks failed:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
+    });
     res.status(500).json({ success: false, error: error.message });
   }
 });
