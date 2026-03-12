@@ -279,7 +279,7 @@ app.use('/api', questionnaireGenerationRoutes);
 app.use('/api/errors', clientErrorsRoutes);
 
 // --- Helper: вызов Gemini API с указанной моделью и температурой ---
-async function aiGenerate(modelType, systemPrompt, userMessage, temperature = 0.5) {
+async function aiGenerate(modelType, systemPrompt, userMessage, temperature = 0.5, rawText = false) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY не установлен');
 
@@ -290,12 +290,17 @@ async function aiGenerate(modelType, systemPrompt, userMessage, temperature = 0.
 
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
+  const generationConfig = { temperature };
+  if (!rawText) {
+    generationConfig.responseMimeType = 'application/json';
+  }
+
   const requestBody = {
     contents: [{ parts: [{ text: systemPrompt + '\n\n' + userMessage }] }],
-    generationConfig: { temperature },
+    generationConfig,
   };
 
-  console.log(`🤖 [AI-GENERATE] model=${modelName}, temp=${temperature}, promptLen=${(systemPrompt + userMessage).length}`);
+  console.log(`🤖 [AI-GENERATE] model=${modelName}, temp=${temperature}, rawText=${rawText}, promptLen=${(systemPrompt + userMessage).length}`);
 
   const response = await fetch(apiUrl, {
     method: 'POST',
@@ -312,6 +317,10 @@ async function aiGenerate(modelType, systemPrompt, userMessage, temperature = 0.
   const data = await response.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Gemini API вернул пустой ответ');
+
+  if (rawText) {
+    return text.trim();
+  }
 
   return text;
 }
@@ -443,77 +452,174 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
 
     const systemPrompt = `Ты — профессиональный психолог, создающий ежедневный трекер психического здоровья.
 
-На основе выбранных показателей для отслеживания создай блоки конструктора трекера. Для каждого показателя создай ОДИН блок наиболее подходящего типа.
+На основе выбранных показателей создай пошаговый трекер. Сгруппируй показатели в тематические шаги (3–7 шагов). Каждый шаг содержит 1–5 блоков. Для каждого блока выбери наиболее подходящий тип и заполни его параметры.
 
-Доступные типы блоков:
+Доступные типы блоков и их параметры:
 
 1. "text_input" — Текстовое поле с микрофоном.
-   Плюсы: свободная рефлексия, глубина ответа.
-   Минусы: занимает 15–30 сек, требует усилий.
+   Параметры: placeholder (пример ответа).
    Предпочтителен для: описание чувств, заметки, открытые вопросы.
 
 2. "single_choice" — Выбор одного варианта из карточек.
-   Плюсы: быстро (5–10 сек), однозначный ответ.
-   Минусы: ограниченная детализация.
+   Параметры: options[] (3–6 вариантов).
    Предпочтителен для: настроение, уровень энергии, общее самочувствие.
 
 3. "multi_choice" — Множественный выбор чипсов.
-   Плюсы: несколько вариантов, быстрый выбор.
-   Минусы: нет числовой оценки.
+   Параметры: options[] (5–12 вариантов).
    Предпочтителен для: эмоции за день, симптомы, виды активности.
 
 4. "likert_scale" — Шкала Лайкерта (5–7 пунктов с подписями).
-   Плюсы: тонкая градация, подписи на каждом пункте.
-   Минусы: утомительна при множестве вопросов.
-   Предпочтителен для: согласие/несогласие с утверждениями, самооценка.
+   Параметры: points[] (подписи, до 20 символов каждая), defaultValue (индекс 0-based).
+   Предпочтителен для: согласие/несогласие, самооценка, удовлетворённость.
 
-5. "slider" — Числовой слайдер (0–100) с единицей измерения.
-   Плюсы: интуитивный, визуальный.
-   Минусы: субъективная шкала.
-   Предпочтителен для: уровень тревоги %, качество сна %, продуктивность %.
+5. "slider" — Числовой слайдер С единицей измерения.
+   Параметры: unit (очень коротко: "ч", "мин", "%"), min, max, step, defaultValue.
+   Предпочтителен для: часы сна, процент тревоги, продуктивность %.
 
-6. "number_input" — Ввод числа с единицей измерения.
-   Плюсы: точные данные.
-   Минусы: требует ввода с клавиатуры.
+6. "slider_plain" — Числовой слайдер БЕЗ единиц измерения.
+   Параметры: min, max, step, defaultValue.
+   Предпочтителен для: абстрактные оценки: уровень стресса 1–10, мотивация 1–10.
+
+7. "number_input" — Ввод числа с единицей измерения.
+   Параметры: unit (очень коротко: "ч", "мин", "шт"), defaultValue.
    Предпочтителен для: часы сна, стаканы воды, минуты медитации.
 
-7. "stepper" — Счётчик с кнопками +/−.
-   Плюсы: быстрый для малых чисел.
-   Минусы: только целые числа.
+8. "stepper" — Счётчик с кнопками +/−.
+   Параметры: defaultValue.
    Предпочтителен для: количество приёмов пищи, тренировок, панических атак.
 
-8. "yes_no" — Да/Нет.
-   Плюсы: мгновенный ответ (3 сек).
-   Минусы: нет детализации.
+9. "yes_no" — Да/Нет.
+   Параметры: нет дополнительных.
    Предпочтителен для: привычки — лекарства, спорт, прогулка, медитация.
 
-9. "ranking" — Перетаскивание для ранжирования.
-   Плюсы: расстановка приоритетов.
-   Минусы: сложнее на мобильном, 15–20 сек.
-   Предпочтителен для: "что больше всего беспокоит сегодня".
+10. "ranking" — Перетаскивание для ранжирования.
+    Параметры: items[] (3–7 текстов в порядке по умолчанию).
+    Предпочтителен для: "что больше всего беспокоит сегодня".
 
-10. "time_range" — Временной диапазон (начало-конец).
-    Плюсы: точные временные данные.
-    Минусы: подходит только для временных показателей.
+11. "time_range" — Временной диапазон (начало-конец).
+    Параметры: defaultStart ("22:00"), defaultEnd ("07:00").
     Предпочтителен для: время сна (лёг/встал), рабочие часы.
 
-Для каждого блока верни:
-- indicatorId: id показателя
-- type: один из вышеперечисленных типов
-- label: вопрос-инструкция на русском
-- options: массив вариантов (для single_choice, multi_choice, likert_scale). Для остальных — [].
-- min/max/step: для slider, number_input, stepper. Для остальных — null.
-- unit: единица измерения для slider и number_input. Для остальных — null.
+Для КАЖДОГО блока ОБЯЗАТЕЛЬНО укажи:
+- indicatorId: id показателя из входных данных
+- type: один из 11 типов выше
+- label: вопрос-инструкция для пользователя на русском
+- timeEstimateSec: оценка времени заполнения в секундах
+- ВСЕ параметры, специфичные для выбранного типа (см. выше)
 
 Возвращай JSON:
 {
-  "blocks": [
+  "steps": [
     {
-      "indicatorId": "mood",
-      "type": "single_choice",
-      "label": "Как ваше настроение сегодня?",
-      "options": ["Отличное", "Хорошее", "Среднее", "Плохое", "Очень плохое"],
-      "min": null, "max": null, "step": null, "unit": null
+      "title": "Настроение и эмоции",
+      "blocks": [
+        {
+          "indicatorId": "mood",
+          "type": "single_choice",
+          "label": "Как ваше настроение сегодня?",
+          "options": ["Отличное", "Хорошее", "Нормальное", "Плохое", "Очень плохое"],
+          "timeEstimateSec": 10
+        },
+        {
+          "indicatorId": "emotions",
+          "type": "multi_choice",
+          "label": "Какие эмоции вы испытывали сегодня?",
+          "options": ["Радость", "Спокойствие", "Тревога", "Грусть", "Раздражение", "Злость", "Апатия", "Воодушевление"],
+          "timeEstimateSec": 15
+        }
+      ]
+    },
+    {
+      "title": "Сон и восстановление",
+      "blocks": [
+        {
+          "indicatorId": "sleep-time",
+          "type": "time_range",
+          "label": "Во сколько вы легли и встали?",
+          "defaultStart": "23:00",
+          "defaultEnd": "07:00",
+          "timeEstimateSec": 10
+        },
+        {
+          "indicatorId": "sleep-quality",
+          "type": "slider_plain",
+          "label": "Оцените качество сна",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "defaultValue": 5,
+          "timeEstimateSec": 8
+        }
+      ]
+    },
+    {
+      "title": "Тревога и стресс",
+      "blocks": [
+        {
+          "indicatorId": "anxiety-level",
+          "type": "slider",
+          "label": "Уровень тревоги сейчас",
+          "unit": "%",
+          "min": 0,
+          "max": 100,
+          "step": 5,
+          "defaultValue": 30,
+          "timeEstimateSec": 8
+        },
+        {
+          "indicatorId": "stress-thoughts",
+          "type": "text_input",
+          "label": "Что вас тревожит прямо сейчас?",
+          "placeholder": "Например: переживаю из-за дедлайна на работе...",
+          "timeEstimateSec": 25
+        }
+      ]
+    },
+    {
+      "title": "Активность и привычки",
+      "blocks": [
+        {
+          "indicatorId": "exercise",
+          "type": "yes_no",
+          "label": "Вы занимались физической активностью сегодня?",
+          "timeEstimateSec": 3
+        },
+        {
+          "indicatorId": "water",
+          "type": "stepper",
+          "label": "Сколько стаканов воды вы выпили?",
+          "defaultValue": 0,
+          "timeEstimateSec": 5
+        },
+        {
+          "indicatorId": "meditation-time",
+          "type": "number_input",
+          "label": "Сколько минут медитации сегодня?",
+          "unit": "мин",
+          "defaultValue": 0,
+          "timeEstimateSec": 5
+        }
+      ]
+    },
+    {
+      "title": "Рефлексия",
+      "blocks": [
+        {
+          "indicatorId": "self-esteem",
+          "type": "likert_scale",
+          "label": "Насколько вы довольны собой сегодня?",
+          "points": ["Совсем нет", "Скорее нет", "Наполовину", "Скорее да", "Полностью"],
+          "defaultValue": 2,
+          "timeEstimateSec": 8
+        },
+        {
+          "indicatorId": "worries-rank",
+          "type": "ranking",
+          "label": "Что беспокоит больше всего? Перетащите наверх главное",
+          "items": ["Работа", "Отношения", "Здоровье", "Финансы", "Будущее"],
+          "timeEstimateSec": 15
+        }
+      ]
     }
   ]
 }`;
@@ -538,12 +644,70 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
     console.log('✅ [TRACKER] generate-blocks AI success:', raw.slice(0, 300));
 
     const parsed = parseJsonFromAI(raw);
-    const blockCount = parsed.blocks?.length || 0;
+    const steps = Array.isArray(parsed.steps) ? parsed.steps : [];
 
-    console.log('📤 [TRACKER] generate-blocks → client:', blockCount, 'blocks');
-    res.json(parsed);
+    console.log('📤 [TRACKER] generate-blocks → client:', steps.length, 'steps');
+    res.json({ steps });
   } catch (error) {
     console.error('❌ [TRACKER] generate-blocks failed:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
+    });
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/tracker/generate-feedback', async (req, res) => {
+  try {
+    const { answers, goals, goalsText, history } = req.body;
+
+    if (!answers) {
+      return res.status(400).json({ success: false, error: 'answers is required (ответы текущего чек-ина)' });
+    }
+
+    console.log('📥 [TRACKER] generate-feedback, hasAnswers:', !!answers, ', hasGoals:', !!goals, ', hasGoalsText:', !!goalsText, ', historyCount:', history?.length || 0);
+
+    const systemPrompt = `Ты — Луми, дружелюбный ИИ-помощник по ментальному здоровью. Ты анализируешь ежедневные чек-ины пользователя и даёшь тёплую, поддерживающую и полезную обратную связь на русском языке.
+
+Правила:
+- Максимум 900 символов
+- Обращайся на "вы"
+- Отмечай позитивные моменты и прогресс
+- Если есть тревожные сигналы, мягко обрати внимание
+- Сравни с предыдущими чек-инами, если они есть
+- Дай 1-2 конкретных коротких совета
+- Будь тёплой и поддерживающей, но не навязчивой
+- НЕ используй Markdown-разметку, пиши простым текстом
+
+Возвращай только текст обратной связи, без JSON и обёрток.`;
+
+    let userMessage = `Ответы сегодняшнего чек-ина:\n${JSON.stringify(answers, null, 2)}`;
+
+    if (goals && Array.isArray(goals) && goals.length > 0) {
+      const goalsListText = goals.map((g, i) => `${i + 1}. ${g.label || g}`).join('\n');
+      userMessage += `\n\nЦели пользователя:\n${goalsListText}`;
+    }
+    if (goalsText) {
+      userMessage += `\n\nУточнение целей своими словами: "${goalsText}"`;
+    }
+    if (history && Array.isArray(history) && history.length > 0) {
+      userMessage += '\n\nПредыдущие чек-ины (от новых к старым):';
+      for (const entry of history) {
+        userMessage += `\n--- ${entry.date || 'без даты'} ---\n${JSON.stringify(entry.answers, null, 2)}`;
+      }
+    }
+
+    console.log('📝 [TRACKER] generate-feedback userMessage preview:', userMessage.slice(0, 500));
+
+    const feedback = await aiGenerate('trackers', systemPrompt, userMessage, 0.6, true);
+    console.log('✅ [TRACKER] generate-feedback AI success, length:', feedback.length);
+
+    console.log('📤 [TRACKER] generate-feedback → client:', feedback.slice(0, 200));
+    res.json({ feedback });
+  } catch (error) {
+    console.error('❌ [TRACKER] generate-feedback failed:', {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data,
