@@ -1023,8 +1023,8 @@ app.post('/api/cms/lumi/chat', async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    const client = new GoogleGenerativeAI(apiKey, { apiVersion: 'v1beta' });
+    const modelName = process.env.LUMI_CMS_MODEL || 'gemini-3.1-pro-preview';
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
     const contextStr = analyticsContext ? JSON.stringify(analyticsContext, null, 2) : '{}';
     const today = new Date().toISOString().slice(0, 10);
@@ -1050,22 +1050,34 @@ idenself — сервис психологической самодиагнос�
 ${contextStr}
 \`\`\``;
 
-    const model = client.getGenerativeModel({
-      model: process.env.LUMI_CMS_MODEL || 'gemini-3.1-pro-preview',
-      generationConfig: { temperature: 0.5 },
-      systemInstruction: systemPrompt,
-    });
-
-    const history = messages.slice(0, -1).map((m) => ({
+    const contents = messages.map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
     }));
 
-    const lastMessage = messages[messages.length - 1];
-    const chat = model.startChat({ history });
-    const result = await chat.sendMessage(lastMessage.content);
-    const text = result.response.text().trim();
+    const requestBody = {
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents,
+      generationConfig: { temperature: 0.5 },
+    };
 
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini v1beta API error (${response.status}): ${errorText.slice(0, 500)}`);
+    }
+
+    const data = await response.json();
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      throw new Error(`Unexpected Gemini response structure: ${JSON.stringify(data).slice(0, 500)}`);
+    }
+
+    const text = data.candidates[0].content.parts[0].text.trim();
     res.json({ reply: text });
   } catch (error) {
     console.error('Error in CMS Lumi chat:', error);
