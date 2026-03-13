@@ -285,6 +285,7 @@ async function aiGenerate(modelType, systemPrompt, userMessage, temperature = 0.
 
   const modelMap = {
     trackers: 'gemini-3.1-flash-lite-preview',
+    gemini: 'gemini-3.1-flash-lite-preview',
   };
   const modelName = modelMap[modelType] || 'gemini-3.1-pro-preview';
 
@@ -755,6 +756,111 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
   } catch (error) {
     console.error('Error generating feedback:', error);
     res.status(500).json({ error: 'Failed to generate feedback', details: error.message });
+  }
+});
+
+app.post('/api/tracker/generate-reminder', async (req, res) => {
+  try {
+    const {
+      goals, goalsText, messageType, dayOfWeek, activityLevel,
+      weeklyCheckins, checkinCount, daysWithoutCheckin,
+      dataAggregates, lastFeedbackSummary, recentMessages, safetyFiltered,
+    } = req.body;
+
+    console.log('📥 [TRACKER] generate-reminder, messageType:', messageType, ', checkinCount:', checkinCount, ', safetyFiltered:', !!safetyFiltered);
+
+    const systemPrompt = `Ты — Луми, помощник по ментальному здоровью. Напиши сообщение для пользователя (4-6 предложений, 300-500 символов).
+
+ДВА РЕЖИМА ЦЕННОСТИ:
+1. Зеркало — покажи человеку то, что он сам о себе не замечает: паттерн, расхождение, прогресс, слепое пятно в данных.
+2. Редкий эксперт — дай то, что он услышал бы только от хорошего терапевта: конкретную книгу, метод, знание — THE one thing для его проблемы. Адаптируй под его текущее состояние по данным.
+
+Тип сообщения: ${messageType || 'adaptive_calibration'}
+
+ТИПЫ:
+- blind_spot: покажи разрыв между тем, что пользователь думает о себе, и тем, что говорят данные. Например: «Вы оценили неделю как плохую, но 5 из 7 дней — выше среднего». Используй конкретные числа.
+- trigger: найди конкретный порог или событие, после которого показатели падают. Не «сон влияет на тревогу», а «ваша граница — полночь: ВСЕ плохие дни были после засыпания позже 00:00». Числа обязательны.
+- hidden_progress: покажи улучшение, которое пользователь не чувствует из-за привыкания к новой базовой линии. «Ваша тревожность в первую неделю — 4.1, сейчас — 2.8. Вы сдвинулись на 30%, но не замечаете.»
+- precision_insight: дай THE one thing — самое эффективное знание для конкретной проблемы пользователя. Не generic-совет, а expert-level интервенция. Адаптируй под текущие данные: если человек срывается — один тон, если держится — другой. Можно рекомендовать конкретные методы (ERP при ОКР, парадоксальная интенция при бессоннице, и т.д.).
+- resource_discovery: порекомендуй конкретную книгу, метод или тип терапии, который является золотым стандартом для проблемы пользователя. Объясни почему именно эта книга/метод, привяжи к данным. Не список — одна рекомендация.
+- adaptive_calibration: считай тренд данных и подстрой тон и содержание. Если спад 3+ дня — нормализуй, покажи что спады конечны, приведи его предыдущий спад из данных. Если плато — объясни почему стабильность после нестабильности это результат. Если рост — покажи механизм.
+- curiosity_hook (для <3 заметок): расскажи, что Луми скоро сможет показать. Приведи пример неочевидного открытия. Вызови любопытство к себе.
+
+Обязательно:
+- Обращайся на «вы»
+- Начни сразу с персонального наблюдения или с сути — без приветствия
+- Где есть данные — называй конкретные числа, дни, показатели
+- Для типов precision_insight и resource_discovery — привязывай к целям и текущему состоянию пользователя по данным
+- В конце — открытый вопрос или мягкая связка с наблюдением (не давление)
+- Тон: умный аналитик + терапевт, который нашёл что-то важное для вас лично
+
+Запрещено:
+- Generic-советы: «подышите квадратом», «выпейте воды», «5-4-3-2-1»
+- Общие психологические факты без привязки к данным или проблеме пользователя
+- Слова «чек-ин», «трекер» — используй «заметка», «отметить», «минута для себя»
+- «Не забудьте», «Вы пропустили», любое давление
+- «Исследования показывают...» без связи с пользователем
+- Стрики, серии подряд
+- Медицинские диагнозы и назначения
+- Банальности, мотивационные фразы
+- Повторение предыдущих сообщений
+- Контент, который можно найти в первых 3 ссылках Google
+- Контент, который мог бы быть в любом психологическом Telegram-канале
+
+БЕЗОПАСНОСТЬ — КРИТИЧНО:
+- Если цель пользователя связана с причинением вреда себе или другим, самоповреждением, суицидом, насилием — НЕ упоминай эту цель. Используй нейтральную тему: общее самочувствие, энергия, сон.
+- Никогда не говори, что достижение цели «будет хорошо» или «позитивно повлияет», если не уверен в безопасности цели.
+- Если ВСЕ цели пользователя небезопасны — напиши о ценности регулярного отслеживания состояния в целом, без упоминания целей.`;
+
+    const agg = dataAggregates || {};
+    const recent = Array.isArray(recentMessages) ? recentMessages : [];
+    const goalsStr = Array.isArray(goals) ? goals.join(', ') : (goals || 'не указаны');
+    const patternsStr = Array.isArray(agg.notablePatterns) && agg.notablePatterns.length > 0
+      ? agg.notablePatterns.join('; ')
+      : 'недостаточно данных';
+    const recentStr = recent.length > 0
+      ? recent.map((m, i) => `${i + 1}. ${m}`).join('\n')
+      : 'нет предыдущих';
+
+    const userMessage = `Цели пользователя: ${goalsStr}
+Цели своими словами: ${goalsText || 'не указаны'}
+Тип сообщения: ${messageType || 'adaptive_calibration'}
+День недели: ${dayOfWeek || 'не указан'}
+Уровень активности: ${activityLevel || 'не указан'}
+Заметок за эту неделю: ${weeklyCheckins ?? '?'} из 7
+Всего заметок: ${checkinCount ?? '?'}
+Дней с последней заметки: ${daysWithoutCheckin ?? '?'}
+
+Агрегаты данных:
+- Средние за всё время: ${JSON.stringify(agg.averages || null)}
+- Эта неделя: ${JSON.stringify(agg.thisWeek || null)}
+- Прошлая неделя: ${JSON.stringify(agg.lastWeek || null)}
+- Тренд: ${agg.trend || 'нет данных'}
+- Лучший день: ${agg.bestDay || 'нет данных'}
+- Худший день: ${agg.worstDay || 'нет данных'}
+- Всего дней с данными: ${agg.totalDays ?? '?'}
+- Паттерны: ${patternsStr}
+
+Последняя обратная связь: ${lastFeedbackSummary || 'нет'}
+
+Последние 3 отправленных сообщения (не повторяй):
+${recentStr}`;
+
+    console.log('📝 [TRACKER] generate-reminder userMessage preview:', userMessage.slice(0, 500));
+
+    const result = await aiGenerate('gemini', systemPrompt, userMessage, 0.7, true);
+    console.log('✅ [TRACKER] generate-reminder success, length:', result.length);
+
+    console.log('📤 [TRACKER] generate-reminder → client:', result.slice(0, 200));
+    res.json({ text: result });
+  } catch (error) {
+    console.error('❌ [TRACKER] generate-reminder failed:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
+    });
+    res.status(500).json({ error: 'Failed to generate reminder', details: error.message });
   }
 });
 
