@@ -1023,7 +1023,7 @@ app.post('/api/cms/lumi/chat', async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const client = new GoogleGenerativeAI(apiKey);
 
     const contextStr = analyticsContext ? JSON.stringify(analyticsContext, null, 2) : '{}';
