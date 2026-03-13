@@ -1012,6 +1012,65 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
+// ── CMS Луми: AI-аналитик ──
+app.post('/api/cms/lumi/chat', async (req, res) => {
+  try {
+    const { messages, analyticsContext } = req.body;
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'messages array required' });
+    }
+
+    const contextStr = analyticsContext ? JSON.stringify(analyticsContext, null, 2) : '{}';
+    const today = new Date().toISOString().slice(0, 10);
+
+    const systemPrompt = `Ты — Луми, ИИ-аналитик сервиса idenself. Сегодня: ${today}.
+
+idenself — сервис психологической самодиагностики и личного трекинга ментального здоровья:
+- Пользователи проходят многоэтапную диагностику (симптомы → жалоба → опросники → результаты с гипотезами)
+- После диагностики настраивают персональный трекер (цели → показатели → приоритеты → расписание)
+- Ежедневно заполняют чек-ины по выбранным показателям (слайдеры, шкалы Ликерта, текстовые вопросы)
+- Получают персонализированные ИИ-напоминания в Telegram
+
+Тебе доступны актуальные аналитические данные CMS (ниже). Ты знаешь цифры, тренды и конверсии не хуже человека, который смотрит на дашборд. Твоя задача — давать точные, конкретные инсайты на основе этих данных.
+
+Как отвечать:
+- Отвечай на русском, конкретно и по делу
+- Если тебя просят про цифры — называй точные значения из контекста
+- Предлагай гипотезы о причинах, сравнения, прогнозы
+- Если данных недостаточно для ответа — честно скажи об этом
+- Форматируй ответы читаемо: используй абзацы, списки через дефис, жирный текст **так**
+- Не придумывай данные, которых нет в контексте
+
+Актуальные данные CMS:
+\`\`\`json
+${contextStr}
+\`\`\``;
+
+    if (!genAI) throw new Error('Gemini API key not configured');
+
+    const proModel = genAI.getGenerativeModel({
+      model: process.env.LUMI_CMS_MODEL || 'gemini-3.1-pro-preview',
+      generationConfig: { temperature: 0.5 },
+      systemInstruction: systemPrompt,
+    });
+
+    const history = messages.slice(0, -1).map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
+
+    const lastMessage = messages[messages.length - 1];
+    const chat = proModel.startChat({ history });
+    const result = await chat.sendMessage(lastMessage.content);
+    const text = result.response.text().trim();
+
+    res.json({ reply: text });
+  } catch (error) {
+    console.error('Error in CMS Lumi chat:', error);
+    res.status(500).json({ error: 'Failed to generate response', details: error.message });
+  }
+});
+
 // Создаем HTTP сервер для socket.io
 const httpServer = createServer(app);
 
