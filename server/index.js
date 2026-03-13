@@ -671,7 +671,7 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
 
 app.post('/api/tracker/generate-feedback', async (req, res) => {
   try {
-    const { answers, blocks, goals, goalsText, previousCheckins, checkinDate, diagnosticsDate } = req.body;
+    const { answers, blocks, goals, goalsText, previousCheckins, checkinDate, diagnosticsDate, freeText } = req.body;
     console.log('[generate-feedback] Received request, answers keys:', answers ? Object.keys(answers).length : 0);
 
     const systemPrompt = `Ты — Луми, дружелюбный ИИ-помощник по ментальному здоровью. Ты анализируешь ежедневные чек-ины пользователя и даёшь тёплую, поддерживающую и полезную обратную связь на русском языке.
@@ -728,6 +728,10 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
     userMessage += readableAnswers.trim()
       ? `Ответы сегодняшнего чек-ина:\n${readableAnswers}`
       : `Ответы сегодняшнего чек-ина (сырые данные):\n${JSON.stringify(answers, null, 2)}`;
+
+    if (freeText && freeText.trim()) {
+      userMessage += `\n\nСвободный комментарий пользователя о сегодняшнем дне:\n"${freeText.trim()}"`;
+    }
 
     if (goals && Array.isArray(goals) && goals.length > 0) {
       userMessage += `\n\nЦели пользователя:\n${goals.map((g, i) => `${i + 1}. ${g.label || g}`).join('\n')}`;
