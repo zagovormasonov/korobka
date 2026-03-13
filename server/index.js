@@ -1054,7 +1054,7 @@ ${contextStr}
       model: process.env.LUMI_CMS_MODEL || 'gemini-3.1-pro-preview',
       generationConfig: { temperature: 0.5 },
       systemInstruction: systemPrompt,
-    });
+    }, { apiVersion: 'v1beta' });
 
     const history = messages.slice(0, -1).map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
