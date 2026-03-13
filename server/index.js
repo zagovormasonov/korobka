@@ -1024,7 +1024,7 @@ app.post('/api/cms/lumi/chat', async (req, res) => {
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    const client = new GoogleGenerativeAI(apiKey);
+    const client = new GoogleGenerativeAI(apiKey, { apiVersion: 'v1beta' });
 
     const contextStr = analyticsContext ? JSON.stringify(analyticsContext, null, 2) : '{}';
     const today = new Date().toISOString().slice(0, 10);
@@ -1054,7 +1054,7 @@ ${contextStr}
       model: process.env.LUMI_CMS_MODEL || 'gemini-3.1-pro-preview',
       generationConfig: { temperature: 0.5 },
       systemInstruction: systemPrompt,
-    }, { apiVersion: 'v1beta' });
+    });
 
     const history = messages.slice(0, -1).map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
