@@ -1034,7 +1034,7 @@ process.on('uncaughtException', (error) => {
 // ── CMS Луми: AI-аналитик ──
 app.post('/api/cms/lumi/chat', async (req, res) => {
   try {
-    const { messages, analyticsContext } = req.body;
+    const { messages, analyticsContext, pinnedContext } = req.body;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'messages array required' });
     }
@@ -1067,7 +1067,7 @@ idenself — сервис психологической самодиагнос�
 Актуальные данные CMS:
 \`\`\`json
 ${contextStr}
-\`\`\``;
+\`\`\`${pinnedContext ? `\n\n---\nДОПОЛНИТЕЛЬНЫЙ КОНТЕКСТ ОТ АДМИНИСТРАТОРА:\n${pinnedContext}` : ''}`;
 
     const contents = messages.map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
