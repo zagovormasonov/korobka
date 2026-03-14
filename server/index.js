@@ -672,10 +672,23 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
 
 app.post('/api/tracker/generate-feedback', async (req, res) => {
   try {
-    const { answers, blocks, goals, goalsText, previousCheckins, checkinDate, diagnosticsDate, freeText } = req.body;
-    console.log('[generate-feedback] Received request, answers keys:', answers ? Object.keys(answers).length : 0);
+    // Новый формат payload с полным датасетом
+    const { currentCheckin, blocks, goals, goalsText, dataset } = req.body;
+
+    // Обратная совместимость со старым форматом
+    const answers = currentCheckin?.answers ?? req.body.answers;
+    const freeText = currentCheckin?.freeText ?? req.body.freeText;
+    const checkinDate = currentCheckin?.date ?? req.body.checkinDate;
+    const previousCheckins = dataset?.checkins ?? req.body.previousCheckins ?? [];
+    const diagnosticsDate = dataset?.diagnostics?.[0]?.completedAt ?? req.body.diagnosticsDate;
+
+    console.log('[generate-feedback] Received request, answers keys:', answers ? Object.keys(answers).length : 0,
+      ', checkins:', previousCheckins.length, ', feedbacks:', dataset?.feedbacks?.length ?? 0,
+      ', tgMessages:', dataset?.telegramMessages?.length ?? 0);
 
     const systemPrompt = `Ты — Луми, дружелюбный ИИ-помощник по ментальному здоровью. Ты анализируешь ежедневные чек-ины пользователя и даёшь тёплую, поддерживающую и полезную обратную связь на русском языке.
+
+Тебе доступен ПОЛНЫЙ долгосрочный датасет пользователя — ВСЕ чек-ины, ВСЯ предыдущая обратная связь от Луми, ВСЕ AI-сообщения из Telegram, данные диагностики. Используй эту полноту для глубокого анализа.
 
 Стиль обратной связи:
 - Тебе доступны дата/время текущего чек-ина и дата диагностики. Используй это для контекста: сколько дней прошло с диагностики, в какое время суток заполнен чек-ин (утро/вечер), интервалы между чек-инами.
@@ -683,9 +696,15 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
 - Если предыдущих чек-инов НЕТ — анализируй только связи внутри текущего чек-ина. НЕ упоминай предыдущие дни, тренды или динамику.
 - Находи неочевидные связи между ответами внутри чек-ина: например, связь сна с раздражительностью, социальной активности с энергией.
 - Комментируй ВСЕ текстовые ответы пользователя — они особенно важны, потому что человек потратил время, чтобы их написать.
+- Если пользователь оставил свободный комментарий о дне (freeText) — обязательно учти его. Реагируй на содержание, не игнорируй.
 - Валидируй состояние пользователя, а не поучай. Вместо советов — признание того, через что он проходит.
 - Подмечай неочевидные позитивные моменты, которые пользователь сам мог не заметить.
 - Если видишь тренд на ухудшение — мягко предупреди и дай прогноз, а не банальный совет.
+
+ПРАВИЛО АНТИПОВТОРА (КРИТИЧНО):
+- Тебе предоставлена ВСЯ предыдущая обратная связь и ВСЕ Telegram-сообщения. НИКОГДА не повторяй смыслы, советы, наблюдения или формулировки из предыдущих фидбеков и сообщений.
+- Каждая обратная связь должна содержать НОВЫЙ инсайт, НОВОЕ наблюдение или НОВЫЙ ракурс на данные пользователя.
+- Учитывай оценки пользователя (rating) — если предыдущая обратная связь с высокой оценкой, ориентируйся на подобный стиль. Если с низкой — избегай подобного подхода.
 
 Правила:
 - Максимум 900 символов
@@ -727,8 +746,8 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
     userMessage += '\n';
 
     userMessage += readableAnswers.trim()
-      ? `Ответы сегодняшнего чек-ина:\n${readableAnswers}`
-      : `Ответы сегодняшнего чек-ина (сырые данные):\n${JSON.stringify(answers, null, 2)}`;
+      ? `Ответы текущего чек-ина:\n${readableAnswers}`
+      : `Ответы текущего чек-ина (сырые данные):\n${JSON.stringify(answers, null, 2)}`;
 
     if (freeText && freeText.trim()) {
       userMessage += `\n\nСвободный комментарий пользователя о сегодняшнем дне:\n"${freeText.trim()}"`;
@@ -740,13 +759,36 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
     if (goalsText) {
       userMessage += `\n\nУточнение целей своими словами: "${goalsText}"`;
     }
-    if (previousCheckins && previousCheckins.length > 0) {
-      userMessage += `\n\nПредыдущие чек-ины (от новых к старым):`;
+
+    // ВСЕ предыдущие чек-ины (без лимитов)
+    if (previousCheckins.length > 0) {
+      userMessage += `\n\nВСЕ предыдущие чек-ины (от новых к старым):`;
       previousCheckins.forEach((c) => {
-        userMessage += `\n--- ${formatDate(c.date) || c.date} ---\n${JSON.stringify(c.answers, null, 2)}`;
+        const dateStr = formatDate(c.submittedAt || c.date || c.createdAt) || c.submittedAt || c.date || c.createdAt;
+        userMessage += `\n--- ${dateStr}${c.mode ? ` (${c.mode})` : ''} ---\n${JSON.stringify(c.answers, null, 2)}`;
+        if (c.freeText) userMessage += `\nКомментарий: "${c.freeText}"`;
       });
     } else {
       userMessage += `\n\nЭто первый чек-ин пользователя. Предыдущих данных нет.`;
+    }
+
+    // ВСЯ предыдущая обратная связь от Луми
+    if (dataset?.feedbacks?.length > 0) {
+      userMessage += `\n\nВСЯ предыдущая обратная связь от Луми (не повторяй смыслы):`;
+      dataset.feedbacks.forEach((f) => {
+        const dateStr = formatDate(f.checkinDate || f.feedbackDate) || f.checkinDate || f.feedbackDate;
+        userMessage += `\n--- ${dateStr}${f.rating ? ` (оценка: ${f.rating}/5)` : ''} ---\n${f.text}`;
+        if (f.comment) userMessage += `\nКомментарий пользователя: "${f.comment}"`;
+      });
+    }
+
+    // ВСЕ AI-сообщения из Telegram
+    if (dataset?.telegramMessages?.length > 0) {
+      userMessage += `\n\nВСЕ AI-сообщения из Telegram (не повторяй смыслы):`;
+      dataset.telegramMessages.forEach((m) => {
+        const dateStr = formatDate(m.createdAt) || m.createdAt;
+        userMessage += `\n--- ${dateStr} ---\n${m.content}`;
+      });
     }
 
     const feedback = await aiGenerate('trackers', systemPrompt, userMessage, 0.6, true);
@@ -765,7 +807,7 @@ app.post('/api/tracker/generate-reminder', async (req, res) => {
       goals, goalsText, messageType, dayOfWeek, activityLevel,
       weeklyCheckins, checkinCount, daysWithoutCheckin,
       dataAggregates, lastFeedbackSummary, recentMessages, safetyFiltered,
-      hasDraft, draftAnswersSummary, diagnosticSummary,
+      hasDraft, draftAnswersSummary, diagnosticSummary, dataset,
     } = req.body;
 
     console.log('📥 [TRACKER] generate-reminder, messageType:', messageType, ', checkinCount:', checkinCount, ', safetyFiltered:', !!safetyFiltered);
@@ -865,12 +907,48 @@ app.post('/api/tracker/generate-reminder', async (req, res) => {
 
 Данные диагностики: ${diagnosticSummary ? JSON.stringify(diagnosticSummary) : 'диагностика не пройдена'}
 
-Последняя обратная связь: ${lastFeedbackSummary || 'нет'}
+${(() => {
+  // Обратная совместимость: dataset → старые поля как fallback
+  const feedbacks = dataset?.feedbacks;
+  const tgMessages = dataset?.telegramMessages;
+  const checkins = dataset?.checkins;
+  let block = '';
 
-Последние 3 отправленных сообщения (не повторяй):
-${recentStr}
+  if (feedbacks && feedbacks.length > 0) {
+    block += 'ВСЯ предыдущая обратная связь от Луми (не повторяй смыслы):\n';
+    feedbacks.forEach((f) => {
+      const d = f.checkinDate || f.feedbackDate || '';
+      block += `--- ${d}${f.rating ? ` (оценка: ${f.rating}/5)` : ''} ---\n${f.text}\n`;
+      if (f.comment) block += `Комментарий пользователя: "${f.comment}"\n`;
+    });
+  } else {
+    block += `Последняя обратная связь: ${lastFeedbackSummary || 'нет'}\n`;
+  }
 
-Статус сегодняшнего чек-ина: ${hasDraft ? 'Пользователь начал заполнять заметку сегодня.' : 'Заметка сегодня не начата.'}
+  block += '\n';
+
+  if (tgMessages && tgMessages.length > 0) {
+    block += 'ВСЕ предыдущие AI-сообщения из Telegram (не повторяй смыслы):\n';
+    tgMessages.forEach((m) => {
+      block += `--- ${m.createdAt || ''} ---\n${m.content}\n`;
+    });
+  } else {
+    block += `Последние отправленные сообщения (не повторяй):\n${recentStr}\n`;
+  }
+
+  block += '\n';
+
+  if (checkins && checkins.length > 0) {
+    block += 'ВСЕ предыдущие чек-ины (ответы):\n';
+    checkins.forEach((c) => {
+      const d = c.submittedAt || c.createdAt || '';
+      block += `--- ${d}${c.mode ? ` (${c.mode})` : ''} ---\n${JSON.stringify(c.answers)}\n`;
+    });
+    block += '\n';
+  }
+
+  return block;
+})()}Статус сегодняшнего чек-ина: ${hasDraft ? 'Пользователь начал заполнять заметку сегодня.' : 'Заметка сегодня не начата.'}
 Частичные ответы черновика: ${draftAnswersSummary || 'нет'}`;
 
     console.log('📝 [TRACKER] generate-reminder userMessage preview:', userMessage.slice(0, 500));
