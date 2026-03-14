@@ -771,6 +771,14 @@ app.post('/api/tracker/generate-reminder', async (req, res) => {
 
     const systemPrompt = `Ты — Луми, помощник по ментальному здоровью. Напиши сообщение для пользователя (4-6 предложений, 300-500 символов).
 
+ВЕРНИ СТРОГО JSON:
+{
+  "text": "Текст сообщения (300-500 символов)",
+  "buttonText": "Короткий текст кнопки (2-5 слов, без стрелок, приглашение заполнить заметку)"
+}
+
+Для buttonText: придумай короткую, живую фразу-приглашение, которая органично продолжает тему сообщения и цели пользователя. Например: «Отметить сейчас», «Проверить себя», «Записать момент», «Поймать настроение», «Добавить заметку». Без стрелок и знаков пунктуации в конце.
+
 ДВА РЕЖИМА ЦЕННОСТИ:
 1. Зеркало — покажи человеку то, что он сам о себе не замечает: паттерн, расхождение, прогресс, слепое пятно в данных.
 2. Редкий эксперт — дай то, что он услышал бы только от хорошего терапевта: конкретную книгу, метод, знание — THE one thing для его проблемы. Адаптируй под его текущее состояние по данным.
@@ -848,11 +856,22 @@ ${recentStr}`;
 
     console.log('📝 [TRACKER] generate-reminder userMessage preview:', userMessage.slice(0, 500));
 
-    const result = await aiGenerate('gemini', systemPrompt, userMessage, 0.7, true);
-    console.log('✅ [TRACKER] generate-reminder success, length:', result.length);
+    const result = await aiGenerate('gemini', systemPrompt, userMessage, 0.7, false);
+    console.log('✅ [TRACKER] generate-reminder success:', JSON.stringify(result).slice(0, 200));
 
-    console.log('📤 [TRACKER] generate-reminder → client:', result.slice(0, 200));
-    res.json({ text: result });
+    let text, buttonText;
+    try {
+      const parsed = typeof result === 'string' ? JSON.parse(result) : result;
+      text = parsed.text;
+      buttonText = parsed.buttonText ?? null;
+    } catch (parseErr) {
+      console.error('❌ [TRACKER] generate-reminder JSON parse failed, fallback to raw text');
+      text = typeof result === 'string' ? result : JSON.stringify(result);
+      buttonText = null;
+    }
+
+    console.log('📤 [TRACKER] generate-reminder → client: text:', String(text).slice(0, 150), '| buttonText:', buttonText);
+    res.json({ text, buttonText });
   } catch (error) {
     console.error('❌ [TRACKER] generate-reminder failed:', {
       message: error.message,
