@@ -764,7 +764,7 @@ app.post('/api/tracker/generate-reminder', async (req, res) => {
     const {
       goals, goalsText, messageType, dayOfWeek, activityLevel,
       weeklyCheckins, checkinCount, daysWithoutCheckin,
-      dataAggregates, lastFeedbackSummary, recentMessages, safetyFiltered,
+      dataAggregates, lastFeedbackSummary, recentMessages, safetyFiltered, hasDraft,
     } = req.body;
 
     console.log('📥 [TRACKER] generate-reminder, messageType:', messageType, ', checkinCount:', checkinCount, ', safetyFiltered:', !!safetyFiltered);
@@ -852,7 +852,11 @@ app.post('/api/tracker/generate-reminder', async (req, res) => {
 Последняя обратная связь: ${lastFeedbackSummary || 'нет'}
 
 Последние 3 отправленных сообщения (не повторяй):
-${recentStr}`;
+${recentStr}
+
+Статус сегодняшнего чек-ина: ${hasDraft ? 'Пользователь начал заполнять чек-ин сегодня, но не завершил.' : 'Чек-ин сегодня не начат.'}
+
+${hasDraft ? 'Если hasDraft = true: человек уже сделал первый шаг сегодня. Не упоминай "начали, но не завершили" напрямую — это может звучать как упрёк. Сделай сообщение, которое органично ведёт к завершению (как продолжение уже начатого действия). buttonText в этом случае — что-то вроде «Продолжить», «Добавить», «Завершить» — короткое и без давления.' : ''}`;
 
     console.log('📝 [TRACKER] generate-reminder userMessage preview:', userMessage.slice(0, 500));
 
