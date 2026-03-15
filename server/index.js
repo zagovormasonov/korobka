@@ -219,7 +219,7 @@ app.use((req, res, next) => {
 
   next();
 });
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
 // Статическая раздача фронтенда в продакшне
@@ -1162,7 +1162,7 @@ process.on('uncaughtException', (error) => {
 // ── CMS Луми: AI-аналитик ──
 app.post('/api/cms/lumi/chat', async (req, res) => {
   try {
-    const { messages, analyticsContext, pinnedContext } = req.body;
+    const { messages, analyticsContext, pinnedContext, files } = req.body;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'messages array required' });
     }
@@ -1197,10 +1197,23 @@ idenself — сервис психологической самодиагнос�
 ${contextStr}
 \`\`\`${pinnedContext ? `\n\n---\nДОПОЛНИТЕЛЬНЫЙ КОНТЕКСТ ОТ АДМИНИСТРАТОРА:\n${pinnedContext}` : ''}`;
 
-    const contents = messages.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
+    const contents = messages.map((msg, idx) => {
+      const parts = [{ text: msg.content }];
+
+      // Прикрепляем файлы только к последнему user-сообщению
+      if (msg.role === 'user' && idx === messages.length - 1 && files && files.length > 0) {
+        for (const file of files) {
+          parts.push({
+            inlineData: {
+              mimeType: file.mimeType,
+              data: file.data, // base64 строка без префикса data:...
+            },
+          });
+        }
+      }
+
+      return { role: msg.role === 'assistant' ? 'model' : 'user', parts };
+    });
 
     const requestBody = {
       system_instruction: { parts: [{ text: systemPrompt }] },
