@@ -672,68 +672,77 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
 
 app.post('/api/tracker/generate-feedback', async (req, res) => {
   try {
-    // Новый формат payload с полным датасетом
-    const { currentCheckin, blocks, goals, goalsText, dataset } = req.body;
+    const {
+      currentCheckin, blocks, goals, goalsText, dataset,
+      feedbackType, dataAggregates, diagnosticSummary,
+      // legacy fallback поля
+      answers: legacyAnswers, freeText: legacyFreeText,
+      previousCheckins: legacyPreviousCheckins,
+      checkinDate: legacyCheckinDate, diagnosticsDate: legacyDiagnosticsDate,
+    } = req.body;
 
-    // Обратная совместимость со старым форматом
-    const answers = currentCheckin?.answers ?? req.body.answers;
-    const freeText = currentCheckin?.freeText ?? req.body.freeText;
-    const checkinDate = currentCheckin?.date ?? req.body.checkinDate;
-    const previousCheckins = dataset?.checkins ?? req.body.previousCheckins ?? [];
-    const diagnosticsDate = dataset?.diagnostics?.[0]?.completedAt ?? req.body.diagnosticsDate;
+    // Резолв данных: новый формат имеет приоритет, legacy — fallback
+    const checkinAnswers = currentCheckin?.answers || legacyAnswers;
+    const checkinFreeText = currentCheckin?.freeText || legacyFreeText || '';
+    const checkinDateVal = currentCheckin?.date || legacyCheckinDate;
+    const allCheckins = dataset?.checkins || legacyPreviousCheckins || [];
+    const allFeedbacks = dataset?.feedbacks || [];
+    const allTelegramMsgs = dataset?.telegramMessages || [];
+    const diagDate = dataset?.diagnostics?.[0]?.completedAt || legacyDiagnosticsDate;
 
-    console.log('[generate-feedback] Received request, answers keys:', answers ? Object.keys(answers).length : 0,
-      ', checkins:', previousCheckins.length, ', feedbacks:', dataset?.feedbacks?.length ?? 0,
-      ', tgMessages:', dataset?.telegramMessages?.length ?? 0);
+    console.log('[generate-feedback] Received request, answers keys:', checkinAnswers ? Object.keys(checkinAnswers).length : 0,
+      ', feedbackType:', feedbackType || 'none',
+      ', checkins:', allCheckins.length,
+      ', feedbacks:', allFeedbacks.length,
+      ', tgMessages:', allTelegramMsgs.length,
+      ', hasAggregates:', !!dataAggregates);
 
-    const systemPrompt = `Ты — Луми, дружелюбный ИИ-помощник по ментальному здоровью. Ты анализируешь ежедневные чек-ины пользователя и даёшь тёплую, поддерживающую и полезную обратную связь на русском языке.
+    const systemPrompt = `Ты — Луми, ИИ-помощник по ментальному здоровью. Ты анализируешь ежедневные чек-ины пользователя и даёшь глубокую, персонализированную обратную связь на русском языке.
 
-Тебе доступен ПОЛНЫЙ долгосрочный датасет пользователя — ВСЕ чек-ины, ВСЯ предыдущая обратная связь от Луми, ВСЕ AI-сообщения из Telegram, данные диагностики. Используй эту полноту для глубокого анализа.
+Тебе доступен ПОЛНЫЙ долгосрочный датасет пользователя — ВСЕ чек-ины, ВСЯ предыдущая обратная связь от Луми, ВСЕ AI-сообщения из Telegram, данные диагностики, агрегаты данных (средние, тренды, паттерны, корреляции). Используй эту полноту для глубокого анализа.
 
-Стиль обратной связи:
-- Тебе доступны дата/время текущего чек-ина и дата диагностики. Используй это для контекста: сколько дней прошло с диагностики, в какое время суток заполнен чек-ин (утро/вечер), интервалы между чек-инами.
-- Если есть данные предыдущих чек-инов — ищи паттерны и тренды: что растёт, что снижается, какие закономерности. Ссылайся на конкретные даты.
-- Если предыдущих чек-инов НЕТ — анализируй только связи внутри текущего чек-ина. НЕ упоминай предыдущие дни, тренды или динамику.
-- Находи неочевидные связи между ответами внутри чек-ина: например, связь сна с раздражительностью, социальной активности с энергией.
-- Комментируй ВСЕ текстовые ответы пользователя — они особенно важны, потому что человек потратил время, чтобы их написать.
-- Если пользователь оставил свободный комментарий о дне (freeText) — обязательно учти его. Реагируй на содержание, не игнорируй.
-- Валидируй состояние пользователя, а не поучай. Вместо советов — признание того, через что он проходит.
-- Подмечай неочевидные позитивные моменты, которые пользователь сам мог не заметить.
-- Если видишь тренд на ухудшение — мягко предупреди и дай прогноз, а не банальный совет.
+ДВА РЕЖИМА ЦЕННОСТИ — чередуй их:
+1. Зеркало — покажи то, что человек о себе не замечает: паттерн, расхождение, скрытый прогресс. Числа обязательны.
+2. Редкий эксперт — дай то, что услышал бы только от хорошего терапевта: конкретный метод, знание, объяснение.
 
-ПРАВИЛО АНТИПОВТОРА (КРИТИЧНО):
-- Тебе предоставлена ВСЯ предыдущая обратная связь и ВСЕ Telegram-сообщения. НИКОГДА не повторяй смыслы, советы, наблюдения или формулировки из предыдущих фидбеков и сообщений.
-- Каждая обратная связь должна содержать НОВЫЙ инсайт, НОВОЕ наблюдение или НОВЫЙ ракурс на данные пользователя.
-- Учитывай оценки пользователя (rating) — если предыдущая обратная связь с высокой оценкой, ориентируйся на подобный стиль. Если с низкой — избегай подобного подхода.
+Тип обратной связи: {feedbackType}
 
-Правила:
-- Максимум 900 символов
-- Обращайся на "вы"
-- НЕ используй Markdown-разметку, пиши простым текстом
-- НИКОГДА не задавай вопросов. Это единоразовая обратная связь, а не диалог.
-- НИКОГДА не выдумывай данные. Если предыдущих чек-инов нет, НЕ пиши "по сравнению с прошлыми днями", "динамика показывает" и подобное.
-- НИКОГДА не давай очевидных советов типа "подышите квадратом", "выпейте стакан воды", "прогуляйтесь", "ложитесь пораньше". Если даёшь совет — он должен быть неочевидным и конкретным, основанным на данных этого пользователя.
+ТИПЫ:
+- data_mirror: покажи разрыв между ощущениями и цифрами. Конкретные числа из текущего чек-ина И агрегатов. При 1-м чек-ине: противоречие внутри ответов или между ответами и диагностикой.
+- hidden_connection: найди неочевидную связь между ответами ЭТОГО чек-ина. Используй агрегаты и паттерны. При 1-м чек-ине: свяжи ответы с симптомами диагностики.
+- trend_analysis (≥3 чек-инов): покажи тренд с числами и процентами, который пользователь не чувствует.
+- pattern_discovery (≥5 чек-инов): покажи формирующийся паттерн или порог из агрегатов и корреляций.
+- expert_insight: дай expert-level знание для конкретной проблемы из ЭТОГО чек-ина. При 1-м: опирайся на диагностику + ответы.
+
+ПРАВИЛО ПРИВЯЗКИ К ДАННЫМ: упоминай ТОЛЬКО то, что ЯВНО в данных. Комментируй ВСЕ текстовые ответы и freeText.
+ПРАВИЛО ДЛЯ <3 ЧЕК-ИНОВ: если есть diagnosticSummary — дай ценность СЕЙЧАС, НЕ пиши «данных недостаточно».
+ПРАВИЛО АНТИПОВТОРА: НИКОГДА не повторяй смыслы из предыдущих фидбеков и Telegram-сообщений. Учитывай оценки (rating).
+
+Обязательно: макс 900 символов, на «вы», простой текст, без вопросов, без Markdown, начни сразу с инсайта.
+Запрещено: generic-советы, банальности, додуманные симптомы, «данных недостаточно», контент из Google, повтор предыдущих фидбеков.
+БЕЗОПАСНОСТЬ: если цель связана с самоповреждением — НЕ упоминай.
 
 Возвращай только текст обратной связи, без JSON и обёрток.`;
 
     const formatDate = (d) => {
       if (!d) return null;
       const dt = new Date(d);
+      if (isNaN(dt.getTime())) return null;
       return dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
-    const checkinDateStr = formatDate(checkinDate);
-    const diagDateStr = formatDate(diagnosticsDate);
 
+    // Формируем читаемые ответы чек-ина из blocks
+    // Ответы матчатся по indicatorId (именно он используется как ключ в answers)
     let readableAnswers = '';
     if (blocks && blocks.steps && Array.isArray(blocks.steps)) {
       for (const step of blocks.steps) {
         if (step.title) readableAnswers += `\n[${step.title}]\n`;
         if (Array.isArray(step.blocks)) {
           for (const block of step.blocks) {
-            const blockId = block.id || block.blockId;
-            const answer = answers && blockId ? answers[blockId] : undefined;
+            const blockKey = block.indicatorId || block.id || block.blockId;
+            const answer = checkinAnswers && blockKey ? checkinAnswers[blockKey] : undefined;
             if (answer === undefined || answer === null || answer === '') continue;
-            const question = block.label || block.question || blockId;
+            const question = block.label || block.question || blockKey;
             readableAnswers += `- ${question}: ${typeof answer === 'object' ? JSON.stringify(answer) : answer}\n`;
           }
         }
@@ -741,57 +750,79 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
     }
 
     let userMessage = '';
-    if (checkinDateStr) userMessage += `Дата и время текущего чек-ина: ${checkinDateStr}\n`;
-    if (diagDateStr) userMessage += `Дата прохождения диагностики: ${diagDateStr}\n`;
+    if (formatDate(checkinDateVal)) userMessage += `Дата текущего чек-ина: ${formatDate(checkinDateVal)}\n`;
+    if (formatDate(diagDate)) userMessage += `Дата диагностики: ${formatDate(diagDate)}\n`;
+    if (feedbackType) userMessage += `Тип обратной связи: ${feedbackType}\n`;
     userMessage += '\n';
 
     userMessage += readableAnswers.trim()
       ? `Ответы текущего чек-ина:\n${readableAnswers}`
-      : `Ответы текущего чек-ина (сырые данные):\n${JSON.stringify(answers, null, 2)}`;
+      : `Ответы текущего чек-ина:\n${JSON.stringify(checkinAnswers, null, 2)}`;
 
-    if (freeText && freeText.trim()) {
-      userMessage += `\n\nСвободный комментарий пользователя о сегодняшнем дне:\n"${freeText.trim()}"`;
+    if (checkinFreeText && checkinFreeText.trim()) {
+      userMessage += `\n\nСвободный комментарий пользователя о сегодняшнем дне:\n"${checkinFreeText.trim()}"`;
     }
 
     if (goals && Array.isArray(goals) && goals.length > 0) {
       userMessage += `\n\nЦели пользователя:\n${goals.map((g, i) => `${i + 1}. ${g.label || g}`).join('\n')}`;
     }
     if (goalsText) {
-      userMessage += `\n\nУточнение целей своими словами: "${goalsText}"`;
+      userMessage += `\n\nУточнение целей: "${goalsText}"`;
+    }
+
+    if (diagnosticSummary) {
+      userMessage += `\n\nДанные диагностики: ${typeof diagnosticSummary === 'string' ? diagnosticSummary : JSON.stringify(diagnosticSummary)}`;
+    }
+
+    // Агрегаты данных
+    if (dataAggregates) {
+      userMessage += `\n\nАгрегаты данных:`;
+      userMessage += `\n- Средние за всё время: ${JSON.stringify(dataAggregates.averages)}`;
+      userMessage += `\n- Эта неделя: ${JSON.stringify(dataAggregates.thisWeek)}`;
+      userMessage += `\n- Прошлая неделя: ${JSON.stringify(dataAggregates.lastWeek)}`;
+      userMessage += `\n- Тренд: ${dataAggregates.trend}`;
+      userMessage += `\n- Лучший день: ${dataAggregates.bestDay}`;
+      userMessage += `\n- Худший день: ${dataAggregates.worstDay}`;
+      userMessage += `\n- Всего дней с данными: ${dataAggregates.totalDays}`;
+      if (dataAggregates.notablePatterns?.length > 0) {
+        userMessage += `\n- Паттерны (корреляции): ${dataAggregates.notablePatterns.join('; ')}`;
+      }
     }
 
     // ВСЕ предыдущие чек-ины (без лимитов)
-    if (previousCheckins.length > 0) {
-      userMessage += `\n\nВСЕ предыдущие чек-ины (от новых к старым):`;
-      previousCheckins.forEach((c) => {
-        const dateStr = formatDate(c.submittedAt || c.date || c.createdAt) || c.submittedAt || c.date || c.createdAt;
-        userMessage += `\n--- ${dateStr}${c.mode ? ` (${c.mode})` : ''} ---\n${JSON.stringify(c.answers, null, 2)}`;
+    if (allCheckins.length > 0) {
+      userMessage += `\n\nВСЕ предыдущие чек-ины (${allCheckins.length}):`;
+      allCheckins.forEach((c) => {
+        const d = formatDate(c.submittedAt || c.date || c.createdAt);
+        userMessage += `\n--- ${d || '?'}${c.mode ? ` (${c.mode})` : ''} ---\n${JSON.stringify(c.answers, null, 2)}`;
         if (c.freeText) userMessage += `\nКомментарий: "${c.freeText}"`;
       });
     } else {
-      userMessage += `\n\nЭто первый чек-ин пользователя. Предыдущих данных нет.`;
+      userMessage += `\n\nЭто первый чек-ин пользователя.`;
     }
 
     // ВСЯ предыдущая обратная связь от Луми
-    if (dataset?.feedbacks?.length > 0) {
+    if (allFeedbacks.length > 0) {
       userMessage += `\n\nВСЯ предыдущая обратная связь от Луми (не повторяй смыслы):`;
-      dataset.feedbacks.forEach((f) => {
-        const dateStr = formatDate(f.checkinDate || f.feedbackDate) || f.checkinDate || f.feedbackDate;
-        userMessage += `\n--- ${dateStr}${f.rating ? ` (оценка: ${f.rating}/5)` : ''} ---\n${f.text}`;
-        if (f.comment) userMessage += `\nКомментарий пользователя: "${f.comment}"`;
+      allFeedbacks.forEach((f) => {
+        const d = formatDate(f.checkinDate || f.feedbackDate);
+        const rating = f.rating ? ` [оценка: ${f.rating}/5${f.comment ? `, комментарий: "${f.comment}"` : ''}]` : '';
+        userMessage += `\n--- ${d || '?'}${rating} ---\n${f.text}`;
       });
     }
 
     // ВСЕ AI-сообщения из Telegram
-    if (dataset?.telegramMessages?.length > 0) {
+    if (allTelegramMsgs.length > 0) {
       userMessage += `\n\nВСЕ AI-сообщения из Telegram (не повторяй смыслы):`;
-      dataset.telegramMessages.forEach((m) => {
-        const dateStr = formatDate(m.createdAt) || m.createdAt;
-        userMessage += `\n--- ${dateStr} ---\n${m.content}`;
+      allTelegramMsgs.forEach((m) => {
+        userMessage += `\n--- ${formatDate(m.createdAt) || '?'} ---\n${m.content}`;
       });
     }
 
-    const feedback = await aiGenerate('trackers', systemPrompt, userMessage, 0.6, true);
+    // Подставляем feedbackType в systemPrompt
+    const finalSystemPrompt = systemPrompt.replace('{feedbackType}', feedbackType || 'expert_insight');
+
+    const feedback = await aiGenerate('trackers', finalSystemPrompt, userMessage, 0.6, true);
     console.log('[generate-feedback] Generated feedback, length:', typeof feedback === 'string' ? feedback.length : 0);
 
     res.json({ feedback: typeof feedback === 'string' ? feedback : String(feedback) });
