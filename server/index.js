@@ -847,11 +847,10 @@ app.post('/api/tracker/generate-reminder', async (req, res) => {
 
 ВЕРНИ СТРОГО JSON:
 {
-  "text": "Текст сообщения (300-500 символов)",
-  "buttonText": "Короткий текст кнопки (2-5 слов, без стрелок, приглашение заполнить заметку)"
+  "text": "Текст сообщения (300-500 символов)"
 }
 
-Для buttonText: придумай короткую, живую фразу-приглашение, которая органично продолжает тему сообщения и цели пользователя. Например: «Отметить сейчас», «Проверить себя», «Записать момент», «Поймать настроение», «Добавить заметку». Если hasDraft=true — что-то вроде «Продолжить», «Добавить», «Завершить». Без стрелок и знаков пунктуации в конце.
+ВАЖНО: поле buttonText больше НЕ нужно — кнопки генерируются автоматически на бэкенде.
 
 ДВА РЕЖИМА ЦЕННОСТИ:
 1. Зеркало — покажи человеку то, что он сам о себе не замечает: паттерн, расхождение, прогресс, слепое пятно в данных.
@@ -883,8 +882,8 @@ app.post('/api/tracker/generate-reminder', async (req, res) => {
 - Начни сразу с персонального наблюдения или с сути — без приветствия
 - Где есть данные — называй конкретные числа, дни, показатели
 - Для типов precision_insight и resource_discovery — привязывай к целям и текущему состоянию пользователя по данным
-- В конце — открытый вопрос или мягкая связка с наблюдением (не давление)
 - Тон: умный аналитик + терапевт, который нашёл что-то важное для вас лично
+- ПОСЛЕДНЕЕ ПРЕДЛОЖЕНИЕ (обязательно, кроме draft_nudge): сформулируй естественный мостик к заметке. НЕ спрашивай напрямую «сколько у вас времени?» — это звучит как вопрос. Вместо этого — мягкая связка, которая намекает на действие. Варианты тона: «Отметьте сегодняшний день — даже минута даст точку отсчёта.», «Если есть пара минут — посмотрим, что изменилось.», «Пара отметок сегодня закроет этот пробел в картине.». Под сообщением появятся три кнопки: «1 мин», «5 мин», «больше» — заключительная фраза должна органично к ним подводить, не повторяя их текст.
 
 Запрещено:
 - Generic-советы: «подышите квадратом», «выпейте воды», «5-4-3-2-1»
@@ -987,19 +986,17 @@ ${(() => {
     const result = await aiGenerate('gemini', systemPrompt, userMessage, 0.7, false);
     console.log('✅ [TRACKER] generate-reminder success:', JSON.stringify(result).slice(0, 200));
 
-    let text, buttonText;
+    let text;
     try {
       const parsed = typeof result === 'string' ? JSON.parse(result) : result;
       text = parsed.text;
-      buttonText = parsed.buttonText ?? null;
     } catch (parseErr) {
       console.error('❌ [TRACKER] generate-reminder JSON parse failed, fallback to raw text');
       text = typeof result === 'string' ? result : JSON.stringify(result);
-      buttonText = null;
     }
 
-    console.log('📤 [TRACKER] generate-reminder → client: text:', String(text).slice(0, 150), '| buttonText:', buttonText);
-    res.json({ text, buttonText });
+    console.log('📤 [TRACKER] generate-reminder → client: text:', String(text).slice(0, 150));
+    res.json({ text });
   } catch (error) {
     console.error('❌ [TRACKER] generate-reminder failed:', {
       message: error.message,
