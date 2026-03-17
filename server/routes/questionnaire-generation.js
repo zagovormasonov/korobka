@@ -657,6 +657,8 @@ router.post('/transcribe', upload.single('audio'), async (req, res) => {
     formData.append('model', 'whisper-1');
     formData.append('language', 'ru');
 
+    console.log('[Transcribe] forwarding to OpenAI, size:', req.file.size, 'filename:', req.file.originalname || 'audio.webm');
+
     const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
       headers: { 
         ...formData.getHeaders(), 
@@ -667,7 +669,7 @@ router.post('/transcribe', upload.single('audio'), async (req, res) => {
     console.log('✅ [QUESTIONNAIRE] Транскрибация успешна');
     res.json({ success: true, text: response.data.text });
   } catch (error) {
-    console.error('❌ [QUESTIONNAIRE] Ошибка transcribe:', error?.message || error, error?.response?.data || '');
+    console.error('transcribe error:', error.message, JSON.stringify(error.response?.data || {}));
     res.status(500).json({ success: false, error: error.message });
   } finally {
     if (req.file && fs.existsSync(req.file.path)) {
