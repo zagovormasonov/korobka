@@ -667,7 +667,7 @@ router.post('/transcribe', upload.single('audio'), async (req, res) => {
     console.log('✅ [QUESTIONNAIRE] Транскрибация успешна');
     res.json({ success: true, text: response.data.text });
   } catch (error) {
-    console.error('❌ [QUESTIONNAIRE] Ошибка transcribe:', error.response?.data || error.message);
+    console.error('❌ [QUESTIONNAIRE] Ошибка transcribe:', error?.message || error, error?.response?.data || '');
     res.status(500).json({ success: false, error: error.message });
   } finally {
     if (req.file && fs.existsSync(req.file.path)) {
