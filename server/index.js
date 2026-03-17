@@ -98,6 +98,7 @@ import generateVariantsRoutes from './routes/generate-variants.js';
 import symptomsRoutes from './routes/symptoms.js';
 import renderDeployRoutes from './routes/render-deploy.js';
 import clientErrorsRoutes from './routes/client-errors.js';
+import situationRoutes from './routes/situation.js';
 
 // Получаем путь к корневой директории проекта
 const __filename = fileURLToPath(import.meta.url);
@@ -277,6 +278,7 @@ app.use('/api/cms', cmsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api', questionnaireGenerationRoutes);
 app.use('/api/errors', clientErrorsRoutes);
+app.use('/api/situation', situationRoutes);
 
 // --- Helper: вызов Gemini API с указанной моделью и температурой ---
 async function aiGenerate(modelType, systemPrompt, userMessage, temperature = 0.5, rawText = false) {
