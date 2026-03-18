@@ -5,19 +5,30 @@ const router = express.Router();
 const GEMINI_MODEL = 'gemini-3.1-flash-lite-preview';
 
 function parseJsonFromAI(raw) {
-  let cleaned = raw.trim();
-  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) cleaned = fenceMatch[1].trim();
-  const firstBrace = cleaned.indexOf('{');
-  const firstBracket = cleaned.indexOf('[');
-  let start = -1;
+  let text = raw.trim();
+
+  // Снимаем markdown-fence, если есть
+  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) text = fenceMatch[1].trim();
+
+  // Определяем, что стоит раньше: { или [
+  const firstBrace = text.indexOf('{');
+  const firstBracket = text.indexOf('[');
+  let start, end;
+
   if (firstBracket >= 0 && (firstBrace < 0 || firstBracket < firstBrace)) {
     start = firstBracket;
+    end = text.lastIndexOf(']');
   } else if (firstBrace >= 0) {
     start = firstBrace;
+    end = text.lastIndexOf('}');
+  } else {
+    throw new Error('No JSON object found in response');
   }
-  if (start > 0) cleaned = cleaned.slice(start);
-  return JSON.parse(cleaned);
+
+  if (end === -1 || end <= start) throw new Error('No JSON object found in response');
+
+  return JSON.parse(text.slice(start, end + 1));
 }
 
 async function callGemini(systemPrompt, userMessage, temperature = 0.5) {
