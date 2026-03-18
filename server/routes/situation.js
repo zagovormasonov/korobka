@@ -31,24 +31,36 @@ function parseJsonFromAI(raw) {
   return JSON.parse(text.slice(start, end + 1));
 }
 
-function ensureCustomOptionAfterMultiChoice(exercises) {
-  let blockCounter = 0;
+function postProcessExerciseBlocks(exercises) {
+  let autoId = 0;
   for (const ex of exercises) {
     for (const step of ex.steps || []) {
       const blocks = step.blocks || [];
       const patched = [];
       for (let i = 0; i < blocks.length; i++) {
-        patched.push(blocks[i]);
-        if (blocks[i].type === 'multi_choice') {
+        const block = blocks[i];
+        const prev = patched[patched.length - 1];
+
+        // Убираем ошибочный «Свой вариант» после text_input (должен быть только после выбора)
+        if (block.type === 'text_input' && /вариант/i.test(block.label || '')) {
+          if (!prev || (prev.type !== 'multi_choice' && prev.type !== 'single_choice')) {
+            continue;
+          }
+        }
+
+        patched.push(block);
+
+        // Добавляем «Свой вариант» после multi_choice, если его нет
+        if (block.type === 'multi_choice') {
           const next = blocks[i + 1];
           const hasCustom = next && next.type === 'text_input' && /вариант/i.test(next.label || '');
           if (!hasCustom) {
-            blockCounter++;
+            autoId++;
             patched.push({
-              id: `block-auto-${blockCounter}`,
+              id: `block-auto-${autoId}`,
               type: 'text_input',
               label: 'Свой вариант',
-              placeholder: 'Например: напишите свой вариант, если нужного нет в списке',
+              placeholder: 'Напишите свой вариант, если нужного нет в списке',
             });
           }
         }
@@ -143,7 +155,7 @@ router.post('/generate-goals', async (req, res) => {
 
     const userMessage = JSON.stringify({ description, dataset });
 
-    const raw = await callGemini(systemPrompt, userMessage, 0.5);
+    const raw = await callGemini(systemPrompt, userMessage, 0.4);
     const parsed = parseJsonFromAI(raw);
     const goals = Array.isArray(parsed.goals) ? parsed.goals : [];
 
@@ -172,7 +184,7 @@ router.post('/generate-short-title', async (req, res) => {
 
     const userMessage = JSON.stringify({ description });
 
-    const raw = await callGemini(systemPrompt, userMessage, 0.3);
+    const raw = await callGemini(systemPrompt, userMessage, 0.1);
     const parsed = parseJsonFromAI(raw);
     const shortTitle = parsed.shortTitle || '';
 
@@ -210,7 +222,7 @@ router.post('/parse-goals-text', async (req, res) => {
 
     const userMessage = JSON.stringify({ goalsText, description });
 
-    const raw = await callGemini(systemPrompt, userMessage, 0.3);
+    const raw = await callGemini(systemPrompt, userMessage, 0.1);
     const parsed = parseJsonFromAI(raw);
     const goals = Array.isArray(parsed.goals) ? parsed.goals : [];
 
@@ -260,6 +272,10 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
    Если событие необратимо (смерть, потеря, разрыв) — используй навыки принятия,
    проживания горя, анализа цепочки, а НЕ навыки предотвращения или планирования
    действий с тем, чего больше нет.
+   ЭТО ПРАВИЛО РАСПРОСТРАНЯЕТСЯ НА ВСЕ ЧАСТИ УПРАЖНЕНИЯ: заголовки, описания,
+   вопросы, варианты ответов И ПЛЕЙСХОЛДЕРЫ. Даже в упражнении «Выводы для будущего»
+   — если питомец умер, нельзя писать «поставлю напоминание покормить». Проверяй
+   КАЖДЫЙ текст на соответствие реальности ситуации.
 
 3. КОНТЕКСТ ПОЛЬЗОВАТЕЛЯ: пользователь выполняет упражнения с телефона или компьютера,
    скорее всего находясь дома. Он НЕ может прямо сейчас:
@@ -276,6 +292,9 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
 6. ПЛЕЙСХОЛДЕРЫ: для КАЖДОГО блока text_input — конкретный пример ответа в placeholder.
    НЕ пиши "Введите ваш ответ" или "Опишите ситуацию". Пиши КОНКРЕТНЫЙ пример:
    "Например: Вчера на совещании коллега перебил меня, и я почувствовал злость и бессилие"
+   ВАЖНО: плейсхолдеры ОБЯЗАНЫ учитывать контекст ситуации. Если ситуация про смерть
+   питомца — плейсхолдер НЕ может содержать «покормить», «погулять», «позвонить ему».
+   Перед записью плейсхолдера проверь: не противоречит ли пример фактам ситуации?
 
 7. ПОЛЕ detailedHint: для КАЖДОГО шага добавь поле detailedHint — подробное объяснение
    навыка/техники из dbtContext (блок «Механизм и нюансы»). Это показывается пользователю
@@ -474,9 +493,9 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
 
     console.log('📝 [SITUATION] generate-exercises-for-goal userMessage len:', userMessage.length);
 
-    const raw = await callGemini(systemPrompt, userMessage, 0.5);
+    const raw = await callGemini(systemPrompt, userMessage, 0.4);
     const parsed = parseJsonFromAI(raw);
-    const exercises = ensureCustomOptionAfterMultiChoice(
+    const exercises = postProcessExerciseBlocks(
       Array.isArray(parsed.exercises) ? parsed.exercises : []
     );
 
@@ -544,7 +563,7 @@ E) «ВОПРОС-ПРОВОКАЦИЯ» — задай вопрос, котор
 
     const userMessage = JSON.stringify({ situationDescription, exerciseTitle, exerciseTherapyType, goalLabel, answers, steps, dataset, exerciseHistory, situationHistory });
 
-    const raw = await callGemini(systemPrompt, userMessage, 0.6);
+    const raw = await callGemini(systemPrompt, userMessage, 0.7);
     const parsed = parseJsonFromAI(raw);
     const feedback = parsed.feedback || '';
 
