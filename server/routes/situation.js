@@ -116,28 +116,98 @@ router.post('/generate-goals', async (req, res) => {
   }
 });
 
-// ── POST /api/situation/generate-exercises ──
-router.post('/generate-exercises', async (req, res) => {
+// ── POST /api/situation/generate-short-title ──
+router.post('/generate-short-title', async (req, res) => {
   try {
-    const { description, goals, goalsText, dataset, dbtContext } = req.body;
+    const { description } = req.body;
     if (!description) {
       return res.status(400).json({ error: 'description is required' });
     }
-    if (!goals || !Array.isArray(goals) || goals.length === 0) {
-      return res.status(400).json({ error: 'goals array is required' });
+
+    console.log('📥 [SITUATION] generate-short-title, descLen:', description.length);
+
+    const systemPrompt = `Пользователь описал жизненную ситуацию. Сформулируй краткое название (до 50 символов).
+Название должно точно отражать суть, быть нейтральным и без оценки.
+НЕ используй кавычки, восклицательные знаки или многоточия.
+Верни СТРОГО JSON: { "shortTitle": "..." }`;
+
+    const userMessage = JSON.stringify({ description });
+
+    const raw = await callGemini(systemPrompt, userMessage, 0.3);
+    const parsed = parseJsonFromAI(raw);
+    const shortTitle = parsed.shortTitle || '';
+
+    console.log('✅ [SITUATION] generate-short-title success:', shortTitle);
+    res.json({ shortTitle });
+  } catch (error) {
+    console.error('❌ [SITUATION] generate-short-title failed:', error.message);
+    res.status(500).json({ error: 'Failed to generate short title', details: error.message });
+  }
+});
+
+// ── POST /api/situation/parse-goals-text ──
+router.post('/parse-goals-text', async (req, res) => {
+  try {
+    const { goalsText, description } = req.body;
+    if (!goalsText) {
+      return res.status(400).json({ error: 'goalsText is required' });
     }
 
-    console.log('📥 [SITUATION] generate-exercises, goals:', goals.length, ', hasDbtContext:', !!dbtContext, ', dbtLen:', dbtContext?.length || 0);
+    console.log('📥 [SITUATION] parse-goals-text, goalsTextLen:', goalsText.length);
+
+    const systemPrompt = `Пользователь описал свои цели свободным текстом. Разбей текст на ОТДЕЛЬНЫЕ цели.
+
+Правила:
+1. Каждая ОТДЕЛЬНАЯ цель = отдельный элемент массива.
+2. Если в тексте одна цель — верни массив из 1 элемента.
+3. Если несколько целей (через "и", "а также", "ещё хочу", перечисление) — раздели.
+4. Каждая цель в ответе должна быть чёткой, короткой (до 60 символов) и позитивной
+   (чего достичь, а не чего избежать). Если пользователь уже написал кратко и ясно —
+   оставь как есть. Если длинно, размыто или негативно — переформулируй.
+5. id: формат "custom-<slug>" (латиница, kebab-case).
+6. Учитывай описание ситуации для контекста — цели должны быть релевантны.
+
+Верни СТРОГО JSON: { "goals": [{ "id": "...", "label": "..." }] }`;
+
+    const userMessage = JSON.stringify({ goalsText, description });
+
+    const raw = await callGemini(systemPrompt, userMessage, 0.3);
+    const parsed = parseJsonFromAI(raw);
+    const goals = Array.isArray(parsed.goals) ? parsed.goals : [];
+
+    console.log('✅ [SITUATION] parse-goals-text success:', goals.length, 'goals');
+    res.json({ goals });
+  } catch (error) {
+    console.error('❌ [SITUATION] parse-goals-text failed:', error.message);
+    res.status(500).json({ error: 'Failed to parse goals text', details: error.message });
+  }
+});
+
+// ── POST /api/situation/generate-exercises-for-goal ──
+router.post('/generate-exercises-for-goal', async (req, res) => {
+  try {
+    const { description, goal, otherGoals, dataset, dbtContext } = req.body;
+    if (!description) {
+      return res.status(400).json({ error: 'description is required' });
+    }
+    if (!goal) {
+      return res.status(400).json({ error: 'goal is required' });
+    }
+
+    console.log('📥 [SITUATION] generate-exercises-for-goal, goal:', goal.id, ', hasDbtContext:', !!dbtContext, ', dbtLen:', dbtContext?.length || 0);
 
     const systemPrompt = `Ты — эксперт-практик в доказательных терапиях. У тебя есть контекст из справочника
 по DBT (навыки осознанности, межличностной эффективности, эмоциональной регуляции,
 стрессоустойчивости) — он передан в поле dbtContext.
 
-Пользователь описал ситуацию и выбрал цели. Подбери для каждой цели РОВНО 3 практических
-упражнения из предоставленного контекста с РАЗНЫМ временем на выполнение:
+Пользователь описал ситуацию. Тебе передана ОДНА КОНКРЕТНАЯ цель.
+Подбери для неё РОВНО 3 практических упражнения с РАЗНЫМ временем:
 - короткое (~3 мин, 2-3 шага)
 - среднее (~8 мин, 3-5 шагов)
 - длинное (~20 мин, 5-15 шагов)
+
+Поле otherGoals содержит остальные цели пользователя — НЕ генерируй для них упражнения,
+но используй для контекста: избегай дублирования навыков/техник с упражнениями других целей.
 
 === КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА ===
 
@@ -152,32 +222,32 @@ router.post('/generate-exercises', async (req, res) => {
    проживания горя, анализа цепочки, а НЕ навыки предотвращения или планирования
    действий с тем, чего больше нет.
 
-4. КОНТЕКСТ ПОЛЬЗОВАТЕЛЯ: пользователь выполняет упражнения с телефона или компьютера,
+3. КОНТЕКСТ ПОЛЬЗОВАТЕЛЯ: пользователь выполняет упражнения с телефона или компьютера,
    скорее всего находясь дома. Он НЕ может прямо сейчас:
    - пойти к людям, выйти на улицу, найти группу
    - применить навык в реальной ситуации с другим человеком
    - выполнить физическое действие, требующее оборудования
 
-5. АДАПТАЦИЯ НАВЫКОВ: адаптируй упражнения как ПОДГОТОВКУ к применению навыка.
+4. АДАПТАЦИЯ НАВЫКОВ: адаптируй упражнения как ПОДГОТОВКУ к применению навыка.
    Вместо прямого действия — рефлексия, анализ прошлого опыта, планирование будущего.
 
-6. ОТ 3 ДО 7 БЛОКОВ НА КАЖДЫЙ ШАГ. Это критически важно: минимум 3 блока, максимум 7.
+5. ОТ 3 ДО 7 БЛОКОВ НА КАЖДЫЙ ШАГ. Это критически важно: минимум 3 блока, максимум 7.
    Разные шаги должны иметь разное количество блоков (не везде одинаково).
 
-7. ПЛЕЙСХОЛДЕРЫ: для КАЖДОГО блока text_input — конкретный пример ответа в placeholder.
+6. ПЛЕЙСХОЛДЕРЫ: для КАЖДОГО блока text_input — конкретный пример ответа в placeholder.
    НЕ пиши "Введите ваш ответ" или "Опишите ситуацию". Пиши КОНКРЕТНЫЙ пример:
    "Например: Вчера на совещании коллега перебил меня, и я почувствовал злость и бессилие"
 
-8. ПОЛЕ detailedHint: для КАЖДОГО шага добавь поле detailedHint — подробное объяснение
+7. ПОЛЕ detailedHint: для КАЖДОГО шага добавь поле detailedHint — подробное объяснение
    навыка/техники из dbtContext (блок «Механизм и нюансы»). Это показывается пользователю
    по кнопке «Подробнее». Длина: 400-500 символов (это важно, не короче!).
 
-9. Допустимые значения therapyType: "DBT"
+8. Допустимые значения therapyType: "DBT"
 
-10. ID упражнений: формат "ex-<timestamp>" (13 цифр), каждый уникальный.
-    ID блоков: формат "block-<порядковый номер>" внутри упражнения (сквозная нумерация).
+9. ID упражнений: формат "ex-<timestamp>" (13 цифр), каждый уникальный.
+   ID блоков: формат "block-<порядковый номер>" внутри упражнения (сквозная нумерация).
 
-11. «СВОЙ ВАРИАНТ» — TEXT_INPUT ПОСЛЕ БЛОКОВ ВЫБОРА:
+10. «СВОЙ ВАРИАНТ» — TEXT_INPUT ПОСЛЕ БЛОКОВ ВЫБОРА:
     - После КАЖДОГО блока multi_choice — ОБЯЗАТЕЛЬНО добавляй text_input с label "Свой вариант"
       и конкретным примером в placeholder.
     - После КАЖДОГО блока single_choice — добавляй text_input с label "Свой вариант",
@@ -187,12 +257,7 @@ router.post('/generate-exercises', async (req, res) => {
     Текстовое поле (text_input) — это AudioTextarea с микрофоном Whisper.
     Пользователь может как набрать текст, так и надиктовать голосом.
 
-12. shortDescription упражнений: НЕ ставь точку в конце.
-
-13. ПОЛЬЗОВАТЕЛЬСКИЕ ЦЕЛИ (goalsText): если в поле goalsText указаны цели пользователя
-    своими словами, они ДОЛЖНЫ быть включены в goalGroups как отдельные группы
-    с isCustom: true. Переформулируй их в чёткие цели и сгенерируй для них
-    упражнения так же, как для стандартных целей.
+11. shortDescription упражнений: НЕ ставь точку в конце.
 
 === ТИПЫ БЛОКОВ ===
 
@@ -333,51 +398,44 @@ router.post('/generate-exercises', async (req, res) => {
 
 === ФОРМАТ ОТВЕТА ===
 
-Верни СТРОГО JSON по структуре:
+Верни СТРОГО JSON:
 {
-  "shortTitle": "краткое название ситуации (до 50 символов)",
-  "goalGroups": [
+  "exercises": [
     {
-      "goalId": "id цели",
-      "goalLabel": "текст цели",
-      "isCustom": false,
-      "exercises": [
+      "id": "ex-<13 цифр timestamp>",
+      "title": "название упражнения",
+      "shortDescription": "краткое описание (до 120 символов, БЕЗ точки в конце)",
+      "therapyType": "DBT",
+      "estimatedMinutes": 3,
+      "totalSteps": 2,
+      "steps": [
         {
-          "id": "ex-<13 цифр timestamp>",
-          "title": "название упражнения",
-          "shortDescription": "краткое описание (до 120 символов)",
-          "therapyType": "DBT",
-          "estimatedMinutes": 3,
-          "totalSteps": 2,
-          "steps": [
-            {
-              "stepNumber": 1,
-              "title": "название шага",
-              "description": "описание шага",
-              "detailedHint": "подробное объяснение навыка/техники (400-500 символов, из dbtContext)",
-              "blocks": [ { "id": "block-1", "type": "...", ... } ]
-            }
-          ]
-        },
-        { "estimatedMinutes": 8, ... },
-        { "estimatedMinutes": 20, ... }
+          "stepNumber": 1,
+          "title": "название шага",
+          "description": "описание шага",
+          "detailedHint": "подробное объяснение навыка/техники (400-500 символов, из dbtContext)",
+          "blocks": [ { "id": "block-1", "type": "...", ... } ]
+        }
       ]
-    }
+    },
+    { "estimatedMinutes": 8, "...": "..." },
+    { "estimatedMinutes": 20, "...": "..." }
   ]
 }`;
 
-    const userMessage = JSON.stringify({ description, goals, goalsText, dataset })
+    const userMessage = JSON.stringify({ description, goal, otherGoals, dataset })
       + (dbtContext ? '\n\n--- DBT CONTEXT ---\n' + dbtContext : '');
 
-    console.log('📝 [SITUATION] generate-exercises userMessage len:', userMessage.length);
+    console.log('📝 [SITUATION] generate-exercises-for-goal userMessage len:', userMessage.length);
 
     const raw = await callGemini(systemPrompt, userMessage, 0.5);
     const parsed = parseJsonFromAI(raw);
+    const exercises = Array.isArray(parsed.exercises) ? parsed.exercises : [];
 
-    console.log('✅ [SITUATION] generate-exercises success, goalGroups:', parsed.goalGroups?.length ?? 0);
-    res.json({ shortTitle: parsed.shortTitle || '', goalGroups: parsed.goalGroups || [] });
+    console.log('✅ [SITUATION] generate-exercises-for-goal success, exercises:', exercises.length);
+    res.json({ exercises });
   } catch (error) {
-    console.error('❌ [SITUATION] generate-exercises failed:', error.message);
+    console.error('❌ [SITUATION] generate-exercises-for-goal failed:', error.message);
     res.status(500).json({ error: 'Failed to generate exercises', details: error.message });
   }
 });
