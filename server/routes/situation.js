@@ -31,6 +31,34 @@ function parseJsonFromAI(raw) {
   return JSON.parse(text.slice(start, end + 1));
 }
 
+function ensureCustomOptionAfterMultiChoice(exercises) {
+  let blockCounter = 0;
+  for (const ex of exercises) {
+    for (const step of ex.steps || []) {
+      const blocks = step.blocks || [];
+      const patched = [];
+      for (let i = 0; i < blocks.length; i++) {
+        patched.push(blocks[i]);
+        if (blocks[i].type === 'multi_choice') {
+          const next = blocks[i + 1];
+          const hasCustom = next && next.type === 'text_input' && /вариант/i.test(next.label || '');
+          if (!hasCustom) {
+            blockCounter++;
+            patched.push({
+              id: `block-auto-${blockCounter}`,
+              type: 'text_input',
+              label: 'Свой вариант',
+              placeholder: 'Например: напишите свой вариант, если нужного нет в списке',
+            });
+          }
+        }
+      }
+      step.blocks = patched;
+    }
+  }
+  return exercises;
+}
+
 async function callGemini(systemPrompt, userMessage, temperature = 0.5) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY не установлен');
@@ -448,7 +476,9 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
 
     const raw = await callGemini(systemPrompt, userMessage, 0.5);
     const parsed = parseJsonFromAI(raw);
-    const exercises = Array.isArray(parsed.exercises) ? parsed.exercises : [];
+    const exercises = ensureCustomOptionAfterMultiChoice(
+      Array.isArray(parsed.exercises) ? parsed.exercises : []
+    );
 
     console.log('✅ [SITUATION] generate-exercises-for-goal success, exercises:', exercises.length);
     res.json({ exercises });
