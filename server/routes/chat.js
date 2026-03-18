@@ -167,8 +167,10 @@ router.post('/image', upload.single('image'), async (req, res) => {
     });
 
     const requestBody = {
-      contents: contents
-      // Убрали maxOutputTokens - используем максимальные значения API по умолчанию
+      contents: contents,
+      generationConfig: {
+        responseModalities: ['IMAGE', 'TEXT']
+      }
     };
 
     console.log(`🖼️ [${requestId}] Генерация изображения:`, {
