@@ -270,11 +270,18 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
 
 11. shortDescription упражнений: НЕ ставь точку в конце.
 
+12. SINGLE_CHOICE vs MULTI_CHOICE — правило выбора типа:
+    Используй single_choice ТОЛЬКО когда варианты ВЗАИМОИСКЛЮЧАЮЩИЕ (можно выбрать
+    строго один): «Какой уровень интенсивности?», «Что вы выберете?», «Какой формат?».
+    Используй multi_choice когда пользователь может отметить НЕСКОЛЬКО вариантов
+    одновременно: части тела, эмоции, симптомы, причины, способы, ресурсы, люди.
+    Правило-подсказка: если в жизни ответом может быть «и то, и то» — это multi_choice.
+
 === ТИПЫ БЛОКОВ ===
 
 - text_input: { label, placeholder } — текстовое поле. ОБЯЗАТЕЛЬНО с конкретным примером в placeholder
-- single_choice: { label, options[] } — один вариант из списка
-- multi_choice: { label, options[] } — несколько вариантов
+- single_choice: { label, options[] } — ОДИН вариант из ВЗАИМОИСКЛЮЧАЮЩИХ
+- multi_choice: { label, options[] } — несколько вариантов (тело, эмоции, симптомы и т.д.)
 - likert_scale: { label, points[] } — шкала (обычно 5 или 7 пунктов с подписями)
 - slider: { label, min, max, step, unit } — ползунок с единицами
 - number_input: { label, unit } — числовой ввод
