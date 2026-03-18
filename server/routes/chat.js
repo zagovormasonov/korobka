@@ -114,9 +114,9 @@ router.post('/image', upload.single('image'), async (req, res) => {
       uploadedFiles.push(imageFile.path);
     }
 
-    // Nano Banana Pro (по вашему уточнению): gemini-3-pro-image-preview.
+    // Nano Banana Pro: gemini-3.1-flash-image-preview (официальное название для генерации изображений).
     // Важно: API ожидает формат "models/<id>", поэтому нормализуем значение.
-    const rawModel = process.env.NANO_BANANA_PRO_MODEL || 'gemini-3-pro-image-preview';
+    const rawModel = process.env.NANO_BANANA_PRO_MODEL || 'gemini-3.1-flash-image-preview';
     const modelName = rawModel.startsWith('models/') ? rawModel : `models/${rawModel}`;
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
 
@@ -208,7 +208,19 @@ router.post('/image', upload.single('image'), async (req, res) => {
     // Ищем image inlineData в parts ответа
     const partsOut = data?.candidates?.[0]?.content?.parts || [];
     const imagePart = partsOut.find(p => p.inlineData?.mimeType?.startsWith('image/') && p.inlineData?.data);
+    const textPart = partsOut.find(p => p.text);
+
     if (!imagePart) {
+      // Если модель вернула текст вместо картинки — возвращаем текст как fallback
+      if (textPart) {
+        console.warn(`⚠️ [${requestId}] Модель вернула текст вместо изображения. Возвращаем как текстовый ответ.`);
+        return res.json({
+          success: true,
+          model: modelName,
+          response: textPart.text,
+          isTextFallback: true
+        });
+      }
       console.error(`❌ [${requestId}] В ответе нет изображения. Ответ:`, JSON.stringify(data)?.substring(0, 800));
       return res.status(500).json({
         success: false,
