@@ -237,7 +237,7 @@ router.post('/parse-goals-text', async (req, res) => {
 // ── POST /api/situation/generate-exercises-for-goal ──
 router.post('/generate-exercises-for-goal', async (req, res) => {
   try {
-    const { description, goal, otherGoals, dataset, dbtContext } = req.body;
+    const { description, goal, otherGoals, excludeExercises, dataset, dbtContext } = req.body;
     if (!description) {
       return res.status(400).json({ error: 'description is required' });
     }
@@ -245,7 +245,7 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
       return res.status(400).json({ error: 'goal is required' });
     }
 
-    console.log('📥 [SITUATION] generate-exercises-for-goal, goal:', goal.id, ', hasDbtContext:', !!dbtContext, ', dbtLen:', dbtContext?.length || 0);
+    console.log('📥 [SITUATION] generate-exercises-for-goal, goal:', goal.id, ', exclude:', excludeExercises?.length || 0, ', hasDbtContext:', !!dbtContext, ', dbtLen:', dbtContext?.length || 0);
 
     const systemPrompt = `Ты — эксперт-практик в доказательных терапиях. У тебя есть контекст из справочника
 по DBT (навыки осознанности, межличностной эффективности, эмоциональной регуляции,
@@ -258,7 +258,16 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
 - длинное (~20 мин, 5-15 шагов)
 
 Поле otherGoals содержит остальные цели пользователя — НЕ генерируй для них упражнения,
-но используй для контекста: избегай дублирования навыков/техник с упражнениями других целей.
+но используй для контекста.
+
+КРИТИЧНО: НЕ ДУБЛИРУЙ навыки и упражнения, которые могут быть сгенерированы для других целей.
+Для КАЖДОЙ цели выбирай УНИКАЛЬНЫЕ навыки/техники из dbtContext. Если цель про «управление
+гневом» и другая цель про «принятие ситуации» — НЕ используй «Радикальное принятие» для обеих.
+Каждый ID упражнения должен содержать уникальный timestamp (13 цифр, все разные).
+
+Если в запросе есть поле excludeExercises — это ЗАПРЕТНЫЙ СПИСОК. Ни одно из сгенерированных
+упражнений НЕ ДОЛЖНО использовать те же навыки/техники, которые перечислены в этом списке.
+Выбери ДРУГИЕ навыки из dbtContext.
 
 === КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА ===
 
@@ -488,7 +497,7 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
   ]
 }`;
 
-    const userMessage = JSON.stringify({ description, goal, otherGoals, dataset })
+    const userMessage = JSON.stringify({ description, goal, otherGoals, excludeExercises, dataset })
       + (dbtContext ? '\n\n--- DBT CONTEXT ---\n' + dbtContext : '');
 
     console.log('📝 [SITUATION] generate-exercises-for-goal userMessage len:', userMessage.length);
