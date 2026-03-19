@@ -280,6 +280,88 @@ app.use('/api/errors', clientErrorsRoutes);
 app.use('/api/situation', situationRoutes);
 app.use('/api/meditation', meditationRoutes);
 
+// --- Helper: извлечение JSON из текста с лишними символами ---
+function extractJSON(text) {
+  if (!text || typeof text !== 'string') {
+    throw new Error('extractJSON: input must be a non-empty string');
+  }
+  
+  // Удаляем markdown code blocks
+  let cleaned = text.trim();
+  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
+    cleaned = fenceMatch[1].trim();
+  }
+  
+  // Ищем первую открывающую скобку { или [
+  let startIdx = -1;
+  let braceType = null;
+  for (let i = 0; i < cleaned.length; i++) {
+    if (cleaned[i] === '{') {
+      startIdx = i;
+      braceType = '{';
+      break;
+    } else if (cleaned[i] === '[') {
+      startIdx = i;
+      braceType = '[';
+      break;
+    }
+  }
+  
+  if (startIdx === -1) {
+    throw new Error('extractJSON: no JSON object or array found');
+  }
+  
+  // Находим соответствующую закрывающую скобку с учётом вложенности и строк
+  let depth = 0;
+  let inString = false;
+  let escapeNext = false;
+  let endIdx = -1;
+  
+  for (let i = startIdx; i < cleaned.length; i++) {
+    const char = cleaned[i];
+    
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+    
+    if (char === '\\') {
+      escapeNext = true;
+      continue;
+    }
+    
+    if (char === '"' && !escapeNext) {
+      inString = !inString;
+      continue;
+    }
+    
+    if (inString) continue;
+    
+    if (char === '{' || char === '[') {
+      depth++;
+    } else if (char === '}' || char === ']') {
+      depth--;
+      if (depth === 0) {
+        endIdx = i;
+        break;
+      }
+    }
+  }
+  
+  if (endIdx === -1) {
+    throw new Error('extractJSON: unmatched brackets, JSON is incomplete');
+  }
+  
+  const jsonStr = cleaned.substring(startIdx, endIdx + 1);
+  
+  try {
+    return JSON.parse(jsonStr);
+  } catch (parseError) {
+    throw new Error(`extractJSON: JSON parse failed: ${parseError.message}`);
+  }
+}
+
 // --- Helper: вызов Gemini API с указанной моделью и температурой ---
 async function aiGenerate(modelType, systemPrompt, userMessage, temperature = 0.5, rawText = false) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -325,20 +407,10 @@ async function aiGenerate(modelType, systemPrompt, userMessage, temperature = 0.
     return text.trim();
   }
 
-  return text;
+  // ВСЕГДА используй extractJSON для Gemini, даже при responseMimeType: 'application/json'
+  return extractJSON(text);
 }
 
-function parseJsonFromAI(raw) {
-  let cleaned = raw.trim();
-  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) cleaned = fenceMatch[1].trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    console.error('❌ [TRACKER] JSON parse failed, raw:', raw.slice(0, 500));
-    throw e;
-  }
-}
 
 // --- Tracker endpoints ---
 
@@ -368,7 +440,7 @@ app.post('/api/tracker/generate-goals', async (req, res) => {
     const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
     console.log('✅ [TRACKER] generate-goals AI success:', raw.slice(0, 300));
 
-    const parsed = parseJsonFromAI(raw);
+    const parsed = extractJSON(raw);
     const goals = Array.isArray(parsed.goals) ? parsed.goals : [];
 
     console.log('📤 [TRACKER] generate-goals → client:', goals.length, 'goals');
@@ -429,7 +501,7 @@ app.post('/api/tracker/generate-indicators', async (req, res) => {
     const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
     console.log('✅ [TRACKER] generate-indicators AI success:', raw.slice(0, 300));
 
-    const parsed = parseJsonFromAI(raw);
+    const parsed = extractJSON(raw);
     const indicatorCount = parsed.indicators?.length || 0;
 
     console.log('📤 [TRACKER] generate-indicators → client:', indicatorCount, 'indicators');
@@ -656,7 +728,7 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
     const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.4);
     console.log('✅ [TRACKER] generate-blocks AI success:', raw.slice(0, 300));
 
-    const parsed = parseJsonFromAI(raw);
+    const parsed = extractJSON(raw);
     const steps = Array.isArray(parsed.steps) ? parsed.steps : [];
 
     console.log('📤 [TRACKER] generate-blocks → client:', steps.length, 'steps');

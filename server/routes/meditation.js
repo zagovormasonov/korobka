@@ -4,24 +4,85 @@ const router = express.Router();
 
 const GEMINI_MODEL = 'gemini-3.1-flash-lite-preview';
 
-function parseJsonFromAI(raw) {
-  let text = raw.trim();
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) text = fenceMatch[1].trim();
-  const firstBrace = text.indexOf('{');
-  const firstBracket = text.indexOf('[');
-  let start, end;
-  if (firstBracket >= 0 && (firstBrace < 0 || firstBracket < firstBrace)) {
-    start = firstBracket;
-    end = text.lastIndexOf(']');
-  } else if (firstBrace >= 0) {
-    start = firstBrace;
-    end = text.lastIndexOf('}');
-  } else {
-    throw new Error('No JSON object found in response');
+function extractJSON(text) {
+  if (!text || typeof text !== 'string') {
+    throw new Error('extractJSON: input must be a non-empty string');
   }
-  if (end === -1 || end <= start) throw new Error('No JSON object found in response');
-  return JSON.parse(text.slice(start, end + 1));
+  
+  // Удаляем markdown code blocks
+  let cleaned = text.trim();
+  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
+    cleaned = fenceMatch[1].trim();
+  }
+  
+  // Ищем первую открывающую скобку { или [
+  let startIdx = -1;
+  let braceType = null;
+  for (let i = 0; i < cleaned.length; i++) {
+    if (cleaned[i] === '{') {
+      startIdx = i;
+      braceType = '{';
+      break;
+    } else if (cleaned[i] === '[') {
+      startIdx = i;
+      braceType = '[';
+      break;
+    }
+  }
+  
+  if (startIdx === -1) {
+    throw new Error('extractJSON: no JSON object or array found');
+  }
+  
+  // Находим соответствующую закрывающую скобку с учётом вложенности и строк
+  let depth = 0;
+  let inString = false;
+  let escapeNext = false;
+  let endIdx = -1;
+  
+  for (let i = startIdx; i < cleaned.length; i++) {
+    const char = cleaned[i];
+    
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+    
+    if (char === '\\') {
+      escapeNext = true;
+      continue;
+    }
+    
+    if (char === '"' && !escapeNext) {
+      inString = !inString;
+      continue;
+    }
+    
+    if (inString) continue;
+    
+    if (char === '{' || char === '[') {
+      depth++;
+    } else if (char === '}' || char === ']') {
+      depth--;
+      if (depth === 0) {
+        endIdx = i;
+        break;
+      }
+    }
+  }
+  
+  if (endIdx === -1) {
+    throw new Error('extractJSON: unmatched brackets, JSON is incomplete');
+  }
+  
+  const jsonStr = cleaned.substring(startIdx, endIdx + 1);
+  
+  try {
+    return JSON.parse(jsonStr);
+  } catch (parseError) {
+    throw new Error(`extractJSON: JSON parse failed: ${parseError.message}`);
+  }
 }
 
 async function callGemini(systemPrompt, userMessage, temperature = 0.4) {
@@ -144,7 +205,7 @@ router.post('/generate-text', async (req, res) => {
     const userMessage = JSON.stringify({ dataset });
 
     const raw = await callGemini(systemPrompt, userMessage, 0.4);
-    const parsed = parseJsonFromAI(raw);
+    const parsed = extractJSON(raw);
     const text = parsed.text || '';
 
     console.log('✅ [MEDITATION] generate-text success, textLen:', text.length);

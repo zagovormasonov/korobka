@@ -4,31 +4,85 @@ const router = express.Router();
 
 const GEMINI_MODEL = 'gemini-3.1-flash-lite-preview';
 
-function parseJsonFromAI(raw) {
-  let text = raw.trim();
-
-  // Снимаем markdown-fence, если есть
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) text = fenceMatch[1].trim();
-
-  // Определяем, что стоит раньше: { или [
-  const firstBrace = text.indexOf('{');
-  const firstBracket = text.indexOf('[');
-  let start, end;
-
-  if (firstBracket >= 0 && (firstBrace < 0 || firstBracket < firstBrace)) {
-    start = firstBracket;
-    end = text.lastIndexOf(']');
-  } else if (firstBrace >= 0) {
-    start = firstBrace;
-    end = text.lastIndexOf('}');
-  } else {
-    throw new Error('No JSON object found in response');
+function extractJSON(text) {
+  if (!text || typeof text !== 'string') {
+    throw new Error('extractJSON: input must be a non-empty string');
   }
-
-  if (end === -1 || end <= start) throw new Error('No JSON object found in response');
-
-  return JSON.parse(text.slice(start, end + 1));
+  
+  // Удаляем markdown code blocks
+  let cleaned = text.trim();
+  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
+    cleaned = fenceMatch[1].trim();
+  }
+  
+  // Ищем первую открывающую скобку { или [
+  let startIdx = -1;
+  let braceType = null;
+  for (let i = 0; i < cleaned.length; i++) {
+    if (cleaned[i] === '{') {
+      startIdx = i;
+      braceType = '{';
+      break;
+    } else if (cleaned[i] === '[') {
+      startIdx = i;
+      braceType = '[';
+      break;
+    }
+  }
+  
+  if (startIdx === -1) {
+    throw new Error('extractJSON: no JSON object or array found');
+  }
+  
+  // Находим соответствующую закрывающую скобку с учётом вложенности и строк
+  let depth = 0;
+  let inString = false;
+  let escapeNext = false;
+  let endIdx = -1;
+  
+  for (let i = startIdx; i < cleaned.length; i++) {
+    const char = cleaned[i];
+    
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+    
+    if (char === '\\') {
+      escapeNext = true;
+      continue;
+    }
+    
+    if (char === '"' && !escapeNext) {
+      inString = !inString;
+      continue;
+    }
+    
+    if (inString) continue;
+    
+    if (char === '{' || char === '[') {
+      depth++;
+    } else if (char === '}' || char === ']') {
+      depth--;
+      if (depth === 0) {
+        endIdx = i;
+        break;
+      }
+    }
+  }
+  
+  if (endIdx === -1) {
+    throw new Error('extractJSON: unmatched brackets, JSON is incomplete');
+  }
+  
+  const jsonStr = cleaned.substring(startIdx, endIdx + 1);
+  
+  try {
+    return JSON.parse(jsonStr);
+  } catch (parseError) {
+    throw new Error(`extractJSON: JSON parse failed: ${parseError.message}`);
+  }
 }
 
 function postProcessExerciseBlocks(exercises) {
@@ -156,7 +210,7 @@ router.post('/generate-goals', async (req, res) => {
     const userMessage = JSON.stringify({ description, dataset });
 
     const raw = await callGemini(systemPrompt, userMessage, 0.4);
-    const parsed = parseJsonFromAI(raw);
+    const parsed = extractJSON(raw);
     const goals = Array.isArray(parsed.goals) ? parsed.goals : [];
 
     console.log('✅ [SITUATION] generate-goals success:', goals.length, 'goals');
@@ -185,7 +239,7 @@ router.post('/generate-short-title', async (req, res) => {
     const userMessage = JSON.stringify({ description });
 
     const raw = await callGemini(systemPrompt, userMessage, 0.1);
-    const parsed = parseJsonFromAI(raw);
+    const parsed = extractJSON(raw);
     const shortTitle = parsed.shortTitle || '';
 
     console.log('✅ [SITUATION] generate-short-title success:', shortTitle);
@@ -223,7 +277,7 @@ router.post('/parse-goals-text', async (req, res) => {
     const userMessage = JSON.stringify({ goalsText, description });
 
     const raw = await callGemini(systemPrompt, userMessage, 0.1);
-    const parsed = parseJsonFromAI(raw);
+    const parsed = extractJSON(raw);
     const goals = Array.isArray(parsed.goals) ? parsed.goals : [];
 
     console.log('✅ [SITUATION] parse-goals-text success:', goals.length, 'goals');
@@ -503,7 +557,7 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
     console.log('📝 [SITUATION] generate-exercises-for-goal userMessage len:', userMessage.length);
 
     const raw = await callGemini(systemPrompt, userMessage, 0.4);
-    const parsed = parseJsonFromAI(raw);
+    const parsed = extractJSON(raw);
     const exercises = postProcessExerciseBlocks(
       Array.isArray(parsed.exercises) ? parsed.exercises : []
     );
@@ -573,7 +627,7 @@ E) «ВОПРОС-ПРОВОКАЦИЯ» — задай вопрос, котор
     const userMessage = JSON.stringify({ situationDescription, exerciseTitle, exerciseTherapyType, goalLabel, answers, steps, dataset, exerciseHistory, situationHistory });
 
     const raw = await callGemini(systemPrompt, userMessage, 0.7);
-    const parsed = parseJsonFromAI(raw);
+    const parsed = extractJSON(raw);
     const feedback = parsed.feedback || '';
 
     console.log('✅ [SITUATION] generate-feedback success, len:', feedback.length);
