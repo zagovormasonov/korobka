@@ -437,22 +437,22 @@ app.post('/api/tracker/generate-goals', async (req, res) => {
     const userMessage = `Результаты диагностики пользователя:\n${JSON.stringify(diagnosticSummary, null, 2)}`;
     console.log('📝 [TRACKER] generate-goals userMessage preview:', userMessage.slice(0, 500));
 
-    const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
-    console.log('✅ [TRACKER] generate-goals AI success:', raw.slice(0, 300));
+    // aiGenerate при rawText=false уже возвращает распарсенный объект (extractJSON внутри)
+    const parsed = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
+    console.log('✅ [TRACKER] generate-goals AI success:', JSON.stringify(parsed).slice(0, 300));
 
-    const parsed = extractJSON(raw);
     const goals = Array.isArray(parsed.goals) ? parsed.goals : [];
 
     console.log('📤 [TRACKER] generate-goals → client:', goals.length, 'goals');
     res.json({ goals });
   } catch (error) {
-    console.error('❌ [TRACKER] generate-goals failed:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
-    });
-    res.status(500).json({ error: 'Failed to generate goals', details: error.message });
+    const errMsg = error?.message || String(error);
+    const extra =
+      error?.response?.status != null
+        ? ` status=${error.response.status} data=${JSON.stringify(error.response?.data || {})}`
+        : '';
+    console.error(`❌ [TRACKER] generate-goals failed: ${errMsg}${extra}`, error?.stack || '');
+    res.status(500).json({ error: 'Failed to generate goals', details: errMsg });
   }
 });
 
@@ -498,22 +498,21 @@ app.post('/api/tracker/generate-indicators', async (req, res) => {
     console.log('📥 [TRACKER] generate-indicators, goals:', goals?.length || 0, ', hasGoalsText:', !!goalsText, ', hasDiagnostic:', !!diagnosticSummary);
     console.log('📝 [TRACKER] userMessage preview:', userMessage.slice(0, 500));
 
-    const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
-    console.log('✅ [TRACKER] generate-indicators AI success:', raw.slice(0, 300));
+    const parsed = await aiGenerate('trackers', systemPrompt, userMessage, 0.5);
+    console.log('✅ [TRACKER] generate-indicators AI success:', JSON.stringify(parsed).slice(0, 300));
 
-    const parsed = extractJSON(raw);
     const indicatorCount = parsed.indicators?.length || 0;
 
     console.log('📤 [TRACKER] generate-indicators → client:', indicatorCount, 'indicators');
     res.json(parsed);
   } catch (error) {
-    console.error('❌ [TRACKER] generate-indicators failed:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
-    });
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    const extra =
+      error?.response?.status != null
+        ? ` status=${error.response.status} data=${JSON.stringify(error.response?.data || {})}`
+        : '';
+    console.error(`❌ [TRACKER] generate-indicators failed: ${errMsg}${extra}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -725,22 +724,21 @@ app.post('/api/tracker/generate-blocks', async (req, res) => {
     console.log('📥 [TRACKER] generate-blocks, indicators:', indicators.length, ', hasGoals:', !!goals, ', hasGoalsText:', !!goalsText, ', hasDiagnostic:', !!diagnosticSummary);
     console.log('📝 [TRACKER] userMessage preview:', userMessage.slice(0, 500));
 
-    const raw = await aiGenerate('trackers', systemPrompt, userMessage, 0.4);
-    console.log('✅ [TRACKER] generate-blocks AI success:', raw.slice(0, 300));
+    const parsed = await aiGenerate('trackers', systemPrompt, userMessage, 0.4);
+    console.log('✅ [TRACKER] generate-blocks AI success:', JSON.stringify(parsed).slice(0, 300));
 
-    const parsed = extractJSON(raw);
     const steps = Array.isArray(parsed.steps) ? parsed.steps : [];
 
     console.log('📤 [TRACKER] generate-blocks → client:', steps.length, 'steps');
     res.json({ steps });
   } catch (error) {
-    console.error('❌ [TRACKER] generate-blocks failed:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
-    });
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    const extra =
+      error?.response?.status != null
+        ? ` status=${error.response.status} data=${JSON.stringify(error.response?.data || {})}`
+        : '';
+    console.error(`❌ [TRACKER] generate-blocks failed: ${errMsg}${extra}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -1066,20 +1064,21 @@ ${(() => {
       const parsed = typeof result === 'string' ? JSON.parse(result) : result;
       text = parsed.text;
     } catch (parseErr) {
-      console.error('❌ [TRACKER] generate-reminder JSON parse failed, fallback to raw text');
+      const pMsg = parseErr?.message || String(parseErr);
+      console.error(`❌ [TRACKER] generate-reminder JSON parse failed: ${pMsg}`, parseErr?.stack || '');
       text = typeof result === 'string' ? result : JSON.stringify(result);
     }
 
     console.log('📤 [TRACKER] generate-reminder → client: text:', String(text).slice(0, 150));
     res.json({ text });
   } catch (error) {
-    console.error('❌ [TRACKER] generate-reminder failed:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
-    });
-    res.status(500).json({ error: 'Failed to generate reminder', details: error.message });
+    const errMsg = error?.message || String(error);
+    const extra =
+      error?.response?.status != null
+        ? ` status=${error.response.status} data=${JSON.stringify(error.response?.data || {})}`
+        : '';
+    console.error(`❌ [TRACKER] generate-reminder failed: ${errMsg}${extra}`, error?.stack || '');
+    res.status(500).json({ error: 'Failed to generate reminder', details: errMsg });
   }
 });
 
