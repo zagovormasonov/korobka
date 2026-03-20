@@ -513,11 +513,8 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
           console.warn(`⚠️ [${requestId}] Превышен лимит запросов (429) для ${modelName}`);
           console.warn(`🔄 [${requestId}] Пробуем следующую модель...`);
         } else {
-          console.error(`❌ Ошибка с ${modelName}:`, {
-            message: modelError.message,
-            status: modelError.status,
-            statusText: modelError.statusText
-          });
+          const me = modelError?.message || String(modelError);
+          console.error(`❌ [CHAT] Ошибка с ${modelName}: ${me} status=${modelError?.status || ''} statusText=${modelError?.statusText || ''}`, modelError?.stack || '');
         }
         lastError = modelError;
         // Продолжаем со следующей моделью
@@ -528,7 +525,8 @@ router.post('/message', upload.array('files', 10), async (req, res) => {
     throw lastError || new Error('Все модели Gemini недоступны');
 
   } catch (error) {
-    console.error('❌ Ошибка в чате:', error);
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [CHAT] Ошибка в чате: ${errMsg}`, error?.stack || '');
     
     // Проверяем, является ли ошибка 429 (Rate Limit)
     const isRateLimit = error.message?.includes('429') || 

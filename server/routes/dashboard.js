@@ -234,16 +234,12 @@ router.post('/create-credentials', async (req, res) => {
     }
 
     if (error) {
-      console.error('❌ [DASHBOARD] Ошибка при сохранении учетных данных:', error);
-      console.error('❌ [DASHBOARD] Детали ошибки:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
+      const errMsg = error?.message || String(error);
+      const supaMeta = ` code=${error.code || ''} details=${error.details || ''} hint=${error.hint || ''}`;
+      console.error(`❌ [DASHBOARD] Ошибка при сохранении учетных данных: ${errMsg}${supaMeta}`, error?.stack || '');
       return res.status(500).json({ 
         success: false, 
-        error: `Ошибка при сохранении данных: ${error.message}` 
+        error: `Ошибка при сохранении данных: ${errMsg}` 
       });
     }
 

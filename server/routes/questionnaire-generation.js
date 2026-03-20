@@ -3,30 +3,10 @@ import axios from 'axios';
 import multer from 'multer';
 import fs from 'fs';
 import FormData from 'form-data';
+import { extractJSON } from '../utils/extractJSON.js';
 
 const router = express.Router();
 const upload = multer({ dest: '/tmp/' });
-
-/**
- * Парсинг JSON из ответа OpenAI (может вернуть JSON в markdown-блоке)
- */
-function parseJSONFromResponse(text) {
-  let cleaned = text;
-  const jsonMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-  if (jsonMatch) {
-    cleaned = jsonMatch[1];
-  }
-
-  const firstBrace = cleaned.indexOf('{');
-  const firstBracket = cleaned.indexOf('[');
-  if (firstBracket >= 0 && (firstBrace < 0 || firstBracket < firstBrace)) {
-    cleaned = cleaned.substring(firstBracket);
-  } else if (firstBrace >= 0) {
-    cleaned = cleaned.substring(firstBrace);
-  }
-
-  return JSON.parse(cleaned);
-}
 
 /**
  * Вызов OpenAI Chat Completions API
@@ -153,7 +133,7 @@ type всегда "text". В options — 4 примера ответов, кот
     const content = await callOpenAI(systemPrompt, userMessage, 0.5);
     console.log('📥 [QUESTIONNAIRE] Ответ от OpenAI (Part 1):', content.substring(0, 500));
 
-    const questions = parseJSONFromResponse(content);
+    const questions = extractJSON(content);
 
     console.log('✅ [QUESTIONNAIRE] Сгенерировано вопросов (Part 1):', Array.isArray(questions) ? questions.length : 0);
 
@@ -194,7 +174,7 @@ type всегда "text". В options — 4 примера ответов. Ник
     const content = await callOpenAI(systemPrompt, userMessage, 0.5);
     console.log('📥 [QUESTIONNAIRE] Ответ от OpenAI (Part 2):', content.substring(0, 500));
 
-    const questions = parseJSONFromResponse(content);
+    const questions = extractJSON(content);
 
     console.log('✅ [QUESTIONNAIRE] Сгенерировано вопросов (Part 2):', Array.isArray(questions) ? questions.length : 0);
 
@@ -281,7 +261,7 @@ router.post('/generate-specialist', async (req, res) => {
 
     const userMessage = buildUserContext(req.body);
     const content = await callOpenAI(systemPrompt, userMessage, 0.5);
-    const data = parseJSONFromResponse(content);
+    const data = extractJSON(content);
     
     res.json({ success: true, data });
   } catch (error) {
@@ -361,7 +341,7 @@ router.post('/generate-diagnostic', async (req, res) => {
 
     const userMessage = `Core Hypotheses: ${JSON.stringify(req.body.coreHypotheses || [])}\n\n${buildUserContext(req.body)}`;
     const content = await callOpenAI(systemPrompt, userMessage, 0.5);
-    const data = parseJSONFromResponse(content);
+    const data = extractJSON(content);
     
     res.json({ success: true, beforeHypotheses: data.beforeHypotheses || '', afterHypotheses: data.afterHypotheses || '' });
   } catch (error) {
@@ -395,7 +375,7 @@ router.post('/generate-lumi', async (req, res) => {
 
     const userMessage = `Core Hypotheses: ${JSON.stringify(req.body.coreHypotheses || [])}\n\n${buildUserContext(req.body)}`;
     const content = await callOpenAI(systemPrompt, userMessage, 0.7);
-    const data = parseJSONFromResponse(content);
+    const data = extractJSON(content);
     
     res.json({ success: true, content: data.content });
   } catch (error) {
@@ -458,7 +438,7 @@ router.post('/generate-plan', async (req, res) => {
 
     const userMessage = `Core Hypotheses: ${JSON.stringify(req.body.coreHypotheses || [])}\n\n${buildUserContext(req.body)}`;
     const content = await callOpenAI(systemPrompt, userMessage, 0.5);
-    const data = parseJSONFromResponse(content);
+    const data = extractJSON(content);
     
     res.json({ success: true, content: data.content });
   } catch (error) {
@@ -530,7 +510,7 @@ router.post('/generate-tools', async (req, res) => {
 
     const userMessage = `Core Hypotheses: ${JSON.stringify(req.body.coreHypotheses || [])}\n\n${buildUserContext(req.body)}`;
     const content = await callOpenAI(systemPrompt, userMessage, 0.5);
-    const data = parseJSONFromResponse(content);
+    const data = extractJSON(content);
     
     res.json({ 
       success: true, 
@@ -634,7 +614,7 @@ router.post('/generate-prep', async (req, res) => {
 
     const userMessage = `Core Hypotheses: ${JSON.stringify(req.body.coreHypotheses || [])}\n\n${buildUserContext(req.body)}`;
     const content = await callOpenAI(systemPrompt, userMessage, 0.5);
-    const data = parseJSONFromResponse(content);
+    const data = extractJSON(content);
     
     res.json({ 
       success: true, 

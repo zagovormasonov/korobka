@@ -375,15 +375,12 @@ router.post('/personal-plan', async (req, res) => {
     
     console.log('✅ [PDF-HTML-PERSONAL-PLAN] PDF успешно отправлен клиенту');
   } catch (error) {
-    console.error('❌ [PDF-HTML-PERSONAL-PLAN] Критическая ошибка:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [PDF-HTML-PERSONAL-PLAN] Критическая ошибка: ${errMsg} name=${error?.name || ''}`, error?.stack || '');
     res.status(500).json({ 
       success: false, 
       error: 'Ошибка при генерации PDF',
-      details: error.message 
+      details: errMsg 
     });
   }
 });
@@ -556,15 +553,12 @@ router.post('/psychologist-pdf', async (req, res) => {
     res.send(html);
 
   } catch (error) {
-    console.error('❌ [PDF-HTML-PSYCHOLOGIST-PDF] Критическая ошибка:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [PDF-HTML-PSYCHOLOGIST-PDF] Критическая ошибка: ${errMsg} name=${error?.name || ''}`, error?.stack || '');
     res.status(500).json({ 
       success: false, 
       error: 'Ошибка при генерации PDF для психолога',
-      details: error.message 
+      details: errMsg 
     });
   }
 });

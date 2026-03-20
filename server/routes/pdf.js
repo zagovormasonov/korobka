@@ -402,17 +402,16 @@ router.post('/personal-plan', async (req, res) => {
       res.setHeader('Content-Disposition', 'attachment; filename="personal-plan.pdf"');
       res.send(pdfBuffer);
     } catch (pdfError) {
-      console.error('❌ [PDF-PERSONAL-PLAN] Ошибка генерации PDF:', pdfError);
+      const pe = pdfError?.message || String(pdfError);
+      console.error(`❌ [PDF-PERSONAL-PLAN] Ошибка генерации PDF: ${pe}`, pdfError?.stack || '');
       // Fallback: возвращаем HTML
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.send(html);
     }
   } catch (error) {
-    console.error('❌ [PDF-PERSONAL-PLAN] Критическая ошибка:', {
-      message: error.message,
-      stack: error.stack
-    });
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [PDF-PERSONAL-PLAN] Критическая ошибка: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -906,15 +905,12 @@ router.post('/psychologist-pdf', async (req, res) => {
     res.send(pdfBuffer);
 
   } catch (error) {
-    console.error('❌ [PDF-PSYCHOLOGIST-PDF] Критическая ошибка:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [PDF-PSYCHOLOGIST-PDF] Критическая ошибка: ${errMsg} name=${error?.name || ''}`, error?.stack || '');
     res.status(500).json({ 
       success: false, 
       error: 'Ошибка при генерации PDF для психолога',
-      details: error.message 
+      details: errMsg 
     });
   }
 });

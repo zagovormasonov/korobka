@@ -7,14 +7,9 @@ router.post('/client', express.json(), async (req, res) => {
   try {
     const { error, errorInfo, userAgent, isSafari, isIOS, url, timestamp } = req.body;
     
-    console.error('❌ [CLIENT-ERROR] Ошибка от клиента:', {
-      error: error?.message,
-      url,
-      userAgent,
-      isSafari,
-      isIOS,
-      timestamp
-    });
+    console.error(
+      `❌ [CLIENT-ERROR] Ошибка от клиента: msg=${error?.message || ''} url=${url || ''} safari=${!!isSafari} ios=${!!isIOS} ts=${timestamp || ''} ua=${(userAgent || '').slice(0, 120)}`
+    );
     
     // Отправляем в Telegram
     const errorObj = new Error(error?.message || 'Client error');
@@ -33,7 +28,8 @@ router.post('/client', express.json(), async (req, res) => {
     
     res.json({ success: true });
   } catch (err) {
-    console.error('❌ [CLIENT-ERROR] Ошибка при обработке клиентской ошибки:', err);
+    const errMsg = err?.message || String(err);
+    console.error(`❌ [CLIENT-ERROR] Ошибка при обработке клиентской ошибки: ${errMsg}`, err?.stack || '');
     res.status(500).json({ success: false });
   }
 });

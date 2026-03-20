@@ -280,12 +280,14 @@ async function callGeminiAI(prompt, maxTokens = null) {
     return text;
     
   } catch (error) {
-    console.error('❌ Ошибка Gemini API через SDK:', {
-      message: error.message,
-      name: error.name,
-      stack: error.stack,
-      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
-    });
+    const errMsg = error?.message || String(error);
+    let fullSnippet = '';
+    try {
+      fullSnippet = JSON.stringify(error, Object.getOwnPropertyNames(error)).slice(0, 500);
+    } catch {
+      /* ignore */
+    }
+    console.error(`❌ [AI] Gemini API через SDK failed: ${errMsg} name=${error?.name || ''} meta=${fullSnippet}`, error?.stack || '');
     
     // КРИТИЧЕСКОЕ: Отправляем уведомление в Telegram для критических ошибок
     if (error.message.includes('MAX_TOKENS') || 
@@ -471,13 +473,12 @@ ${JSON.stringify(answers)}
     
     res.json({ success: true, message, recommendedTests, cached: false });
   } catch (error) {
-    console.error('❌ Ошибка генерации сообщения маскота:', {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    });
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    const extra = error.response
+      ? ` status=${error.response.status} data=${JSON.stringify(error.response.data || {}).slice(0, 400)}`
+      : '';
+    console.error(`❌ [AI] mascot-message failed: ${errMsg}${extra}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -677,13 +678,12 @@ router.post('/mascot-message/dashboard', async (req, res) => {
     
     res.json({ success: true, message, recommendedTests, cached: false });
   } catch (error) {
-    console.error('❌ Ошибка генерации сообщения для ЛК:', {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    });
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    const extra = error.response
+      ? ` status=${error.response.status} data=${JSON.stringify(error.response.data || {}).slice(0, 400)}`
+      : '';
+    console.error(`❌ [AI] mascot-message dashboard failed: ${errMsg}${extra}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -870,11 +870,9 @@ router.post('/personal-plan', async (req, res) => {
       throw promptError;
     }
   } catch (error) {
-    console.error('❌ [PERSONAL-PLAN] Критическая ошибка:', {
-      message: error.message,
-      stack: error.stack
-    });
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [AI] personal-plan failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -1633,11 +1631,9 @@ router.post('/psychologist-pdf', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [PSYCHOLOGIST-PDF] Критическая ошибка:', {
-      message: error.message,
-      stack: error.stack
-    });
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [AI] psychologist-pdf failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 

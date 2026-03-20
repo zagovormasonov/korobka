@@ -63,7 +63,7 @@ async function handleYandexFormSubmission(data) {
     
     // Проверяем обязательные поля
     if (!name || !phone || !email) {
-      console.error('❌ [YANDEX-FORMS] Отсутствуют обязательные поля:', { name: !!name, phone: !!phone, email: !!email });
+      console.error(`❌ [YANDEX-FORMS] Отсутствуют обязательные поля: name=${!!name} phone=${!!phone} email=${!!email}`);
       return;
     }
     

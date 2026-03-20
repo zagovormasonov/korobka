@@ -818,15 +818,10 @@ router.post('/additional/save-result', async (req, res) => {
     
     res.json({ success: true, data: result.data });
   } catch (error) {
-    console.error('❌ Ошибка при сохранении результата теста:', error);
-    console.error('❌ Stack trace:', error.stack);
-    console.error('❌ Error details:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint
-    });
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    const supaMeta = ` code=${error.code || ''} details=${error.details || ''} hint=${error.hint || ''}`;
+    console.error(`❌ [TESTS] Ошибка при сохранении результата теста: ${errMsg}${supaMeta}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 

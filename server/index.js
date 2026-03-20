@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { initializeWebSocket, getOnlineUsers, getOnlineCount } from './websocket.js';
 import { sendErrorToTelegram } from './utils/telegram-errors.js';
+import { extractJSON } from './utils/extractJSON.js';
 import testRoutes from './routes/tests.js';
 
 // Перехватываем console.error() для отправки всех ошибок в Telegram
@@ -279,88 +280,6 @@ app.use('/api', questionnaireGenerationRoutes);
 app.use('/api/errors', clientErrorsRoutes);
 app.use('/api/situation', situationRoutes);
 app.use('/api/meditation', meditationRoutes);
-
-// --- Helper: извлечение JSON из текста с лишними символами ---
-function extractJSON(text) {
-  if (!text || typeof text !== 'string') {
-    throw new Error('extractJSON: input must be a non-empty string');
-  }
-  
-  // Удаляем markdown code blocks
-  let cleaned = text.trim();
-  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) {
-    cleaned = fenceMatch[1].trim();
-  }
-  
-  // Ищем первую открывающую скобку { или [
-  let startIdx = -1;
-  let braceType = null;
-  for (let i = 0; i < cleaned.length; i++) {
-    if (cleaned[i] === '{') {
-      startIdx = i;
-      braceType = '{';
-      break;
-    } else if (cleaned[i] === '[') {
-      startIdx = i;
-      braceType = '[';
-      break;
-    }
-  }
-  
-  if (startIdx === -1) {
-    throw new Error('extractJSON: no JSON object or array found');
-  }
-  
-  // Находим соответствующую закрывающую скобку с учётом вложенности и строк
-  let depth = 0;
-  let inString = false;
-  let escapeNext = false;
-  let endIdx = -1;
-  
-  for (let i = startIdx; i < cleaned.length; i++) {
-    const char = cleaned[i];
-    
-    if (escapeNext) {
-      escapeNext = false;
-      continue;
-    }
-    
-    if (char === '\\') {
-      escapeNext = true;
-      continue;
-    }
-    
-    if (char === '"' && !escapeNext) {
-      inString = !inString;
-      continue;
-    }
-    
-    if (inString) continue;
-    
-    if (char === '{' || char === '[') {
-      depth++;
-    } else if (char === '}' || char === ']') {
-      depth--;
-      if (depth === 0) {
-        endIdx = i;
-        break;
-      }
-    }
-  }
-  
-  if (endIdx === -1) {
-    throw new Error('extractJSON: unmatched brackets, JSON is incomplete');
-  }
-  
-  const jsonStr = cleaned.substring(startIdx, endIdx + 1);
-  
-  try {
-    return JSON.parse(jsonStr);
-  } catch (parseError) {
-    throw new Error(`extractJSON: JSON parse failed: ${parseError.message}`);
-  }
-}
 
 // --- Helper: вызов Gemini API с указанной моделью и температурой ---
 async function aiGenerate(modelType, systemPrompt, userMessage, temperature = 0.5, rawText = false) {
