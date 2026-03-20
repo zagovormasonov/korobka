@@ -216,8 +216,9 @@ router.post('/generate-goals', async (req, res) => {
     console.log('✅ [SITUATION] generate-goals success:', goals.length, 'goals');
     res.json({ goals });
   } catch (error) {
-    console.error('❌ [SITUATION] generate-goals failed:', error.message);
-    res.status(500).json({ error: 'Failed to generate goals', details: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [SITUATION] generate-goals failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ error: 'Failed to generate goals', details: errMsg });
   }
 });
 
@@ -245,8 +246,9 @@ router.post('/generate-short-title', async (req, res) => {
     console.log('✅ [SITUATION] generate-short-title success:', shortTitle);
     res.json({ shortTitle });
   } catch (error) {
-    console.error('❌ [SITUATION] generate-short-title failed:', error.message);
-    res.status(500).json({ error: 'Failed to generate short title', details: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [SITUATION] generate-short-title failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ error: 'Failed to generate short title', details: errMsg });
   }
 });
 
@@ -283,8 +285,9 @@ router.post('/parse-goals-text', async (req, res) => {
     console.log('✅ [SITUATION] parse-goals-text success:', goals.length, 'goals');
     res.json({ goals });
   } catch (error) {
-    console.error('❌ [SITUATION] parse-goals-text failed:', error.message);
-    res.status(500).json({ error: 'Failed to parse goals text', details: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [SITUATION] parse-goals-text failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ error: 'Failed to parse goals text', details: errMsg });
   }
 });
 
@@ -565,8 +568,9 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
     console.log('✅ [SITUATION] generate-exercises-for-goal success, exercises:', exercises.length);
     res.json({ exercises });
   } catch (error) {
-    console.error('❌ [SITUATION] generate-exercises-for-goal failed:', error.message);
-    res.status(500).json({ error: 'Failed to generate exercises', details: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [SITUATION] generate-exercises-for-goal failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ error: 'Failed to generate exercises', details: errMsg });
   }
 });
 
@@ -633,8 +637,9 @@ E) «ВОПРОС-ПРОВОКАЦИЯ» — задай вопрос, котор
     console.log('✅ [SITUATION] generate-feedback success, len:', feedback.length);
     res.json({ feedback });
   } catch (error) {
-    console.error('❌ [SITUATION] generate-feedback failed:', error.message);
-    res.status(500).json({ error: 'Failed to generate feedback', details: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [SITUATION] generate-feedback failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ error: 'Failed to generate feedback', details: errMsg });
   }
 });
 

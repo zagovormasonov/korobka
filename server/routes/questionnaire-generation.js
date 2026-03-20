@@ -163,10 +163,11 @@ type всегда "text". В options — 4 примера ответов, кот
     });
 
   } catch (error) {
-    console.error('❌ [QUESTIONNAIRE] Ошибка генерации первой части:', error);
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [QUESTIONNAIRE] generate-part1 failed: ${errMsg}`, error?.stack || '');
     res.status(500).json({
       success: false,
-      error: error.message || 'Ошибка генерации опросника',
+      error: errMsg || 'Ошибка генерации опросника',
       questions: []
     });
   }
@@ -203,10 +204,11 @@ type всегда "text". В options — 4 примера ответов. Ник
     });
 
   } catch (error) {
-    console.error('❌ [QUESTIONNAIRE] Ошибка генерации второй части:', error);
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [QUESTIONNAIRE] generate-part2 failed: ${errMsg}`, error?.stack || '');
     res.status(500).json({
       success: false,
-      error: error.message || 'Ошибка генерации опросника',
+      error: errMsg || 'Ошибка генерации опросника',
       questions: []
     });
   }
@@ -283,8 +285,9 @@ router.post('/generate-specialist', async (req, res) => {
     
     res.json({ success: true, data });
   } catch (error) {
-    console.error('❌ [QUESTIONNAIRE] Ошибка generate-specialist:', error);
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [QUESTIONNAIRE] generate-specialist failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -362,8 +365,9 @@ router.post('/generate-diagnostic', async (req, res) => {
     
     res.json({ success: true, beforeHypotheses: data.beforeHypotheses || '', afterHypotheses: data.afterHypotheses || '' });
   } catch (error) {
-    console.error('❌ [QUESTIONNAIRE] Ошибка generate-diagnostic:', error);
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [QUESTIONNAIRE] generate-diagnostic failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -395,8 +399,9 @@ router.post('/generate-lumi', async (req, res) => {
     
     res.json({ success: true, content: data.content });
   } catch (error) {
-    console.error('❌ [QUESTIONNAIRE] Ошибка generate-lumi:', error);
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [QUESTIONNAIRE] generate-lumi failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -457,8 +462,9 @@ router.post('/generate-plan', async (req, res) => {
     
     res.json({ success: true, content: data.content });
   } catch (error) {
-    console.error('❌ [QUESTIONNAIRE] Ошибка generate-plan:', error);
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [QUESTIONNAIRE] generate-plan failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -533,8 +539,9 @@ router.post('/generate-tools', async (req, res) => {
       outro: data.outro || ''
     });
   } catch (error) {
-    console.error('❌ [QUESTIONNAIRE] Ошибка generate-tools:', error);
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [QUESTIONNAIRE] generate-tools failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 
@@ -635,8 +642,9 @@ router.post('/generate-prep', async (req, res) => {
       psychologistContent: data.psychologistContent || ''
     });
   } catch (error) {
-    console.error('❌ [QUESTIONNAIRE] Ошибка generate-prep:', error);
-    res.status(500).json({ success: false, error: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [QUESTIONNAIRE] generate-prep failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ success: false, error: errMsg });
   }
 });
 

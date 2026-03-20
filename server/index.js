@@ -901,8 +901,9 @@ app.post('/api/tracker/generate-feedback', async (req, res) => {
 
     res.json({ feedback: typeof feedback === 'string' ? feedback : String(feedback) });
   } catch (error) {
-    console.error('Error generating feedback:', error);
-    res.status(500).json({ error: 'Failed to generate feedback', details: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [TRACKER] generate-feedback failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ error: 'Failed to generate feedback', details: errMsg });
   }
 });
 
@@ -1311,8 +1312,9 @@ ${contextStr}
     const text = data.candidates[0].content.parts[0].text.trim();
     res.json({ reply: text });
   } catch (error) {
-    console.error('Error in CMS Lumi chat:', error);
-    res.status(500).json({ error: 'Failed to generate response', details: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [CMS] lumi-chat failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ error: 'Failed to generate response', details: errMsg });
   }
 });
 

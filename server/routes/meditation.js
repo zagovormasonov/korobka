@@ -211,8 +211,9 @@ router.post('/generate-text', async (req, res) => {
     console.log('✅ [MEDITATION] generate-text success, textLen:', text.length);
     res.json({ text });
   } catch (error) {
-    console.error('❌ [MEDITATION] generate-text failed:', error.message);
-    res.status(500).json({ error: 'Failed to generate meditation text', details: error.message });
+    const errMsg = error?.message || String(error);
+    console.error(`❌ [MEDITATION] generate-text failed: ${errMsg}`, error?.stack || '');
+    res.status(500).json({ error: 'Failed to generate meditation text', details: errMsg });
   }
 });
 
