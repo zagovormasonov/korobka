@@ -204,7 +204,7 @@ router.post('/generate-specialist', async (req, res) => {
     const systemPrompt = `Ты — экспертный консилиум: главный врач-психиатр и клинический психолог. На основе данных пациента сформируй два клинических отчета.
 Это первый этап, поэтому детально проанализируй анамнез.
 
-ВЕРНИ СТРОГО JSON-ОБЪЕКТ С ТРЕМЯ КЛЮЧАМИ:
+ВЕРНИ СТРОГО JSON-ОБЪЕКТ С ЧЕТЫРЬМЯ КЛЮЧАМИ:
 {
   "hypotheses": [
     {
@@ -217,12 +217,12 @@ router.post('/generate-specialist', async (req, res) => {
       "missingData": ["Каких данных не хватает 1"]
     }
   ],
+  "riskStatus": {
+    "suicide": "отсутствует / низкий / выраженный / высокий",
+    "selfHarm": "отсутствует / низкий / выраженный / высокий",
+    "aggression": "отсутствует / низкий / выраженный / высокий"
+  },
   "psychiatristDoc": {
-    "riskStatus": {
-      "suicide": "отсутствует / низкий / выраженный / высокий",
-      "selfHarm": "отсутствует / низкий / выраженный / высокий",
-      "aggression": "отсутствует / низкий / выраженный / высокий"
-    },
     "symptoms": {
       "emotional": ["Настроение, апатия, тревога..."],
       "cognitive": ["Память, внимание, туман в голове..."],
@@ -239,11 +239,6 @@ router.post('/generate-specialist', async (req, res) => {
     "riskFactors": ["Фактор риска 1"]
   },
   "psychologistDoc": {
-    "riskStatus": {
-      "suicide": "отсутствует / низкий / выраженный / высокий",
-      "selfHarm": "отсутствует / низкий / выраженный / высокий",
-      "aggression": "отсутствует / низкий / выраженный / высокий"
-    },
     "mainRequest": ["Жалоба 1 живым языком", "Жалоба 2"],
     "conceptualization": {
       "cognitive": ["Когнитивные искажения, глуб. убеждения"],
@@ -373,7 +368,12 @@ router.post('/generate-lumi', async (req, res) => {
 
 ВЕРНИ СТРОГО JSON: { "content": "текст сообщения" }`;
 
-    const userMessage = `Core Hypotheses: ${JSON.stringify(req.body.coreHypotheses || [])}\n\n${buildUserContext(req.body)}`;
+    const { coreHypotheses, patientPayload } = req.body;
+    const patientBlock =
+      patientPayload != null
+        ? `patientPayload (JSON):\n${JSON.stringify(patientPayload, null, 2)}`
+        : `Данные из анкеты:\n${buildUserContext(req.body)}`;
+    const userMessage = `coreHypotheses: ${JSON.stringify(coreHypotheses || [])}\n\n${patientBlock}`;
     const content = await callOpenAI(systemPrompt, userMessage, 0.7);
     const data = extractJSON(content);
     
@@ -495,6 +495,10 @@ router.post('/generate-tools', async (req, res) => {
 • Когда ощущается пустота, онемение или «дыра»
 • Когда резко падает энергия и мотивация
 • Когда съедает самокритика и чувство вины
+• Когда трудно заснуть или просыпаешься разбитым
+• Когда накатывает грусть или апатия без явной причины
+• Когда трудно сосредоточиться или «туман» в голове
+• Когда напряжены отношения или одиночество
 (Сгенерируй объекты упражнений для выбранных разделов. Названия только на русском, без английских аббревиатур. Аббревиатуры вроде ACT, DBT разрешены только в поле therapy или source).
 
 --- ДЛЯ КЛЮЧА outro ---
