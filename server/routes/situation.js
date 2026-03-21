@@ -45,6 +45,30 @@ function postProcessExerciseBlocks(exercises) {
   return exercises;
 }
 
+/** detailedHint только на уровне упражнения (idenself UI «Подробнее о навыке»); со шагов убираем. */
+function normalizeExerciseDetailedHints(exercises) {
+  for (const ex of exercises || []) {
+    let hint = ex.detailedHint;
+    if (hint == null || String(hint).trim() === '') {
+      for (const step of ex.steps || []) {
+        if (step.detailedHint != null && String(step.detailedHint).trim() !== '') {
+          hint = step.detailedHint;
+          break;
+        }
+      }
+    }
+    if (hint != null && String(hint).trim() !== '') {
+      ex.detailedHint = String(hint).trim();
+    } else if (!ex.detailedHint) {
+      ex.detailedHint = '';
+    }
+    for (const step of ex.steps || []) {
+      delete step.detailedHint;
+    }
+  }
+  return exercises;
+}
+
 async function callGemini(systemPrompt, userMessage, temperature = 0.5) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY не установлен');
@@ -283,9 +307,12 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
    питомца — плейсхолдер НЕ может содержать «покормить», «погулять», «позвонить ему».
    Перед записью плейсхолдера проверь: не противоречит ли пример фактам ситуации?
 
-7. ПОЛЕ detailedHint: для КАЖДОГО шага добавь поле detailedHint — подробное объяснение
-   навыка/техники из dbtContext (блок «Механизм и нюансы»). Это показывается пользователю
-   по кнопке «Подробнее». Длина: 400-500 символов (это важно, не короче!).
+7. ПОЛЕ detailedHint — только про **навык DBT, на котором построено упражнение**, не про шаг:
+   - Добавь **одно** поле \`detailedHint\` на уровне **объекта упражнения** в \`exercises[]\` (не «пояснение к шагу»).
+   - Содержание: из dbtContext — **механизм, нюансы, когда навык уместен**, типичные ошибки; опирайся на блоки вроде «Механизм и нюансы» по выбранной технике.
+   - **Запрещено:** пересказывать \`steps[].title\` / \`steps[].description\`, писать «на этом шаге сделайте…» или дублировать инструкцию конкретного шага. В UI кнопка «Подробнее о навыке» — пользователь ждёт теорию **исходного навыка**, из которого сделано **всё** упражнение.
+   - Длина: 400–500 символов (не короче).
+   - В \`steps[]\` поле \`detailedHint\` **не добавляй** (опусти ключ). Если жёстко требуется поле на каждом шаге в схеме валидации — продублируй **ту же самую** строку, что и \`exercises[].detailedHint\`, во все шаги (идентичный текст), без вариаций под номер шага.
 
 8. Допустимые значения therapyType: "DBT"
 
@@ -460,12 +487,12 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
       "therapyType": "DBT",
       "estimatedMinutes": 3,
       "totalSteps": 2,
+      "detailedHint": "навык DBT целиком: механизм и нюансы из dbtContext (400-500 символов), без текста про конкретный шаг",
       "steps": [
         {
           "stepNumber": 1,
           "title": "название шага",
           "description": "описание шага",
-          "detailedHint": "подробное объяснение навыка/техники (400-500 символов, из dbtContext)",
           "blocks": [ { "id": "block-1", "type": "...", ... } ]
         }
       ]
@@ -482,9 +509,10 @@ router.post('/generate-exercises-for-goal', async (req, res) => {
 
     const raw = await callGemini(systemPrompt, userMessage, 0.4);
     const parsed = extractJSON(raw);
-    const exercises = postProcessExerciseBlocks(
+    let exercises = postProcessExerciseBlocks(
       Array.isArray(parsed.exercises) ? parsed.exercises : []
     );
+    exercises = normalizeExerciseDetailedHints(exercises);
 
     console.log('✅ [SITUATION] generate-exercises-for-goal success, exercises:', exercises.length);
     res.json({ exercises });
