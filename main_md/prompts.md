@@ -1,41 +1,37 @@
-# Фрагмент промптов Bridge API (синхронизация с кодом)
+# Bridge API — фрагмент `prompts.md` (синхрон с кодом в этом репозитории)
 
-Исполняемый промпт для `POST /api/situation/generate-exercises-for-goal` находится в **`server/routes/situation.js`**. Ниже — зафиксированные правила по полю **`detailedHint`** (как в idenself).
+## Отдельный репозиторий Bridge (без idenself)
 
-## `POST /api/situation/generate-exercises-for-goal` — правило `detailedHint`
+- У разработчиков Bridge **нет** монорепозитория idenself и файла `bridge/index.js` на диске idenself — ориентир по путям **`POST /api/...`** в **этом** проекте (`server/index.js`, `server/routes/*.js`).
+- Полный эталонный текст промптов передаётся отдельным документом; здесь зафиксированы ключевые дельты, реализованные в коде.
 
-- Поле **`detailedHint`** задаётся на уровне **объекта упражнения** в `exercises[]`, а не отдельным текстом «про каждый шаг».
-- Содержание: описание **терапевтического навыка/техники из `dbtContext`** (механизм, нюансы, когда применять), на котором основано **всё** упражнение.
-- **Нельзя** пересказывать инструкцию конкретного шага или дублировать `steps[].description`.
-- В **`steps[]`** ключ **`detailedHint` не добавлять**. Если схема валидации требует поле на шаге — **та же строка**, что и `exercises[].detailedHint`, во все шаги (идентичный текст).
-- Клиент idenself показывает «Подробнее о навыке» по **`exercise.detailedHint`**; fallback на шаг — только для **старых** данных.
+---
 
-### Постобработка на Bridge
+## `POST /api/situation/generate-exercises-for-goal`
 
-После парсинга JSON вызывается **`normalizeExerciseDetailedHints`**: переносит текст с шагов на упражнение при legacy-ответе модели и **удаляет** `detailedHint` с объектов шагов в ответе API.
+См. **`server/routes/situation.js`**.
 
-### Фрагмент ожидаемой структуры JSON (пример)
+- **`detailedHint`** — только на уровне объекта в `exercises[]` (теория навыка из `dbtContext`), не пересказ шагов.
+- В **`steps[]`** поле `detailedHint` в ответе API убирается постобработкой **`normalizeExerciseDetailedHints`** (legacy: перенос с шага на упражнение).
 
-```json
-{
-  "exercises": [
-    {
-      "id": "ex-1710000001",
-      "title": "…",
-      "shortDescription": "…",
-      "therapyType": "DBT",
-      "estimatedMinutes": 3,
-      "totalSteps": 2,
-      "detailedHint": "Один текст на всё упражнение: механизм и нюансы базового навыка DBT из dbtContext (не пересказ шага).",
-      "steps": [
-        {
-          "stepNumber": 1,
-          "title": "…",
-          "description": "…",
-          "blocks": []
-        }
-      ]
-    }
-  ]
-}
-```
+---
+
+## `POST /api/situation/generate-feedback`
+
+Исполняемый промпт — в **`server/routes/situation.js`**. Сводка по обновлению контракта:
+
+1. Пункт 1: начало с **наблюдения или инсайта**, не с вопроса.
+2. Пункт 4: **никаких вопросов** в тексте (экран односторонний).
+3. Форматы обратной связи: **только A–D** (инсайт, прогресс, точка роста, мост к жизни). Формат E «вопрос-провокация» **удалён**.
+4. Температура: **0.7**, ответ: `{ "feedback": "..." }`.
+5. Тело запроса в user message: `situationDescription`, `exerciseTitle`, `exerciseTherapyType`, `goalLabel`, `answers`, `steps`, при наличии `dataset`, `exerciseHistory`, `situationHistory` (с дефолтами как в коде).
+
+---
+
+## Прочие эндпоинты
+
+- Опросник / specialist / diagnostic / plan / tools / prep / lumi / transcribe — **`server/routes/questionnaire-generation.js`**.
+- Трекеры / reminder / CMS lumi — **`server/index.js`**.
+- Медитация — роут в **`server/routes/situation.js`** (если подключён).
+
+Полные тексты system/user промптов для всех путей — в переданном заказчиком **`prompts.md`** (целиком).
